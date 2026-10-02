@@ -45,3 +45,8 @@ next-env.d.ts
 /media-src/
 # pagaidu failu pārsūtīšana
 /.transfer/
+
+# darba faili, kas nav jāpublicē (vecās bildes, pārsūtīšanas arhīvi, Claude izvades)
+/_to_delete/
+/update*.tgz
+/Claude outputs/
