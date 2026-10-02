@@ -31,8 +31,15 @@ export default function AdminForm({
   return (
     <form action={formAction} className="space-y-6">
       <div className="grid gap-x-6 gap-y-5 rounded-2xl bg-white p-5 ring-1 ring-line sm:p-7 md:grid-cols-2">
-        {fields.map((f) => (
-          <div key={f.name} className={cn("space-y-1.5", (f.wide || ["textarea", "pairs", "pricing", "faq", "albums", "image"].includes(f.type)) && "md:col-span-2")}>
+        {fields.map((f) =>
+          f.type === "heading" ? (
+            // Formas daļas virsraksts (un īss paskaidrojums zem tā)
+            <div key={f.name} className="border-t border-line pt-5 first:border-t-0 first:pt-0 md:col-span-2">
+              <h2 className="text-base font-extrabold">{f.label}</h2>
+              {f.help && <p className="mt-1 text-sm leading-6 text-ink-soft">{f.help}</p>}
+            </div>
+          ) : (
+          <div key={f.name} className={cn("space-y-1.5", (f.wide || ["textarea", "pairs", "pricing", "faq", "albums", "image", "table"].includes(f.type)) && "md:col-span-2")}>
             {f.type === "checkbox" ? (
               <label className="flex items-center gap-3 text-sm font-semibold">
                 <input type="checkbox" name={f.name} defaultChecked={values[f.name] === true} className="size-5 accent-ink" />
@@ -49,7 +56,8 @@ export default function AdminForm({
             )}
             {f.help && <p className="text-xs leading-5 text-ink-soft">{f.help}</p>}
           </div>
-        ))}
+          ),
+        )}
       </div>
 
       {state?.error && (
@@ -102,7 +110,7 @@ function FieldInput({ field, value, folder }: { field: FieldDef; value: string |
     case "text":
       return <input id={field.name} name={field.name} defaultValue={text} required={field.required} className={adminInput} />;
     default:
-      // textarea, lines, pairs, stats, faq, pricing
+      // textarea, lines, pairs, stats, faq, pricing, table
       return (
         <textarea
           id={field.name}

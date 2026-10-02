@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, clearSession, saveSession } from "@/lib/auth";
-import { createUserClient, supabase } from "@/lib/supabase";
+import { createUserClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getEntity } from "@/lib/admin/entities";
-import { parse, slugify } from "@/lib/admin/fields";
+import { parse, slugify, setPath } from "@/lib/admin/fields";
 import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 
 /**
@@ -27,6 +27,9 @@ export async function login(_: ActionState, form: FormData): Promise<ActionState
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   if (!email || !password) return { error: "Ievadiet e-pastu un paroli." };
+  if (!isSupabaseConfigured) {
+    return { error: "Datubāze nav pieslēgta: nav iestatīti NEXT_PUBLIC_SUPABASE_URL un NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY." };
+  }
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.session) return { error: "Nepareizs e-pasts vai parole." };
@@ -62,6 +65,7 @@ export async function saveEntity(key: string, id: string | null, _: ActionState,
 
   const row: Record<string, unknown> = {};
   for (const field of entity.fields) {
+    if (field.type === "heading") continue;
     const value = parse(field, form);
     if (field.required && (value === "" || value === null || value === undefined)) {
       return { error: `Lauks “${field.label}” ir obligāts.` };
@@ -119,7 +123,8 @@ export async function saveSettings(key: SettingsKey, _: ActionState, form: FormD
   if (!schema) return { error: "Nezināma sadaļa." };
 
   const value: Record<string, unknown> = {};
-  for (const field of schema.fields) value[field.name] = parse(field, form);
+  // Lauki ar punktu nosaukumā (piem. "servicePhotos.mazulu-zona") saglabājas kā iekļauti objekti
+  for (const field of schema.fields) if (field.type !== "heading") setPath(value, field.name, parse(field, form));
 
   const { error } = await db.from("site_settings").upsert({ key, value });
   if (error) return { error: `Neizdevās saglabāt: ${error.message}` };

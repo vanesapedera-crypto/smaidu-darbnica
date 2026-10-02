@@ -3,7 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
-import { createUserClient, supabase } from "@/lib/supabase";
+import { createUserClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { ACCESS_COOKIE, REFRESH_COOKIE, cookieOptions } from "@/lib/auth-cookies";
 
 /**
@@ -35,6 +35,7 @@ export type AdminContext = {
 
 /** Atgriež pašreizējo administratoru vai null. Rezultāts tiek kešots viena pieprasījuma ietvaros. */
 export const getAdmin = cache(async (): Promise<AdminContext | null> => {
+  if (!isSupabaseConfigured) return null; // datubāze nav pieslēgta — neviens nav autorizēts
   const token = (await cookies()).get(ACCESS_COOKIE)?.value;
   if (!token) return null;
 

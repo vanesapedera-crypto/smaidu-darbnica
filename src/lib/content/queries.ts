@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { defaultSettings } from "./defaults/settings";
 import { businessServices } from "./defaults/business-services";
 import { privateServices } from "./defaults/private-services";
@@ -32,6 +32,8 @@ async function select<T extends object>(
   fallback: T[],
   build: (q: ReturnType<typeof supabase.from>) => PromiseLike<{ data: unknown; error: unknown }>,
 ): Promise<T[]> {
+  // Bez datubāzes savienojuma (nav vides mainīgo) — uzreiz noklusējuma saturs, bez kļūdām būves laikā
+  if (!isSupabaseConfigured) return fallback;
   try {
     const { data, error } = await build(supabase.from(table));
     if (error) throw error;

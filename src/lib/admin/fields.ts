@@ -21,7 +21,9 @@ export type FieldType =
   | "pricing" //  "## Grupa" + "Etiķete | 135" → PriceGroup[]
   | "albums" //  izvēles rūtiņas → string[]
   | "videos" //  "Nosaukums | adrese | vāciņa attēls | ilgums | auditorija" rindā → Video[]
-  | "photos"; //  "adrese | paraksts" rindā → { src, caption }[]
+  | "photos" //  "adrese | paraksts" rindā → { src, caption }[]
+  | "table" //   "a | b | c" rindā → objekti ar `columns` norādītajiem laukiem (piem. { name, image }[])
+  | "heading"; // tikai virsraksts formā (sadala garu formu daļās) — neko nesaglabā
 
 export type FieldDef = {
   name: string;
@@ -32,7 +34,22 @@ export type FieldDef = {
   wide?: boolean;
   rows?: number;
   options?: { value: string; label: string }[];
+  /** Laukam "table": objekta lauku nosaukumi kolonnu secībā, piem. ["name", "image"] */
+  columns?: string[];
 };
+
+/** Vērtība pēc ceļa ar punktiem, piem. "servicePhotos.mazulu-zona" */
+export function getPath(obj: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), obj);
+}
+
+/** Ieraksta vērtību pēc ceļa ar punktiem (izveido starpobjektus) */
+export function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
+  const keys = path.split(".");
+  let o = obj;
+  for (const k of keys.slice(0, -1)) o = (o[k] ??= {}) as Record<string, unknown>;
+  o[keys[keys.length - 1]] = value;
+}
 
 const SEP = " | ";
 
@@ -49,8 +66,18 @@ const splitPair = (line: string): [string, string] => {
 };
 
 /** Datubāzes vērtība → teksts formas laukā */
-export function serialize(type: FieldType, value: unknown): string {
+export function serialize(type: FieldType, value: unknown, columns: string[] = []): string {
   switch (type) {
+    case "heading":
+      return "";
+    case "table":
+      return ((value as Record<string, unknown>[]) ?? [])
+        .map((row) => {
+          const cols = columns.map((c) => String(row[c] ?? ""));
+          while (cols.length > 1 && !cols[cols.length - 1]) cols.pop(); // tukšās beigu kolonnas nerāda
+          return cols.join(SEP);
+        })
+        .join("\n");
     case "lines":
       return ((value as string[]) ?? []).join("\n");
     case "pairs":
@@ -91,6 +118,17 @@ export function parse(field: FieldDef, form: FormData): unknown {
   const text = typeof raw === "string" ? raw.trim() : "";
 
   switch (field.type) {
+    case "heading":
+      return undefined;
+    case "table": {
+      const columns = field.columns ?? [];
+      return splitLines(text)
+        .map((l) => {
+          const cells = l.split("|").map((x) => x.trim());
+          return Object.fromEntries(columns.map((c, i) => [c, cells[i] ?? ""]));
+        })
+        .filter((row) => row[columns[0]]);
+    }
     case "checkbox":
       return raw === "on";
     case "number":

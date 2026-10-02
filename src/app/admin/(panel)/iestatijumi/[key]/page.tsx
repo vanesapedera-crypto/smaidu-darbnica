@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
-import { serialize } from "@/lib/admin/fields";
+import { getPath, serialize } from "@/lib/admin/fields";
 import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import { defaultSettings } from "@/lib/content/defaults/settings";
 import { saveSettings } from "../../../actions";
@@ -30,7 +30,10 @@ export default async function SettingsPage({ params, searchParams }: Props) {
   const current = { ...defaultSettings[settingsKey], ...((data?.value as object) ?? {}) } as Record<string, unknown>;
 
   const values = Object.fromEntries(
-    schema.fields.map((f) => [f.name, f.type === "checkbox" ? current[f.name] === true : serialize(f.type, current[f.name])]),
+    schema.fields.map((f) => {
+      const v = getPath(current, f.name);
+      return [f.name, f.type === "checkbox" ? v === true : serialize(f.type, v, f.columns)];
+    }),
   );
 
   return (

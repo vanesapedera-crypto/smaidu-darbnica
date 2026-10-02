@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { bookedSlots } from "@/lib/availability";
 import { notifyNewBooking } from "@/lib/notify";
 import { quoteTravel } from "@/lib/travel";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Validator } from "@/lib/validation";
 
 /**
@@ -30,6 +30,14 @@ const LEGACY_COLUMNS = [
 ];
 
 export async function POST(request: Request) {
+  // Datubāze nav pieslēgta (nav vides mainīgo) — skaidra atbilde, nevis servera kļūda
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { success: false, error: "Pieteikumu saņemšana šobrīd nav pieejama. Lūdzu, zvaniet mums." },
+      { status: 503 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();
