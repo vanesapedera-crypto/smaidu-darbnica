@@ -1,0 +1,145 @@
+{
+  "$comment": "Albumu apraksti attēlu optimizācijas skriptam. Mapes nosaukums media-src/<slug>/ = albuma slug. category nosaka galerijas filtru.",
+  "categories": {
+    "uznemumu-pasakumi": "Uzņēmumu pasākumi",
+    "pilsetu-svetki": "Pilsētu un novadu svētki",
+    "ziemassvetki": "Ziemassvētki",
+    "lielformata-speles": "Lielformāta spēles",
+    "bernu-zona": "Bērnu zonas",
+    "bernu-ballites": "Bērnu ballītes",
+    "telpas": "Mūsu telpas",
+    "komanda": "Komanda"
+  },
+  "albums": {
+    "vizium-jubileja": {
+      "title": "Vizium 1. gada jubileja",
+      "category": "uznemumu-pasakumi"
+    },
+    "bauska-taste-2024": {
+      "title": "Bauska TASTE 2024",
+      "category": "uznemumu-pasakumi"
+    },
+    "bauska-taste-2022": {
+      "title": "Bauska TASTE 2022",
+      "category": "uznemumu-pasakumi"
+    },
+    "elyndi-fest-2026": {
+      "title": "ELYNDI fest 2026",
+      "category": "uznemumu-pasakumi"
+    },
+    "stiga-meza-dienas": {
+      "title": "Stiga RM meža dienas Ogres Zilajos kalnos",
+      "category": "uznemumu-pasakumi"
+    },
+    "ziemassvetki-2025": {
+      "title": "Ziemassvētku pasākumi 2025",
+      "category": "ziemassvetki"
+    },
+    "tukuma-rozu-svetki-2025": {
+      "title": "Tukuma Rožu svētki 2025",
+      "category": "pilsetu-svetki"
+    },
+    "tukuma-rozu-svetki-2024": {
+      "title": "Tukuma Rožu svētki 2024",
+      "category": "pilsetu-svetki"
+    },
+    "dobeles-pilsetas-svetki-2026": {
+      "title": "Dobeles pilsētas svētki 2026",
+      "category": "pilsetu-svetki"
+    },
+    "dobeles-abolu-svetki-2024": {
+      "title": "Dobeles ābolu svētki 2024",
+      "category": "pilsetu-svetki"
+    },
+    "vimbu-svetki-2026": {
+      "title": "Vimbu svētki 2026",
+      "category": "pilsetu-svetki"
+    },
+    "valpurgu-nakts-tervete-2026": {
+      "title": "Valpurģu nakts Tērvetē 2026",
+      "category": "pilsetu-svetki"
+    },
+    "lielformata-speles": {
+      "title": "Lielformāta spēles",
+      "category": "lielformata-speles"
+    },
+    "mazulu-sturitis": {
+      "title": "Mazuļu stūrītis",
+      "category": "bernu-zona"
+    },
+    "smaidu-darbnica": {
+      "title": "Smaidu Darbnīca",
+      "category": "komanda"
+    },
+    "komanda": {
+      "title": "Komanda",
+      "category": "komanda",
+      "keepNames": true,
+      "hidden": true
+    },
+    "telpas": {
+      "title": "Mūsu telpas",
+      "category": "telpas"
+    },
+    "glitteru-ballite": {
+      "title": "Glitteru ballīte",
+      "category": "bernu-ballites"
+    },
+    "fejas-ballite": {
+      "title": "Fejas ballīte",
+      "category": "bernu-ballites"
+    },
+    "petnieku-ballite": {
+      "title": "Pētnieku ballīte",
+      "category": "bernu-ballites"
+    },
+    "gabbys-dollhouse-ballite": {
+      "title": "Gabby's Dollhouse ballīte",
+      "category": "bernu-ballites"
+    },
+    "spa-ballite": {
+      "title": "SPA ballīte",
+      "category": "bernu-ballites"
+    },
+    "make-up-ballite": {
+      "title": "Make-up ballīte",
+      "category": "bernu-ballites"
+    },
+    "wednesday-ballite": {
+      "title": "Wednesday ballīte",
+      "category": "bernu-ballites"
+    },
+    "frozen-ballite": {
+      "title": "Frozen ballīte",
+      "category": "bernu-ballites"
+    },
+    "slaima-meistarklase": {
+      "title": "Slaima meistarklase",
+      "category": "bernu-ballites"
+    },
+    "eksperimentu-ballite": {
+      "title": "Eksperimentu ballīte",
+      "category": "bernu-ballites"
+    },
+    "putu-ballite": {
+      "title": "Putu ballīte",
+      "category": "bernu-ballites"
+    },
+    "nerf-ballite": {
+      "title": "Nerf ballīte",
+      "category": "bernu-ballites"
+    },
+    "parsteiguma-tels": {
+      "title": "Pārsteiguma tēls",
+      "category": "bernu-ballites"
+    },
+    "sejas-apgleznosana": {
+      "title": "Sejas apgleznošana",
+      "category": "bernu-ballites"
+    },
+    "piratu-ballite": {
+      "title": "Pirātu ballīte",
+      "category": "bernu-ballites"
+    }
+  }
+}

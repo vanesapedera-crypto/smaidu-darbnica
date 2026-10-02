@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smaidu Darbnīca — mājaslapa
 
-## Getting Started
+Next.js 16 (App Router) + Supabase + Tailwind CSS 4.
+Publiskā mājaslapa uzņēmumu klientiem un administrēšanas panelis `/admin`.
 
-First, run the development server:
+## Palaišana
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # un ievadiet Supabase datus
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Pirms produkcijas: `npm run build && npm start`. Datubāzes uzstādīšana — [supabase/README.md](supabase/README.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Komanda | Ko dara |
+|---|---|
+| `npm run dev` | Izstrādes serveris |
+| `npm run build` | Produkcijas būvējums |
+| `npm run lint` / `npm run typecheck` | Koda pārbaudes |
+| `npm run images` | Optimizē fotogrāfijas no `media-src/` uz `public/media/` |
+| `npm run seed` | Ģenerē `supabase/seed.sql` no noklusējuma satura |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Struktūra
 
-## Learn More
+```
+src/
+  app/
+    (site)/            publiskā mājaslapa (kopīgs Navbar + Footer)
+      page.tsx           sākumlapa
+      pakalpojumi/       uzņēmumu pakalpojumi + [slug] lapas
+      privatpersonam/    bērnu ballītes, telpu noma, rezervācijas forma
+      galerija/ par-mums/ kontakti/ privatuma-politika/
+    admin/
+      login/             pieteikšanās
+      (panel)/           aizsargātās paneļa lapas
+        page.tsx           pieteikumi (bookings)
+        [entity]/          universāls saraksts + rediģēšana (pakalpojumi, atsauksmes, klienti, komanda, SEO)
+        galerija/          galerija ar masveida augšupielādi
+        iestatijumi/[key]  sākumlapa, par mums, kontakti, SEO iestatījumi
+      actions.ts         servera darbības (visas pārbauda requireAdmin)
+    api/bookings/        pieteikumu API (POST publisks, PATCH tikai adminam)
+    sitemap.ts robots.ts
+  proxy.ts             /admin aizsardzība un sesijas atjaunošana
+  components/
+    site/              publiskās vietnes komponentes
+    admin/             paneļa komponentes
+  lib/
+    content/           satura tipi, noklusējuma saturs, Supabase vaicājumi
+    admin/             paneļa lauku un satura veidu konfigurācija
+    auth.ts seo.ts schema.ts pricing.ts validation.ts
+  data/media.json      optimizēto attēlu manifests (ģenerēts)
+public/media/          optimizētās fotogrāfijas
+supabase/              migrācijas un seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Kā darbojas saturs
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Publiskās lapas nolasa saturu no Supabase (`lib/content/queries.ts`).
+2. Ja tabula nav pieejama, tiek rādīts noklusējuma saturs no `lib/content/defaults` — lapa nekad "nenokrīt".
+3. Lapas ir statiski ģenerētas un kešotas (`revalidate = 3600`). Saglabājot izmaiņas panelī,
+   tiek izsaukts `revalidatePath`, tāpēc izmaiņas redzamas uzreiz.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Jaunu fotogrāfiju pievienošana
 
-## Deploy on Vercel
+- **Panelī:** Galerija → "Pievienot attēlus". Attēli tiek samazināti pārlūkā un saglabāti Supabase Storage.
+- **Projektā:** ielieciet oriģinālus `media-src/<albums>/`, aprakstiet albumu `scripts/media-albums.json`, palaidiet `npm run images`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Dizaina sistēma
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Krāsas un tipogrāfija — `src/app/globals.css` (`--brand` #FFD54A, `--ink` #1F2937).
+Dzeltenais netiek lietots kā teksta krāsa uz balta fona (kontrasts), tikai kā fons, ikonas un akcenti.

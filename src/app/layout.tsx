@@ -1,57 +1,46 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Manrope, Unbounded } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/seo";
 
-import Navbar from "@/components/home/Navbar";
-import Footer from "@/components/layout/Footer";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
+// Viens mainīga svara fonts ar latīņu paplašināto kopu (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
+const manrope = Manrope({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-manrope",
+  display: "swap",
 });
 
-const geistSans = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
+// Virsrakstu fonts — plats, skatuves plakāta noskaņa
+const unbounded = Unbounded({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-unbounded",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Smaidu Darbnīca",
-  description: "Bērnu ballītes, animatori un telpu noma Tukumā",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    template: "%s | Smaidu Darbnīca",
+    default: "Smaidu Darbnīca — pasākumi uzņēmumiem un pašvaldībām",
+  },
+  applicationName: "Smaidu Darbnīca",
+  formatDetection: { telephone: false },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  themeColor: "#1a1816",
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="lv"
-      className={cn(
-        "h-full",
-        "antialiased",
-        inter.variable,
-        geistSans.variable,
-        geistMono.variable,
-        "font-sans"
-      )}
-    >
-      <body className="flex min-h-screen flex-col bg-white text-gray-900">
-        <Navbar />
-
-        <main className="flex-1 pt-20">
-          {children}
-        </main>
-
-        <Footer />
-      </body>
+    <html lang="lv" className={`${manrope.variable} ${unbounded.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Ieslēdz parādīšanās animācijas tikai tad, ja darbojas JS (bez tā saturs ir redzams uzreiz) */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
+      <body className="min-h-screen bg-paper text-ink">{children}</body>
     </html>
   );
 }
