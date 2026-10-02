@@ -22,9 +22,10 @@ import type {
 /**
  * Publiskā satura nolasīšana no Supabase.
  *
- * Ja tabula vēl nav izveidota (migrācija nav palaista) vai datubāze nav sasniedzama,
- * tiek atgriezts noklusējuma saturs no lib/content/defaults — mājaslapa vienmēr strādā.
- * Tukša tabula NETIEK aizstāta ar noklusējumu: ja administrators visu izdzēsa, tā arī paliek.
+ * Ja tabula vēl nav izveidota (migrācija nav palaista), ir tukša (saturs vēl nav ievietots)
+ * vai datubāze nav sasniedzama, tiek atgriezts noklusējuma saturs no lib/content/defaults —
+ * mājaslapa vienmēr strādā. Lai kādu ierakstu paslēptu, panelī noņem atzīmi "Publicēts"
+ * (nevis izdzēš visus ierakstus — tukša tabula atkal rādītu noklusējuma saturu).
  */
 async function select<T extends object>(
   table: string,
@@ -37,7 +38,11 @@ async function select<T extends object>(
   try {
     const { data, error } = await build(supabase.from(table));
     if (error) throw error;
-    return (data as Record<string, unknown>[]).map((row) => fromRow(row, empty));
+    const rows = data as Record<string, unknown>[];
+    // Tukša tabula = saturs vēl nav ievietots datubāzē (seed.sql nav palaists) → rāda noklusējuma saturu.
+    // Citādi uzreiz pēc migrācijas lapā pazustu visi pakalpojumi, programmas, galerijas un komanda.
+    if (rows.length === 0) return fallback;
+    return rows.map((row) => fromRow(row, empty));
   } catch (err) {
     console.warn(`[content] "${table}" nav pieejama, izmantoju noklusējuma saturu.`, (err as Error)?.message ?? err);
     return fallback;

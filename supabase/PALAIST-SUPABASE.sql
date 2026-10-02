@@ -1,3 +1,4 @@
+-- ===== 20260928120000_admin_security_and_content.sql =====
 -- =====================================================================
 -- Smaidu Darbnīca — drošība un satura tabulas
 --
@@ -261,3 +262,63 @@ create policy "media_admin_update" on storage.objects
 drop policy if exists "media_admin_delete" on storage.objects;
 create policy "media_admin_delete" on storage.objects
   for delete to authenticated using (bucket_id = 'media' and public.is_admin());
+
+
+-- ===== 20260929090000_service_seasons.sql =====
+-- Pakalpojumu sezonas lapā "Uzņēmumiem": "ziema" | "vasara" | "visu-gadu".
+-- Viens pakalpojums var būt vairākās sezonās (piem. radošās darbnīcas — ziemā un vasarā).
+alter table public.services add column if not exists seasons jsonb not null default '[]';
+
+-- Esošajiem (jau ievietotajiem) noklusējuma pakalpojumiem aizpilda sezonas.
+-- Tikai tur, kur sezonas vēl nav iestatītas — panelī veiktās izmaiņas netiek pārrakstītas.
+update public.services s
+set seasons = v.seasons::jsonb
+from (values
+  ('komandas-saliedesana',  '["visu-gadu"]'),
+  ('sporta-speles',         '["vasara","visu-gadu"]'),
+  ('uznemumu-pasakumi',     '["visu-gadu"]'),
+  ('vasaras-pasakumi',      '["vasara"]'),
+  ('ziemassvetku-pasakumi', '["ziema"]'),
+  ('radosas-darbnicas',     '["ziema","vasara"]'),
+  ('lielformata-speles',    '["vasara"]'),
+  ('burbulu-sovi',          '["vasara"]'),
+  ('seju-apgleznosana',     '["vasara","visu-gadu"]'),
+  ('bernu-zona',            '["visu-gadu"]'),
+  ('animatori-un-teli',     '["ziema","visu-gadu"]')
+) as v(slug, seasons)
+where s.audience = 'business' and s.slug = v.slug and s.seasons = '[]'::jsonb;
+
+
+-- ===== 20261001090000_booking_travel.sql =====
+-- Izbraukuma ballītēm automātiski aprēķinātie ceļa izdevumi (Pasta iela 25, Tukums → adrese, turp un atpakaļ).
+alter table public.bookings add column if not exists travel_km numeric(7, 1);
+alter table public.bookings add column if not exists travel_cost numeric(8, 2);
+
+
+-- ===== 20261003090000_booked_venue_slots.sql =====
+-- Telpu nomas aizņemtie laiki: rezervācijas forma rāda tikai brīvos laikus.
+--
+-- Pieteikumus drīkst lasīt tikai administrators (RLS), tāpēc forma nevar pati apskatīt `bookings` tabulu.
+-- Šī funkcija atgriež TIKAI aizņemtos sākuma laikus izvēlētajā datumā (piem. '14:00') — bez klientu datiem.
+-- Laiks skaitās aizņemts, ja pieteikums ir mūsu telpās un nav atcelts (statuss "Jauns" vai "Apstiprināta").
+create or replace function public.booked_venue_slots(day date)
+returns setof text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select distinct left(event_time::text, 5)
+  from public.bookings
+  where event_date::date = day
+    and event_time is not null
+    and event_time::text <> ''
+    and coalesce(location, '') <> 'Izbraukums'
+    and coalesce(inquiry_type, 'private') = 'private'
+    and coalesce(status, 'Jauns') <> 'Atcelta';
+$$;
+
+revoke all on function public.booked_venue_slots(date) from public;
+grant execute on function public.booked_venue_slots(date) to anon, authenticated;
+
+
