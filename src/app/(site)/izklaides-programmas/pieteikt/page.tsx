@@ -2,7 +2,7 @@ import BookingForm from "@/components/site/BookingForm";
 import { Smile } from "@/components/site/stage";
 import { Container, Section } from "@/components/site/ui";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { parseExtras, smallGroupMax } from "@/lib/pricing";
+import { bookingPrices, parseExtras, smallGroupMax } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/seo";
 
 export function generateMetadata() {
@@ -40,6 +40,7 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
           <BookingForm
             key={selected}
             defaultProgram={selected}
+            prices={bookingPrices(settings)}
             programs={programs.map(({ slug, title, pricing, pricingNote, body }) => ({
               slug,
               title,

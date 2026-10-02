@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { quoteTravel, TRAVEL_RATE } from "@/lib/travel";
+import { quoteTravel } from "@/lib/travel";
 
 /**
  * GET /api/travel?address=…  →  ceļa izdevumu aprēķins rezervācijas formai.
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   try {
     const quote = await quoteTravel(address);
     if (!quote) return NextResponse.json({ ok: false, error: "Adresi neizdevās atrast. Pārbaudiet ielu un pilsētu." });
-    return NextResponse.json({ ok: true, rate: TRAVEL_RATE, ...quote });
+    return NextResponse.json({ ok: true, ...quote });
   } catch (e) {
     console.error("[travel]", e);
     return NextResponse.json(

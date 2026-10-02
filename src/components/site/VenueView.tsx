@@ -8,24 +8,25 @@ import { ButtonLink, Container } from "./ui";
 import { toReel } from "@/lib/content/media";
 import { getCategoryImages, getSettings } from "@/lib/content/queries";
 import type { GalleryImage, VenueSettings } from "@/lib/content/types";
-import { VENUE_PRICE, VENUE_SLOTS } from "@/lib/pricing";
+import { VENUE_SLOTS } from "@/lib/pricing";
 
 /**
  * Sadaļa "Telpu noma". Trīs kompakti izkārtojumi:
  *  - "kartite"  — viena sekcija: kreisajā pusē apraksts, aprīkojums un "Cenā iekļauts", labajā — tumša cenu kartīte;
  *  - "bento"    — foto režģis + īss apraksts, zem tā viena cenu josla;
  *  - "cilnes"   — viss vienā blokā cilnēs: Telpas · Cenas · Noteikumi · Foto.
- * Teksti — panelī "Telpu noma"; cenas — src/lib/pricing.ts.
+ * Teksti un cenas — panelī "Telpu noma".
  */
 export type VenueVariant = "kartite" | "bento" | "cilnes";
 
 // Ikonas aprīkojumam (pēc kārtas)
 const ICONS = [Sparkles, Gamepad2, Baby, Disc3, Mountain, Coffee];
 
-const PRICES = [
-  { title: "Pirmdiena–ceturtdiena", note: "3 stundas", price: `${VENUE_PRICE.weekday} €` },
-  { title: "Piektdiena–svētdiena", note: "3 stundas", price: `${VENUE_PRICE.weekend} €` },
-  { title: "Papildu stunda", note: "Iepriekš vienojoties", price: "20 €" },
+/** Cenu rindas — cenas rediģē panelī (Telpu noma → Cenas) */
+const prices = (venue: VenueSettings) => [
+  { title: "Pirmdiena–ceturtdiena", note: "3 stundas", price: `${venue.priceWeekday} €` },
+  { title: "Piektdiena–svētdiena", note: "3 stundas", price: `${venue.priceWeekend} €` },
+  { title: "Papildu stunda", note: "Iepriekš vienojoties", price: `${venue.priceExtraHour} €` },
 ];
 
 const BOOK = "/izklaides-programmas/pieteikt";
@@ -43,7 +44,7 @@ export default async function VenueView({ variant }: { variant: VenueVariant }) 
         after={venue.heroAfter}
         text={venue.heroText}
         crumbs={[{ name: "Telpu noma", path: "/telpu-noma" }]}
-        photos={[{ src: "/media/telpas/telpas-26.webp", caption: "Bumbu baseins" }]}
+        photos={[{ src: venue.heroImage, caption: "Smaidu Darbnīcas telpas" }]}
       >
         <ButtonLink href={BOOK} size="lg" arrow>
           Rezervēt telpas
@@ -101,10 +102,10 @@ function Included({ venue, light = false }: { venue: VenueSettings; light?: bool
 }
 
 /** Cenu rindas (tumšai kartītei) */
-function PriceRows() {
+function PriceRows({ venue }: { venue: VenueSettings }) {
   return (
     <dl className="divide-y divide-white/10">
-      {PRICES.map((p) => (
+      {prices(venue).map((p) => (
         <div key={p.title} className="flex items-baseline justify-between gap-4 py-3.5">
           <dt>
             <span className="block font-bold">{p.title}</span>
@@ -157,7 +158,7 @@ function CardLayout({ venue, photos }: LayoutProps) {
             <div className="rounded-[1.75rem] bg-ink p-7 text-white md:p-8">
               <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Cenrādis</p>
               <div className="mt-3">
-                <PriceRows />
+                <PriceRows venue={venue} />
               </div>
               <p className="mt-4 flex items-center gap-2 text-sm text-white/60">
                 <Clock className="size-4" aria-hidden />
@@ -205,7 +206,7 @@ function BentoLayout({ venue, photos, address }: LayoutProps & { address: string
             <div className="rounded-[1.5rem] bg-ink p-6 text-white md:p-7">
               <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Cenas</p>
               <dl className="mt-2 divide-y divide-white/10">
-                {PRICES.map((p) => (
+                {prices(venue).map((p) => (
                   <div key={p.title} className="flex items-center justify-between gap-4 py-3">
                     <dt>
                       <span className="block font-bold">{p.title}</span>
@@ -263,7 +264,7 @@ function TabsLayout({ venue, photos }: LayoutProps) {
       content: (
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <div className="rounded-[1.5rem] bg-ink p-7 text-white">
-            <PriceRows />
+            <PriceRows venue={venue} />
             <p className="mt-4 flex items-center gap-2 text-sm text-white/60">
               <Clock className="size-4" aria-hidden />
               Iespējamie laiki: {VENUE_SLOTS.map((t) => t.label).join(", ")}

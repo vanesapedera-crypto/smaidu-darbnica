@@ -1,14 +1,13 @@
 import Photo from "./Photo";
 import { StageHeading } from "./stage";
 import { Container } from "./ui";
-import { GAMES } from "@/lib/content/defaults/games";
 
 /**
  * Visu lielformāta spēļu režģis (pakalpojuma "Lielformāta spēles" lapā).
- * Ja spēlei ir norādīta bilde (sk. defaults/games.ts), rāda bildi ar nosaukumu;
+ * Spēļu sarakstu rediģē panelī (Uzņēmumiem → "Party Trip spēles"). Ja spēlei ir bilde, rāda bildi ar nosaukumu;
  * ja bildes vēl nav — tumšu kartīti ar numuru un nosaukumu.
  */
-export default function GamesGrid() {
+export default function GamesGrid({ games }: { games: { name: string; image: string }[] }) {
   return (
     <section id="speles" className="scroll-mt-20 bg-surface py-16 md:py-24">
       <Container>
@@ -19,7 +18,7 @@ export default function GamesGrid() {
           text="No šīm spēlēm kopā ar jums izvēlamies pasākumam piemērotāko kombināciju."
         />
         <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {GAMES.map((g, i) => {
+          {games.map((g, i) => {
             const hasImage = g.image !== "";
             return (
               <li

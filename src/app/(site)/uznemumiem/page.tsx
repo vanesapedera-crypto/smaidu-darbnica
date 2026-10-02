@@ -28,11 +28,6 @@ const XMAS_LAYOUT = "tumsais" as const;
 export default async function BusinessPage() {
   const [services, settings, clients] = await Promise.all([getServices("business"), getSettings(), getClients()]);
   const { business, contact, home } = settings;
-  // Ziemassvētku blokā rāda pakalpojumus, kam panelī atzīmēta sezona "Ziema"
-  // (izrādes — pirmās)
-  const xmas = services
-    .filter((s) => s.seasons.includes("ziema"))
-    .sort((a, b) => Number(b.slug === "izrades") - Number(a.slug === "izrades"));
 
   return (
     <>
@@ -42,7 +37,7 @@ export default async function BusinessPage() {
         highlight={business.heroHighlight}
         text={business.heroText}
         crumbs={[{ name: "Uzņēmumiem", path: "/uznemumiem" }]}
-        photos={[{ src: "/media/hero/pasakums-06.webp", caption: "Pasākums" }]}
+        photos={[{ src: business.heroImage, caption: "Pasākums" }]}
       >
         <ButtonLink href="/kontakti#pieprasijums" size="lg" arrow>
           Pieprasīt piedāvājumu
@@ -64,8 +59,8 @@ export default async function BusinessPage() {
         </Container>
       </Section>
 
-      {/* Ziemassvētki — atsevišķs bloks ar sezonas piedāvājumiem (pakalpojumi ar sezonu "Ziema" panelī) */}
-      <XmasFeature home={home} services={xmas} variant={XMAS_LAYOUT} />
+      {/* Ziemassvētki — atsevišķs bloks; kartītes rediģē panelī (Sākumlapa → Ziemassvētku bloka kartītes) */}
+      <XmasFeature home={home} services={services} variant={XMAS_LAYOUT} />
 
       <Partners items={clients} />
 

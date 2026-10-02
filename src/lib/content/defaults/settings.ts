@@ -1,4 +1,13 @@
 import type { SiteSettings } from "../types";
+import { businessServices } from "./business-services";
+import { GAMES } from "./games";
+import { CHARACTERS, SERVICE_PHOTOS, SHOW_PHOTOS } from "./service-media";
+
+// Ziemassvētku bloka kartītes: pakalpojuma nosaukums un īsais apraksts + Ziemassvētku bilde
+const xmasCard = (slug: string, image: string) => {
+  const s = businessServices.find((x) => x.slug === slug);
+  return { title: s?.title ?? slug, text: s?.excerpt ?? "", image };
+};
 
 /**
  * Noklusējuma iestatījumi. Tiek izmantoti:
@@ -18,6 +27,7 @@ export const defaultSettings: SiteSettings = {
     phonePrivate: "+371 28 193 386",
     phonePrivatePerson: "Vanesa",
     hours: "Katru dienu 9.00–16.00",
+    heroImage: "/media/smaidu-darbnica/smaidu-darbnica-01.webp",
     mapQuery: "Pasta iela 25, Tukums, LV-3101",
     facebook: "https://www.facebook.com/smaidudarbnica",
     instagram: "https://www.instagram.com/smaidu_darbnica/",
@@ -121,6 +131,46 @@ export const defaultSettings: SiteSettings = {
     ctaTitle: "Plānojat pasākumu?",
     ctaText:
       "Pastāstiet mums par savu ideju — sagatavosim piedāvājumu vienas darba dienas laikā.",
+    xmasCards: [
+      xmasCard("izrades", "/media/ziemassvetki-2025/ziemassvetki-2025-09.webp"),
+      xmasCard("radosas-darbnicas", "/media/ziemassvetki-2025/ziemassvetki-2025-18.webp"),
+      xmasCard("pasakumu-organizesana", "/media/ziemassvetki-2025/pasakumu-vadisana.webp"),
+      {
+        title: "Egles iedegšana",
+        text: "Pilsētu un pašvaldību egles iedegšanas svētki ar programmu visai ģimenei.",
+        image: "/media/ziemassvetki-2025/egles-iedegsana.webp",
+      },
+    ],
+    doors: [
+      {
+        tag: "Uzņēmumiem",
+        title: "Visu veidu pasākumi",
+        text: "Uzņēmumu, pilsētu un skolu svētki, Ziemassvētku un vasaras pasākumi, radošās darbnīcas un lielformāta spēles.",
+        image: "/media/smaidu-darbnica/uznemumiem-kartite-v2.webp",
+        href: "/uznemumiem",
+      },
+      {
+        tag: "Izrādes",
+        title: "Izrādes visai ģimenei",
+        text: "Interaktīvas izrādes uz skatuves — Ziemassvētku un vasaras uzvedumi.",
+        image: "/media/izrades/izrade-09.webp",
+        href: "/izrades",
+      },
+      {
+        tag: "Privātpersonām",
+        title: "Bērnu ballītes",
+        text: "Tematiskas bērnu ballītes ar animatoriem mūsu telpās vai pie jums.",
+        image: "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-08.webp",
+        href: "/izklaides-programmas",
+      },
+      {
+        tag: "Tukums",
+        title: "Telpu noma",
+        text: "Bumbu baseins, disko zāle un virtuve Tukuma centrā.",
+        image: "/media/telpas/telpas-03.webp",
+        href: "/telpu-noma",
+      },
+    ],
   },
 
   about: {
@@ -154,6 +204,9 @@ export const defaultSettings: SiteSettings = {
     showsText:
       "Interaktīvas izrādes ar mūsu tēliem uz skatuves — Ziemassvētku un vasaras uzvedumi. Video un vairāk informācijas sadaļā “Izrādes”.",
     photosTitle: "No mūsu pasākumiem",
+    heroImage: "/media/hero/pasakums-06.webp",
+    games: GAMES,
+    servicePhotos: SERVICE_PHOTOS,
   },
 
   shows: {
@@ -207,6 +260,8 @@ export const defaultSettings: SiteSettings = {
       "Var apvienot ar darbnīcām un dāvanām",
     ],
     suitableFor: ["Uzņēmumu svētki", "Pašvaldību pasākumi", "Skolas un bērnudārzi", "Ģimenes pasākumi"],
+    heroImage: "/media/ziemassvetki-2025/ziemassvetki-2025-09.webp",
+    photos: SHOW_PHOTOS.map((p) => p.src),
   },
 
   venue: {
@@ -234,6 +289,10 @@ export const defaultSettings: SiteSettings = {
       "Galdi un krēsli līdz 18 pieaugušajiem",
     ],
     rules: "Laipni lūdzam Smaidu Darbnīcā! Lai svētki noritētu patīkami un bez raizēm, lūdzam ievērot šos noteikumus.\n\n## Ierašanās un izrakstīšanās\n- Viesi telpās var ierasties 15 minūtes pirms rezervētā laika.\n- Pēc rezervācijas beigām telpas obligāti jāatstāj un jānodod **ne vēlāk kā 15 minūšu laikā**.\n- Papildu stundu iespējams pieteikt tikai ballītēm, kas notiek no plkst. 18.00–21.00, vai ballītēm no pirmdienas līdz ceturtdienai.\n- Papildu laiks iepriekš jāsaskaņo ar administrāciju.\n\n## Telpu lietošana un drošība\n- Bērni telpās drīkst uzturēties tikai pieaugušo uzraudzībā.\n- Lūdzam saudzīgi izturēties pret rotaļlietām, inventāru un telpu aprīkojumu.\n- Nav atļauts izmantot inventāru neatbilstoši tā paredzētajam lietojumam.\n- Ja tiek pamanīti bojājumi vai drošības riski, lūdzam nekavējoties informēt administrāciju.\n\n## Inventāra bojājumi\n- Par bojātu vai salauztu inventāru tiek piemērota maksa atbilstoši remonta vai nomaiņas izmaksām.\n- JBL skaļruņa bojājuma vai apliešanas gadījumā klients sedz pilnu ierīces vērtību.\n- Disko bumbas vai apgaismojuma bojājumu gadījumā tiek segtas remonta vai nomaiņas izmaksas.\n- Par bojātiem, saplēstiem IGLU klučiem tiek segtas nomaiņas izmaksas.\n- Hokeja galda bojājumu gadījumā izmaksas tiek noteiktas atbilstoši bojājuma apmēram.\n\n## Tīrība un kārtība\n- Pēc pasākuma lūdzam savākt personīgās mantas un salikt visas bumbiņas atpakaļ bumbu baseinā.\n- Virtuves zonu un izmantotos traukus lūdzam atstāt kārtībā.\n\n## Ēdieni un dzērieni\n- Ēdienus un dzērienus aizliegts nest rotaļu zonā.\n\n## Svarīga informācija\n- Ja ballītes laikā rodas jautājumi vai tehniskas problēmas, lūdzam zvanīt uz tālruņa numuru 28193386.\n\n## Klienta atbildība\nVeicot rezervāciju un uzturoties telpās, klients apliecina, ka:\n- ir iepazinies ar telpu lietošanas noteikumiem;\n- ir saņēmis telpas un inventāru kārtīgā stāvoklī;\n- apņemas pēc pasākuma nodot telpas un inventāru tādā pašā stāvoklī;\n- apņemas segt remonta vai nomaiņas izmaksas, ja pēc pasākuma tiek konstatēti būtiski inventāra vai telpu bojājumi.\n\nPaldies par sapratni un sadarbību! Novēlam skaistus un prieka pilnus svētkus.",
+    heroImage: "/media/telpas/telpas-26.webp",
+    priceWeekday: 90,
+    priceWeekend: 110,
+    priceExtraHour: 20,
   },
 
   programs: {
@@ -242,6 +301,11 @@ export const defaultSettings: SiteSettings = {
     heroText:
       "Tematiskas bērnu ballītes ar animatoriem mūsu telpās vai pie jums mājās. Izvēlieties programmu un rezervējiet datumu.",
     photosTitle: "Mūsu ballītes",
+    heroImage: "/media/gabbys-dollhouse-ballite/gabbys-dollhouse-ballite-01.webp",
+    characters: CHARACTERS,
+    travelSurcharge: 15,
+    travelRate: 0.3,
+    freeTravelKm: 10,
   },
 
   seo: {

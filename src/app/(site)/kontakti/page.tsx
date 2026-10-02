@@ -46,7 +46,7 @@ export default async function ContactPage() {
         after="pasākumu"
         text="Aizpildiet pieprasījumu vai zvaniet — sagatavosim programmu un cenu piedāvājumu."
         crumbs={[{ name: "Kontakti", path: "/kontakti" }]}
-        photos={[{ src: "/media/smaidu-darbnica/smaidu-darbnica-01.webp", caption: "Smaidu Darbnīcas komanda" }]}
+        photos={[{ src: contact.heroImage, caption: "Smaidu Darbnīcas komanda" }]}
       />
 
       <Section id="pieprasijums" tone="surface" className="scroll-mt-20">

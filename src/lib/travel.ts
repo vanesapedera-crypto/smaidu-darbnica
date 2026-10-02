@@ -2,7 +2,8 @@
  * Ceļa izdevumu aprēķins izbraukuma ballītēm (tikai serverī).
  *
  * Attālums tiek rēķināts pa ceļiem no Smaidu Darbnīcas (Pasta iela 25, Tukums) līdz ballītes adresei.
- * Maksa = attālums turp un atpakaļ × TRAVEL_RATE.
+ * Maksa = attālums turp un atpakaļ × ceļa likme (€/km). Likmi un attālumu, līdz kuram ceļa izdevumu nav,
+ * rediģē panelī (Izklaides programmas → Izbraukuma ballītes).
  *
  * Pakalpojumi:
  *  - ja ir iestatīts ORS_API_KEY — OpenRouteService (bezmaksas atslēga: openrouteservice.org,
@@ -14,9 +15,8 @@
  * Rezultāti tiek kešoti (Next.js datu kešs + atmiņa), tāpēc viena adrese netiek meklēta atkārtoti.
  */
 
-import { FREE_TRAVEL_KM } from "./pricing";
+import { getSettings } from "./content/queries";
 
-export const TRAVEL_RATE = 0.3; // € par km
 export const TRAVEL_ORIGIN = "Pasta iela 25, Tukums, LV-3101";
 
 // Aptuvenas Pasta ielas 25 koordinātas — izmanto tikai tad, ja sākumpunkta adresi neizdodas atrast
@@ -36,7 +36,12 @@ export type TravelQuote = {
   roundTripKm: number;
   /** Ceļa izdevumi, € */
   cost: number;
+  /** Ceļa likme, € par km */
+  rate: number;
 };
+
+/** Atrastais maršruts (bez cenas) — to var kešot, jo attālums nemainās */
+type Route = Pick<TravelQuote, "address" | "oneWayKm" | "roundTripKm">;
 
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -96,7 +101,7 @@ async function osrmDistance(a: Point, b: Point): Promise<number> {
 
 /* ---------------- Kopējā funkcija ---------------- */
 
-const memo = new Map<string, TravelQuote | null>();
+const memo = new Map<string, Route | null>();
 let origin: Point | null = null;
 
 /**
@@ -104,6 +109,21 @@ let origin: Point | null = null;
  * Izmet kļūdu, ja kartes pakalpojums nav pieejams.
  */
 export async function quoteTravel(rawAddress: string): Promise<TravelQuote | null> {
+  const route = await routeTo(rawAddress);
+  if (!route) return null;
+  const { programs } = await getSettings();
+  return {
+    ...route,
+    rate: programs.travelRate,
+    // Adresēm līdz programs.freeTravelKm (vienā virzienā) ceļa izdevumu nav.
+    // Pārējām — noapaļo uz leju līdz veselam eiro, lai klientam nav jāmaksā centi
+    // (+1e-9 pasargā no datora aprēķina kļūdas, piem. 60 km × 0,30 = 17,999999… → 18).
+    cost: route.oneWayKm <= programs.freeTravelKm ? 0 : Math.floor(route.roundTripKm * programs.travelRate + 1e-9),
+  };
+}
+
+/** Atrod adresi un attālumu pa ceļiem no Smaidu Darbnīcas. Rezultāts tiek kešots. */
+async function routeTo(rawAddress: string): Promise<Route | null> {
   const address = rawAddress.trim().replace(/\s+/g, " ");
   if (address.length < 4) return null;
   const cacheKey = address.toLowerCase();
@@ -125,17 +145,9 @@ export async function quoteTravel(rawAddress: string): Promise<TravelQuote | nul
   const meters = await distance(origin, target);
   const oneWayKm = Math.round(meters / 100) / 10; // 0,1 km precizitāte
   const roundTripKm = Math.round(oneWayKm * 2 * 10) / 10;
-  const quote: TravelQuote = {
-    address: target.label,
-    oneWayKm,
-    roundTripKm,
-    // Ceļa izdevumus noapaļo uz leju līdz veselam eiro — klientam nav jāmaksā centi
-    // (+1e-9 pasargā no datora aprēķina kļūdas, piem. 60 km × 0,30 = 17,999999… → 18)
-    // Adresēm līdz FREE_TRAVEL_KM (vienā virzienā) ceļa izdevumu nav.
-    cost: oneWayKm <= FREE_TRAVEL_KM ? 0 : Math.floor(roundTripKm * TRAVEL_RATE + 1e-9),
-  };
+  const route: Route = { address: target.label, oneWayKm, roundTripKm };
 
   if (memo.size > 500) memo.clear(); // vienkāršs atmiņas ierobežojums
-  memo.set(cacheKey, quote);
-  return quote;
+  memo.set(cacheKey, route);
+  return route;
 }

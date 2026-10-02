@@ -14,8 +14,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
   return (
     <div className="lg:grid lg:min-h-screen lg:grid-cols-[250px_1fr]">
-      <aside className="border-b border-line bg-white lg:sticky lg:top-0 lg:h-screen lg:border-r lg:border-b-0">
-        <div className="flex items-center justify-between gap-4 px-4 py-4 lg:block lg:px-5 lg:py-6">
+      {/* Lielā ekrānā sānjosla ir kolonna: logo augšā, izvēlne pa vidu (ritināma, ja neietilpst), lietotājs apakšā */}
+      <aside className="border-b border-line bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0">
+        <div className="flex items-center justify-between gap-4 px-4 py-4 lg:block lg:shrink-0 lg:px-5 lg:py-5">
           <Link href="/admin" aria-label="Paneļa sākums">
             <Image src="/brand/logo-dark.svg" alt="Smaidu Darbnīca" width={489} height={291} className="h-10 w-auto lg:h-12" />
           </Link>
@@ -24,7 +25,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </Link>
         </div>
         <AdminNav />
-        <div className="hidden border-t border-line px-5 py-4 lg:absolute lg:inset-x-0 lg:bottom-0 lg:block">
+        <div className="hidden shrink-0 border-t border-line px-5 py-4 lg:block">
           <p className="truncate text-xs text-ink-soft">{admin.email}</p>
           <form action={logout}>
             <button type="submit" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold hover:text-destructive">

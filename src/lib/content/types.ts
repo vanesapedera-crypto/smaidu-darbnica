@@ -118,6 +118,8 @@ export type ContactSettings = {
   phonePrivate: string;
   phonePrivatePerson: string;
   hours: string;
+  /** Lapas "Kontakti" galvenes fotogrāfija */
+  heroImage: string;
   mapQuery: string;
   facebook: string;
   instagram: string;
@@ -171,6 +173,10 @@ export type HomeSettings = {
   xmasShort: string;
   xmasPoints: string[];
   xmasPhotos: { src: string; caption: string }[];
+  /** Ziemassvētku bloka kartītes lapā "Uzņēmumiem" (tikai informācijai, bez saitēm) */
+  xmasCards: { title: string; text: string; image: string }[];
+  /** Sākumlapas sadaļu kartītes ("Ko pie mums atradīsiet") */
+  doors: { tag: string; title: string; text: string; image: string; href: string }[];
 };
 
 export type AboutSettings = {
@@ -208,6 +214,12 @@ export type BusinessSettings = {
   showsTitle: string;
   showsText: string;
   photosTitle: string;
+  /** Lapas "Uzņēmumiem" galvenes fotogrāfija */
+  heroImage: string;
+  /** Lielformāta spēles (programma "Party Trip"): nosaukums + bilde */
+  games: { name: string; image: string }[];
+  /** Bilžu režģis pakalpojuma lapā: pakalpojuma adrese (slug) → bilžu adreses */
+  servicePhotos: Record<string, string[]>;
 };
 
 /** Sadaļa "Izrādes" */
@@ -221,6 +233,10 @@ export type ShowsSettings = {
   body: string;
   highlights: string[];
   suitableFor: string[];
+  /** Lapas galvenes fotogrāfija */
+  heroImage: string;
+  /** Bilžu karuselis lapas apakšā (bilžu adreses) */
+  photos: string[];
 };
 
 /** Sadaļa "Telpu noma" */
@@ -236,6 +252,12 @@ export type VenueSettings = {
   included: string[];
   /** Telpu lietošanas noteikumi (atbalsta "## virsrakstus" un "- sarakstus") */
   rules: string;
+  /** Lapas galvenes fotogrāfija */
+  heroImage: string;
+  /** Telpu nomas cenas (€): 3 stundas darba dienās / brīvdienās un papildu stunda */
+  priceWeekday: number;
+  priceWeekend: number;
+  priceExtraHour: number;
 };
 
 /** Sadaļas "Izklaides programmas" lapas teksti */
@@ -244,6 +266,14 @@ export type ProgramsSettings = {
   heroHighlight: string;
   heroText: string;
   photosTitle: string;
+  /** Lapas galvenes fotogrāfija */
+  heroImage: string;
+  /** Pārsteiguma tēli (programmas "Pārsteiguma tēls" lapā): vārds + bilde */
+  characters: { name: string; image: string }[];
+  /** Izbraukuma ballītes: piemaksa (€), ceļa izdevumi (€ par km) un attālums (km), līdz kuram tie netiek rēķināti */
+  travelSurcharge: number;
+  travelRate: number;
+  freeTravelKm: number;
 };
 
 export type SeoSettings = {

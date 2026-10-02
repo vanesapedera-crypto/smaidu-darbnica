@@ -28,7 +28,7 @@ export default async function ProgramsPage() {
         text={page.heroText}
         crumbs={[{ name: "Izklaides programmas", path: "/izklaides-programmas" }]}
         photos={[
-          { src: "/media/gabbys-dollhouse-ballite/gabbys-dollhouse-ballite-01.webp", caption: "Bērnu ballīte" },
+          { src: page.heroImage, caption: "Bērnu ballīte" },
           { src: "/media/piratu-ballite/piratu-ballite-01.webp", caption: "Pirātu ballīte" },
           { src: "/media/eksperimentu-ballite/eksperimentu-ballite-01.webp", caption: "Eksperimenti" },
         ]}

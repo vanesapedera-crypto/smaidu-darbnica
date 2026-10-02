@@ -1,19 +1,18 @@
 import Photo from "./Photo";
 import { StageHeading } from "./stage";
 import { Container } from "./ui";
-import { CHARACTERS } from "@/lib/content/defaults/service-media";
 
 /**
  * Pieejamo pārsteiguma tēlu režģis (programmas "Pārsteiguma tēls" lapā):
- * katram tēlam bilde un nosaukums. Saraksts un bildes — defaults/service-media.ts (CHARACTERS).
+ * katram tēlam bilde un nosaukums. Sarakstu rediģē panelī (Izklaides programmas → "Pārsteiguma tēli").
  */
-export default function CharactersGrid() {
+export default function CharactersGrid({ characters }: { characters: { name: string; image: string }[] }) {
   return (
     <section id="teli" className="scroll-mt-20 bg-surface py-16 md:py-24">
       <Container>
         <StageHeading eyebrow="Pārsteiguma tēls" title="Pieejamie" highlight="tēli" />
         <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
-          {CHARACTERS.map((c, i) => (
+          {characters.map((c, i) => (
             <li
               key={c.name}
               data-reveal

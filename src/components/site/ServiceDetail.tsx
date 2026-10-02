@@ -1,6 +1,6 @@
 import { Baby, Check, Clock, Gift, Phone, Users } from "lucide-react";
-import type { ContactSettings, GalleryImage, Service } from "@/lib/content/types";
-import { SERVICE_HERO_VIDEO, SERVICE_PHOTOS, SERVICE_PHOTOS_PORTRAIT, SERVICE_PHOTOS_SQUARE } from "@/lib/content/defaults/service-media";
+import type { GalleryImage, Service, SiteSettings } from "@/lib/content/types";
+import { SERVICE_HERO_VIDEO, SERVICE_PHOTOS_PORTRAIT, SERVICE_PHOTOS_SQUARE } from "@/lib/content/defaults/service-media";
 import { toReel } from "@/lib/content/media";
 import { serviceSchema } from "@/lib/schema";
 import JsonLd from "./JsonLd";
@@ -23,12 +23,14 @@ const HERO_BRAND: Record<string, string> = { "lielformata-speles": "Party Trip" 
 export default function ServiceDetail({
   service,
   images,
-  contact,
+  settings,
 }: {
   service: Service;
   images: GalleryImage[];
-  contact: ContactSettings;
+  /** Vietnes iestatījumi: kontakti, spēļu un tēlu saraksti, pakalpojumu bildes, izbraukuma cenas */
+  settings: SiteSettings;
 }) {
+  const { contact, business, programs } = settings;
   const isBusiness = service.audience === "business";
   const base = isBusiness ? "/uznemumiem" : "/izklaides-programmas";
   const path = `${base}/${service.slug}`;
@@ -59,7 +61,14 @@ export default function ServiceDetail({
     ...images.filter((i) => i.src !== service.heroImage).slice(0, 2).map((i) => ({ src: i.src })),
   ].filter((p): p is { src: string; caption?: string } => Boolean(p.src));
 
-  const photos = isBusiness ? (SERVICE_PHOTOS[service.slug] ?? []) : [];
+  const photos = isBusiness ? (business.servicePhotos[service.slug] ?? []) : [];
+  // Piezīme par izbraukuma izmaksām (ballītēm) — no paneļa cenām; rāda, ja programmai nav savas piezīmes
+  const money = (n: number) => `${n.toLocaleString("lv-LV", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} €`;
+  const pricingNote =
+    service.pricingNote ||
+    (isBusiness
+      ? ""
+      : `Izbraukuma ballītēm tālāk par ${programs.freeTravelKm} km no Smaidu Darbnīcas tiek pieskaitīta izbraukuma piemaksa ${money(programs.travelSurcharge)} un ceļa izdevumi ${money(programs.travelRate)}/km.`);
   const portrait = SERVICE_PHOTOS_PORTRAIT.has(service.slug);
   const square = SERVICE_PHOTOS_SQUARE.has(service.slug);
 
@@ -240,7 +249,7 @@ export default function ServiceDetail({
                   ))}
                 </div>
               )}
-              {service.pricingNote && <p className="mt-5 text-sm leading-6 text-white/60">{service.pricingNote}</p>}
+              {pricingNote && <p className="mt-5 text-sm leading-6 text-white/60">{pricingNote}</p>}
 
               {isBusiness && service.suitableFor.length > 0 && (
                 <div className="mt-7 border-t border-white/10 pt-6">
@@ -272,10 +281,10 @@ export default function ServiceDetail({
       {hasMain && photoGrid}
 
       {/* Lielformāta spēles — visu spēļu režģis */}
-      {isBusiness && service.slug === "lielformata-speles" && <GamesGrid />}
+      {isBusiness && service.slug === "lielformata-speles" && <GamesGrid games={business.games} />}
 
       {/* Pārsteiguma tēls — pieejamie tēli ar bildēm (galerijas vietā: mapē ir tieši šīs bildes) */}
-      {hasCharacters && <CharactersGrid />}
+      {hasCharacters && <CharactersGrid characters={programs.characters} />}
 
       {/* Izklaides programmām — fotogrāfijas no ballītēm */}
       {!isBusiness && !hasCharacters && images.length > 0 && (

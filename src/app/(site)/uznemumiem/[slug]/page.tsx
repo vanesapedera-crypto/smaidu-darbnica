@@ -38,7 +38,7 @@ export default async function ServicePage({ params }: Props) {
     <ServiceDetail
       service={service}
       images={images}
-      contact={settings.contact}
+      settings={settings}
     />
   );
 }

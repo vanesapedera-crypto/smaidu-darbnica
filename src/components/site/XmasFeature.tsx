@@ -57,7 +57,7 @@ export type XmasVariant = "tumsais" | "foto" | "saraksts";
 
 type FeatureProps = {
   home: HomeSettings;
-  /** Ziemassvētku piedāvājumi (pakalpojumi ar sezonu "Ziema") */
+  /** Uzņēmumu pakalpojumi — tikai kartīšu ikonām (pēc nosaukuma) */
   services: Service[];
   /** Izkārtojums — sk. zemāk */
   variant?: XmasVariant;
@@ -66,37 +66,20 @@ type FeatureProps = {
 // Pieprasījuma formā uzreiz izvēlēts "Ziemassvētku piedāvājums" (sk. EXTRA_OPTIONS lapā "Kontakti")
 const INQUIRY = "/kontakti?pakalpojums=ziemassvetku-piedavajums#pieprasijums";
 
-/** Kartīšu bildes Ziemassvētku blokā — no albuma "ziemassvetki-2025" (citur lapā pakalpojumam ir sava bilde) */
-const xmasPhoto = (n: string) => `/media/ziemassvetki-2025/ziemassvetki-2025-${n}.webp`;
-const XMAS_CARD_PHOTO: Record<string, string> = {
-  izrades: xmasPhoto("09"),
-  "radosas-darbnicas": xmasPhoto("18"),
-  "pasakumu-organizesana": "/media/ziemassvetki-2025/pasakumu-vadisana.webp",
-  "sejas-apgleznosana": xmasPhoto("17"),
-  "mazulu-zona": xmasPhoto("20"),
-  "lielformata-speles": xmasPhoto("16"),
-  "sporta-speles": xmasPhoto("09"),
-  "putu-ballite": xmasPhoto("28"),
-};
-
 type XmasCard = { key: string; title: string; text: string; icon: string; photo: string };
 
-/** Papildu Ziemassvētku piedāvājumi, kas nav atsevišķi pakalpojumi */
-const EXTRA_CARDS: XmasCard[] = [
-  {
-    key: "egles-iedegsana",
-    title: "Egles iedegšana",
-    text: "Pilsētu un pašvaldību egles iedegšanas svētki ar programmu visai ģimenei.",
-    icon: "TreePine",
-    photo: "/media/ziemassvetki-2025/egles-iedegsana.webp",
-  },
-];
-
-/** Kartītes: pakalpojumi ar sezonu "Ziema" + papildu piedāvājumi */
-const toCards = (services: Service[]): XmasCard[] => [
-  ...services.map((s) => ({ key: s.slug, title: s.title, text: s.excerpt, icon: s.icon, photo: XMAS_CARD_PHOTO[s.slug] ?? s.heroImage })),
-  ...EXTRA_CARDS,
-];
+/**
+ * Kartītes — no paneļa (Sākumlapa → "Ziemassvētku bloka kartītes"): nosaukums | teksts | bilde.
+ * Ikona: ja kartītes nosaukums sakrīt ar pakalpojuma nosaukumu — tā ikona, citādi eglīte.
+ */
+const toCards = (home: HomeSettings, services: Service[]): XmasCard[] =>
+  home.xmasCards.map((c) => ({
+    key: c.title,
+    title: c.title,
+    text: c.text,
+    icon: services.find((s) => s.title === c.title)?.icon ?? "TreePine",
+    photo: c.image,
+  }));
 
 /**
  * Ziemassvētku bloks lapā "Uzņēmumiem". Trīs izkārtojumi:
@@ -115,8 +98,8 @@ export function XmasFeature({ home, services, variant = "tumsais" }: FeatureProp
  * Piedāvājumu kartītes — tikai informācijai (nav saites).
  * Vienīgais, kas šajā blokā ved tālāk, ir poga "Pieprasīt piedāvājumu".
  */
-function Cards({ services }: { services: Service[] }) {
-  const cards = toCards(services);
+function Cards({ home, services }: { home: HomeSettings; services: Service[] }) {
+  const cards = toCards(home, services);
   if (cards.length === 0) return null;
   return (
     <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -182,7 +165,7 @@ function XmasDark({ home, services }: FeatureProps) {
         )}
       </Container>
       <Container className="mt-14 md:mt-16">
-        <Cards services={services} />
+        <Cards home={home} services={services} />
       </Container>
     </section>
   );
@@ -213,7 +196,7 @@ function XmasPhoto({ home, services }: FeatureProps) {
       </div>
       {/* Kartītes pārklājas ar fotogrāfijas apakšu */}
       <Container className="relative -mt-28 pb-16 md:-mt-36 md:pb-24">
-        <Cards services={services} />
+        <Cards home={home} services={services} />
       </Container>
     </section>
   );
@@ -239,7 +222,7 @@ function XmasList({ home, services }: FeatureProps) {
         </div>
 
         <ul data-reveal className="divide-y divide-line overflow-hidden rounded-[1.75rem] bg-white ring-1 ring-line">
-          {toCards(services).map((c) => (
+          {toCards(home, services).map((c) => (
             <li key={c.key}>
               <div className="flex items-center gap-5 p-4 sm:p-5">
                 <span className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-surface sm:size-24">

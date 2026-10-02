@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CircleCheck, LoaderCircle, MapPin, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PriceGroup } from "@/lib/content/types";
-import { FREE_TRAVEL_KM, TRAVEL_SURCHARGE, VENUE_PRICE, VENUE_SLOTS, estimateProgramPrice, extraPrice, fromPrice, venuePrice, type Extra } from "@/lib/pricing";
+import { VENUE_SLOTS, estimateProgramPrice, extraPrice, fromPrice, venuePrice, type BookingPrices, type Extra } from "@/lib/pricing";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
 
@@ -45,7 +45,16 @@ const initial = {
  * Pārveidota no iepriekšējās versijas: tie paši lauki un `bookings` tabula,
  * bet cena tiek aprēķināta no programmas cenrāža (lib/pricing.ts).
  */
-export default function BookingForm({ programs, defaultProgram = "" }: { programs: Program[]; defaultProgram?: string }) {
+export default function BookingForm({
+  programs,
+  prices,
+  defaultProgram = "",
+}: {
+  programs: Program[];
+  /** Telpu nomas un izbraukuma cenas no paneļa */
+  prices: BookingPrices;
+  defaultProgram?: string;
+}) {
   const [form, setForm] = useState({ ...initial, program: defaultProgram });
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
@@ -64,7 +73,7 @@ export default function BookingForm({ programs, defaultProgram = "" }: { program
   const programPrice = program
     ? estimateProgramPrice(program.pricing, Number(form.childrenCount), !inStudio)
     : null;
-  const roomPrice = inStudio ? venuePrice(form.eventDate) : null;
+  const roomPrice = inStudio ? venuePrice(form.eventDate, prices) : null;
 
   // Telpu noma: kad izvēlēts datums, noskaidro, kuri laiki tajā jau ir aizņemti
   useEffect(() => {
@@ -101,8 +110,8 @@ export default function BookingForm({ programs, defaultProgram = "" }: { program
   const extrasTotal = chosenExtras.reduce((sum, x) => sum + (x.price ?? 0), 0);
   // Izbraukuma piemaksa — ballītēm tālāk par 10 km no Smaidu Darbnīcas (tāpat kā ceļa izdevumi).
   // Kamēr adrese nav aprēķināta, piemaksu rāda; kad zināms, ka adrese ir tuvāk, tā pazūd.
-  const nearby = Boolean(travelQuote && travelQuote.oneWayKm <= FREE_TRAVEL_KM);
-  const surcharge = inStudio || nearby ? 0 : TRAVEL_SURCHARGE;
+  const nearby = Boolean(travelQuote && travelQuote.oneWayKm <= prices.freeTravelKm);
+  const surcharge = inStudio || nearby ? 0 : prices.travelSurcharge;
   // Piekrišana izbraukuma izmaksām vajadzīga tikai tad, ja tās tiek pieskaitītas (adrese tālāk par 10 km vai vēl nav zināma)
   const needsTravelConsent = !inStudio && !nearby;
   const total = Math.round(((programPrice ?? 0) + extrasTotal + (roomPrice ?? 0) + surcharge + (travelQuote?.cost ?? 0)) * 100) / 100;
@@ -308,8 +317,8 @@ export default function BookingForm({ programs, defaultProgram = "" }: { program
 
         {inStudio ? (
           <p className="rounded-2xl bg-brand-soft p-4 text-sm leading-6 sm:col-span-2">
-            <strong>Telpu noma (3 h):</strong> pirmdiena–ceturtdiena {VENUE_PRICE.weekday} €, piektdiena–svētdiena{" "}
-            {VENUE_PRICE.weekend} €. Pieejamie laiki: {VENUE_SLOTS.map((t) => t.label).join(", ")}.
+            <strong>Telpu noma (3 h):</strong> pirmdiena–ceturtdiena {prices.venueWeekday} €, piektdiena–svētdiena{" "}
+            {prices.venueWeekend} €. Pieejamie laiki: {VENUE_SLOTS.map((t) => t.label).join(", ")}.
           </p>
         ) : (
           <>
@@ -347,7 +356,7 @@ export default function BookingForm({ programs, defaultProgram = "" }: { program
                       {travel.quote.cost === 0 ? (
                         <p>
                           <strong>Ceļa izdevumi: 0 €</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km vienā virzienā.
-                          Adresēm līdz {FREE_TRAVEL_KM} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.
+                          Adresēm līdz {prices.freeTravelKm} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.
                         </p>
                       ) : (
                         <p>
@@ -370,8 +379,8 @@ export default function BookingForm({ programs, defaultProgram = "" }: { program
                 onChange={(e) => setForm((f) => ({ ...f, acceptTravelFee: e.target.checked }))}
                 className="mt-1 size-5 shrink-0 accent-ink"
               />
-              Esmu informēts(-a), ka izbraukuma ballītēm tālāk par {FREE_TRAVEL_KM} km no Smaidu Darbnīcas (Pasta iela 25, Tukums)
-              tiek pieskaitīta izbraukuma piemaksa {eur(TRAVEL_SURCHARGE)} un ceļa izdevumi — 0,30 € par km turp un atpakaļ.
+              Esmu informēts(-a), ka izbraukuma ballītēm tālāk par {prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums)
+              tiek pieskaitīta izbraukuma piemaksa {eur(prices.travelSurcharge)} un ceļa izdevumi — {eur(prices.travelRate)} par km turp un atpakaļ.
             </label>
             )}
           </>

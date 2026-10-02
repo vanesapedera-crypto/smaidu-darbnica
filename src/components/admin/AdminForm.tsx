@@ -106,7 +106,8 @@ function FieldInput({ field, value, folder }: { field: FieldDef; value: string |
       );
     }
     case "number":
-      return <input id={field.name} name={field.name} type="number" defaultValue={text} className={adminInput} />;
+      // step="any" — lai var ievadīt arī decimāldaļas (piem. 0.3 € par km)
+      return <input id={field.name} name={field.name} type="number" step="any" defaultValue={text} className={adminInput} />;
     case "text":
       return <input id={field.name} name={field.name} defaultValue={text} required={field.required} className={adminInput} />;
     default:

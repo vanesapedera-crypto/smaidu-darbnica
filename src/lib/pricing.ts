@@ -1,4 +1,4 @@
-import type { PriceGroup } from "@/lib/content/types";
+import type { PriceGroup, SiteSettings } from "@/lib/content/types";
 
 /**
  * Aptuvenās cenas aprēķins privātajām ballītēm.
@@ -9,8 +9,32 @@ import type { PriceGroup } from "@/lib/content/types";
  *   "Līdz 15 bērniem" · "Mazā grupa (1–6 bērni)" · "No 10 līdz 15 bērniem" · "Katrs nākamais bērns"
  */
 
-/** Telpu noma Smaidu Darbnīcā (3 h) */
-export const VENUE_PRICE = { weekday: 90, weekend: 110 } as const;
+/**
+ * Cenas, ko rediģē panelī (Telpu noma → Cenas; Izklaides programmas → Izbraukuma ballītes).
+ * Rezervācijas forma tās saņem no lapas (sk. bookingPrices), serveris — no iestatījumiem.
+ */
+export type BookingPrices = {
+  /** Telpu noma (3 h): pirmdiena–ceturtdiena / piektdiena–svētdiena, € */
+  venueWeekday: number;
+  venueWeekend: number;
+  /** Izbraukuma piemaksa (€) ballītēm tālāk par freeTravelKm no Smaidu Darbnīcas */
+  travelSurcharge: number;
+  /** Ceļa izdevumi, € par km (turp un atpakaļ) */
+  travelRate: number;
+  /** Līdz šim attālumam (km vienā virzienā) nav ne piemaksas, ne ceļa izdevumu */
+  freeTravelKm: number;
+};
+
+export function bookingPrices(settings: Pick<SiteSettings, "venue" | "programs">): BookingPrices {
+  return {
+    venueWeekday: settings.venue.priceWeekday,
+    venueWeekend: settings.venue.priceWeekend,
+    travelSurcharge: settings.programs.travelSurcharge,
+    travelRate: settings.programs.travelRate,
+    freeTravelKm: settings.programs.freeTravelKm,
+  };
+}
+
 export const VENUE_TIMES = ["10:00", "14:00", "18:00"] as const;
 
 /** Telpu nomas laika posmi (3 stundas) rādīšanai lapā un formā; vērtība saglabājas kā sākuma laiks */
@@ -19,15 +43,11 @@ export const VENUE_SLOTS = VENUE_TIMES.map((t) => {
   return { value: t, label: `${t}–${end}` };
 });
 
-/** Izbraukuma piemaksa (€): tiek pieskaitīta ballītēm, kas notiek tālāk par FREE_TRAVEL_KM no Smaidu Darbnīcas */
-export const TRAVEL_SURCHARGE = 15;
-/** Līdz šim attālumam (km vienā virzienā no Smaidu Darbnīcas) nav ne izbraukuma piemaksas, ne ceļa izdevumu */
-export const FREE_TRAVEL_KM = 10;
-
-export function venuePrice(date: string): number | null {
+/** Telpu nomas cena izvēlētajā datumā (piektdiena–svētdiena ir dārgāka) */
+export function venuePrice(date: string, prices: BookingPrices): number | null {
   if (!date) return null;
   const day = new Date(`${date}T12:00:00`).getDay();
-  return day === 0 || day === 5 || day === 6 ? VENUE_PRICE.weekend : VENUE_PRICE.weekday;
+  return day === 0 || day === 5 || day === 6 ? prices.venueWeekend : prices.venueWeekday;
 }
 
 type Tier = { max: number; price: number };

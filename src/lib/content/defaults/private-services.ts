@@ -35,7 +35,7 @@ export const privateServices: Service[] = programs.map((p, i) => {
   pricingNote:
     o.note ??
     p.note ??
-    "Izbraukuma ballītēm tālāk par 10 km no Smaidu Darbnīcas tiek pieskaitīta izbraukuma piemaksa 15 € un ceļa izdevumi 0,30 €/km.",
+    "", // tukšs → lapā rāda piezīmi par izbraukuma izmaksām ar paneļa cenām (sk. ServiceDetail)
   faq: [],
   age: o.age ?? p.age,
   duration: o.duration ?? p.duration,

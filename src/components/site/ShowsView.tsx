@@ -3,13 +3,19 @@ import VideoShowcase, { type ShowcaseVariant } from "./VideoShowcase";
 import { StageHeading, StageHero } from "./stage";
 import { ButtonLink, Container } from "./ui";
 import { SHOW_PHOTOS } from "@/lib/content/defaults/service-media";
+import { mediaInfo } from "@/lib/content/media";
 import { getServices, getSettings } from "@/lib/content/queries";
 
 /** Lapas saturs (atsevišķi, lai priekšskatījumā var salīdzināt izkārtojumus) */
 export default async function ShowsView({ variant }: { variant: ShowcaseVariant }) {
   const [{ shows }, services] = await Promise.all([getSettings(), getServices("business")]);
-  // Bilžu karuselis lapas apakšā — bildes no mapes public/media/izrades (saraksts: service-media.ts)
-  const reel = SHOW_PHOTOS.map((p) => ({ ...p, alt: "Smaidu Darbnīcas izrāde", blur: null }));
+  // Bilžu karuselis lapas apakšā — bilžu saraksts no paneļa (Izrādes → "Bilžu karuselis").
+  // Platums un augstums (bildes proporcijai): zināmajām bildēm no service-media.ts, pārējām no bilžu saraksta.
+  const known = new Map(SHOW_PHOTOS.map((p) => [p.src, p]));
+  const reel = shows.photos.map((src) => {
+    const size = known.get(src) ?? mediaInfo(src);
+    return { src, alt: "Smaidu Darbnīcas izrāde", blur: null, width: size?.width ?? null, height: size?.height ?? null };
+  });
 
   // Rezervācija notiek pieprasījuma formā lapā "Kontakti" (ar priekšatlasītu pakalpojumu)
   const slug = services.some((s) => s.slug === "izrades") ? "izrades" : "";
@@ -29,7 +35,7 @@ export default async function ShowsView({ variant }: { variant: ShowcaseVariant 
         highlight={shows.heroHighlight}
         text={shows.heroText}
         crumbs={[{ name: "Izrādes", path: "/izrades" }]}
-        photos={[{ src: "/media/ziemassvetki-2025/ziemassvetki-2025-09.webp", caption: "Ziemassvētku izrāde" }]}
+        photos={[{ src: shows.heroImage, caption: "Izrāde" }]}
       >
         <ButtonLink href="#video" size="lg" arrow>
           Skatīties video

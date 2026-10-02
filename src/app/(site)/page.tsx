@@ -12,37 +12,6 @@ export function generateMetadata() {
   return pageMetadata({ path: "/" });
 }
 
-const DOORS = [
-  {
-    href: "/uznemumiem",
-    tag: "Uzņēmumiem",
-    title: "Visu veidu pasākumi",
-    text: "Uzņēmumu, pilsētu un skolu svētki, Ziemassvētku un vasaras pasākumi, radošās darbnīcas un lielformāta spēles.",
-    image: "/media/smaidu-darbnica/uznemumiem-kartite-v2.webp",
-  },
-  {
-    href: "/izrades",
-    tag: "Izrādes",
-    title: "Izrādes visai ģimenei",
-    text: "Interaktīvas izrādes uz skatuves — Ziemassvētku un vasaras uzvedumi.",
-    image: "/media/izrades/izrade-09.webp",
-  },
-  {
-    href: "/izklaides-programmas",
-    tag: "Privātpersonām",
-    title: "Bērnu ballītes",
-    text: "Tematiskas bērnu ballītes ar animatoriem mūsu telpās vai pie jums.",
-    image: "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-08.webp",
-  },
-  {
-    href: "/telpu-noma",
-    tag: "Tukums",
-    title: "Telpu noma",
-    text: "Bumbu baseins, disko zāle un virtuve Tukuma centrā.",
-    image: "/media/telpas/telpas-03.webp",
-  },
-];
-
 /**
  * Sākumlapa ("Skatuve" + 3D kustība):
  *  1) galvene ar vienu lielu fotogrāfiju pa visu platumu (parallakse ritinot);
@@ -115,7 +84,7 @@ export default async function HomePage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {DOORS.map((d, i) => (
+            {home.doors.map((d, i) => (
               <DoorCard key={d.href} {...d} index={i} />
             ))}
           </div>
