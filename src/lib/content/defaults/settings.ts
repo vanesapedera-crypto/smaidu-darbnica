@@ -21,7 +21,7 @@ export const defaultSettings: SiteSettings = {
     city: "Tukums",
     postalCode: "LV-3101",
     email: "smaidu.darbnica@gmail.com",
-    emailPrivate: "smaidudarbniica@gmail.com",
+    emailPrivate: "smaidu.darbniica@gmail.com",
     phoneBusiness: "+371 26 705 817",
     phoneBusinessPerson: "Kristīne",
     phonePrivate: "+371 28 193 386",

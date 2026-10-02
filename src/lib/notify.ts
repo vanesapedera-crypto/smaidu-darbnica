@@ -4,7 +4,7 @@
  * Vides mainīgie:
  *   RESEND_API_KEY   — atslēga no resend.com (API Keys). Ja nav iestatīta, paziņojums netiek sūtīts.
  *   NOTIFY_EMAIL           — kam sūtīt uzņēmumu pieprasījumus (noklusējums: smaidu.darbnica@gmail.com — Kristīne)
- *   NOTIFY_EMAIL_PRIVATE   — kam sūtīt privātās rezervācijas (noklusējums: smaidudarbniica@gmail.com — Vanesa)
+ *   NOTIFY_EMAIL_PRIVATE   — kam sūtīt privātās rezervācijas (noklusējums: smaidu.darbniica@gmail.com — Vanesa)
  *   NOTIFY_FROM      — sūtītājs; jābūt Resend apstiprinātā domēnā, piem. "Smaidu Darbnīca <pieteikumi@smaidudarbnica.lv>".
  *                      Kamēr domēns nav apstiprināts, der "onboarding@resend.dev" (sūta tikai uz Resend konta e-pastu).
  *
@@ -69,7 +69,7 @@ ${site ? `<p style="margin-top:24px"><a href="${site}/admin" style="color:#1a181
         to: [
           isBusiness
             ? process.env.NOTIFY_EMAIL || "smaidu.darbnica@gmail.com"
-            : process.env.NOTIFY_EMAIL_PRIVATE || "smaidudarbniica@gmail.com",
+            : process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com",
         ],
         reply_to: typeof row.email === "string" && row.email ? row.email : undefined,
         subject,
