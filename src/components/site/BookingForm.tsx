@@ -154,16 +154,31 @@ export default function BookingForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Programma jāizvēlas apzināti: vai nu programma, vai "Nebūs nepieciešama" (izbraukumam programma ir obligāta)
-    if (!form.program || (form.program === NO_PROGRAM && !inStudio)) {
-      setErrors({
-        program: inStudio
-          ? "Izvēlieties izklaides programmu vai “Nebūs nepieciešama”."
-          : "Izbraukuma ballītei izvēlieties izklaides programmu.",
-      });
-      setMessage("Lūdzu, pārbaudiet iezīmētos laukus.");
+    // Visi lauki ir obligāti (izņemot "Papildu informācija"); bērnu skaits un vecums — tikai kopā ar izklaides programmu.
+    // Programma jāizvēlas apzināti: vai nu programma, vai "Nebūs nepieciešama" (izbraukumam programma ir obligāta).
+    const missing: Record<string, string> = {};
+    if (!form.program || (form.program === NO_PROGRAM && !inStudio))
+      missing.program = inStudio
+        ? "Izvēlieties izklaides programmu vai “Nebūs nepieciešama”."
+        : "Izbraukuma ballītei izvēlieties izklaides programmu.";
+    if (!inStudio && !form.address.trim()) missing.address = "Norādiet ballītes adresi.";
+    if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
+    if (inStudio && !form.eventTime) missing.eventTime = "Izvēlieties laiku.";
+    if (program && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
+    if (program && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
+    if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
+    if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
+    if (!form.email.trim()) missing.email = "Norādiet e-pastu.";
+    if (!form.consent) missing.consent = "Nepieciešama piekrišana datu apstrādei.";
+    const first = Object.keys(missing)[0];
+    if (first) {
+      setErrors(missing);
+      setMessage("Lūdzu, aizpildiet iezīmētos laukus.");
       setState("error");
-      document.getElementById("program")?.focus();
+      // Aizritina līdz pirmajam neaizpildītajam laukam
+      const el = document.getElementById(first === "eventTime" ? "time-label" : first);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) el.focus({ preventScroll: true });
       return;
     }
     setState("sending");
@@ -340,7 +355,9 @@ export default function BookingForm({
           {stepHead("02", "Vieta un laiks")}
           <div className="clear-both grid gap-5 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <p className="text-sm font-bold" id="location-label">Norises vieta</p>
+              <p className="text-sm font-bold" id="location-label">
+                Norises vieta<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+              </p>
               <div role="radiogroup" aria-labelledby="location-label" className="grid grid-cols-2 gap-3">
                 {(
                   [
@@ -384,7 +401,7 @@ export default function BookingForm({
               </p>
             ) : (
               <>
-                <Field id="address" label="Ballītes adrese" error={errors.address} className="sm:col-span-2">
+                <Field id="address" label="Ballītes adrese" required error={errors.address} className="sm:col-span-2">
                   <div className="flex gap-2">
                     <input
                       {...fieldProps("address")}
@@ -441,14 +458,16 @@ export default function BookingForm({
               </>
             )}
 
-            <Field id="eventDate" label="Vēlamais datums" error={errors.eventDate} className={inStudio ? "sm:col-span-2" : undefined}>
+            <Field id="eventDate" label="Vēlamais datums" required error={errors.eventDate} className={inStudio ? "sm:col-span-2" : undefined}>
               <input {...fieldProps("eventDate")} type="date" min={today} />
             </Field>
 
             {/* Telpu nomas laiki — trīs pogas; aizņemtos laikus izvēlēties nevar */}
             {inStudio && (
               <div className="space-y-2 sm:col-span-2">
-                <p className="text-sm font-bold" id="time-label">Vēlamais laiks</p>
+                <p className="text-sm font-bold" id="time-label">
+                  Vēlamais laiks<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
                 <div role="radiogroup" aria-labelledby="time-label" className="grid grid-cols-3 gap-2 sm:gap-3">
                   {VENUE_SLOTS.map((t) => {
                     const taken = takenTimes.includes(t.value);
@@ -493,10 +512,10 @@ export default function BookingForm({
               </div>
             )}
 
-            <Field id="childrenCount" label="Bērnu skaits" error={errors.childrenCount}>
+            <Field id="childrenCount" label="Bērnu skaits" required={Boolean(program)} error={errors.childrenCount}>
               <input {...fieldProps("childrenCount")} type="number" inputMode="numeric" min={1} />
             </Field>
-            <Field id="childAge" label="Gaviļnieka vecums" error={errors.childAge}>
+            <Field id="childAge" label="Gaviļnieka vecums" required={Boolean(program)} error={errors.childAge}>
               <input {...fieldProps("childAge")} />
             </Field>
           </div>
@@ -597,6 +616,7 @@ export default function BookingForm({
                 type="checkbox"
                 checked={form.consent}
                 onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))}
+                id="consent"
                 className="mt-1 size-5 shrink-0 accent-brand"
                 aria-invalid={errors.consent ? true : undefined}
                 aria-describedby={errors.consent ? "consent-error" : undefined}

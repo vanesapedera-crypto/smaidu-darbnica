@@ -16,52 +16,123 @@ import { eur, type BookingCosts } from "./pricing";
 
 type Row = Record<string, unknown>;
 
-const LABELS: [string, string][] = [
-  ["company_name", "Uzņēmums"],
-  ["parent_name", "Kontaktpersona"],
-  ["contact_role", "Amats"],
-  ["phone", "Telefons"],
-  ["email", "E-pasts"],
-  ["service_slug", "Pakalpojums"],
-  ["program", "Programma"],
-  ["event_type", "Pasākuma veids"],
-  ["event_date", "Datums"],
-  ["event_time", "Laiks"],
-  ["location", "Norises vieta"],
-  ["event_city", "Pilsēta / vieta"],
-  ["address", "Adrese"],
-  ["travel_cost", "Ceļa izdevumi, €"],
-  ["travel_km", "Attālums turp un atpakaļ, km"],
-  ["participants", "Dalībnieki"],
-  ["children_count", "Bērnu skaits"],
-  ["child_age", "Bērnu vecums"],
-  ["budget_range", "Budžets"],
-  ["message", "Ziņojums"],
-];
-
 const escape = (v: unknown) =>
   String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-export async function notifyNewBooking(row: Row) {
+// E-pastu noformējums — lapas krāsās. E-pastos der tikai tabulas un stili pie elementa.
+const INK = "#1a1816";
+const SOFT = "#5e574f";
+const BRAND = "#ffd54a";
+const SURFACE = "#f3eee5";
+const LINE = "#e6dfd3";
+
+const eyebrow = (text: string) =>
+  `<p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:${SOFT}">${text}</p>`;
+/** Tabula "etiķete — vērtība"; tukšās rindas izlaiž. Vērtības jau ir droši HTML. */
+const facts = (rows: [string, string][]) =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 24px">${rows
+    .filter(([, v]) => v)
+    .map(
+      ([label, v]) =>
+        `<tr><td style="width:150px;padding:9px 12px 9px 0;border-bottom:1px solid ${LINE};color:${SOFT};vertical-align:top">${label}</td><td style="padding:9px 0;border-bottom:1px solid ${LINE};font-weight:bold">${v}</td></tr>`,
+    )
+    .join("")}</table>`;
+/** Izmaksu tabula ar kopsummu (tā pati, ko klients redz formā un saņem apstiprinājumā) */
+const costTable = (costs: BookingCosts) => {
+  const order = ["room", "program", "extra", "surcharge", "travel"];
+  const lines = [...costs.lines].sort((x, y) => order.indexOf(x.kind) - order.indexOf(y.kind));
+  return `${eyebrow("Izmaksas")}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 24px">${lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:10px 12px 10px 0;border-bottom:1px solid ${LINE}">${escape(
+          l.kind === "program" ? `Izklaides programma “${l.label}”` : l.label,
+        )}${l.kind === "program" && l.note ? `<br><span style="font-size:13px;color:${SOFT}">${escape(l.note)}</span>` : ""}</td><td style="padding:10px 0;border-bottom:1px solid ${LINE};text-align:right;vertical-align:top;white-space:nowrap;font-weight:bold">${
+          l.amount === null ? "pēc vienošanās" : eur(l.amount)
+        }</td></tr>`,
+    )
+    .join("")}${
+    // Kopsummu rāda tikai tad, ja rindas ir vairākas un visas cenas ir zināmas
+    lines.length > 1 && costs.exact
+      ? `<tr><td style="padding:12px 12px 0 0;font-size:17px;font-weight:bold">Kopā</td><td style="padding:12px 0 0;text-align:right;white-space:nowrap;font-size:17px;font-weight:bold">${eur(costs.total)}</td></tr>`
+      : ""
+  }</table>`;
+};
+/** E-pasta rāmis: tumša galvene ar virsrakstu (otrais vārds dzeltenā uzlīmē), balts saturs */
+const shell = (title: string, sticker: string, body: string) =>
+  `<div style="margin:0;padding:24px 12px;background:${SURFACE};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${INK}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;border-collapse:separate">
+<tr><td style="background:${INK};border-radius:20px 20px 0 0;padding:26px 32px 28px">
+<p style="margin:0;font-size:26px;line-height:1.25;font-weight:bold;text-transform:uppercase;color:#ffffff">${title}<br><span style="display:inline-block;margin-top:4px;padding:2px 12px;border-radius:8px;background:${BRAND};color:${INK}">${sticker}</span></p>
+</td></tr>
+<tr><td style="background:#ffffff;border-radius:0 0 20px 20px;padding:28px 32px 30px">${body}</td></tr>
+</table>
+</div>`;
+
+/** Datums kā "5.09.2026." */
+const lvDate = (iso: unknown) => {
+  const [y, m, d] = String(iso ?? "").split("-");
+  return y && m && d ? `${Number(d)}.${m}.${y}.` : "";
+};
+
+/**
+ * Paziņojums komandai par jaunu pieteikumu — pilns pieteikums vienā e-pastā:
+ * datums un laiks, programma, vieta, bērnu skaits, klienta kontakti, papildu informācija un izmaksas.
+ * `info.title` — programmas vai pakalpojuma nosaukums, `info.time` — laika posms (piem. "14:00–17:00"),
+ * `info.costs` — izmaksu kopsavilkums ballītēm un telpu nomai.
+ */
+export async function notifyNewBooking(row: Row, info: { title?: string; time?: string; costs?: BookingCosts | null } = {}) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return;
 
   const isBusiness = row.inquiry_type === "business";
+  const text = (k: string) => (row[k] === null || row[k] === undefined || row[k] === "" ? "" : escape(row[k]));
   const who = (row.company_name as string) || (row.parent_name as string) || "Jauns pieteikums";
-  const subject = `${isBusiness ? "Pieprasījums" : "Rezervācija"}: ${who}${row.event_date ? ` · ${row.event_date}` : ""}`;
+  const date = lvDate(row.event_date);
+  const subject = `${isBusiness ? "Pieprasījums" : "Rezervācija"}: ${who}${date ? ` · ${date}` : ""}${info.time ? ` ${info.time}` : ""}`;
+  const travelling = row.location === "Izbraukums";
+  const place = isBusiness ? text("event_city") : travelling ? text("address") : "Smaidu Darbnīca, Pasta iela 25, Tukums";
+  const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.smaidudarbnica.lv").replace(/\/$/, "");
+  const phone = String(row.phone ?? "");
+  const email = String(row.email ?? "");
 
-  const rows = LABELS.filter(([k]) => row[k] !== null && row[k] !== undefined && row[k] !== "")
-    .map(
-      ([k, label]) =>
-        `<tr><td style="padding:6px 16px 6px 0;color:#7a7268;vertical-align:top;white-space:nowrap">${label}</td><td style="padding:6px 0;white-space:pre-wrap">${escape(row[k])}</td></tr>`,
-    )
-    .join("");
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;color:#1a1816">
-<p style="font-size:18px;margin:0 0 16px"><b>${escape(subject)}</b></p>
-<table style="border-collapse:collapse">${rows}</table>
-${site ? `<p style="margin-top:24px"><a href="${site}/admin" style="color:#1a1816">Atvērt administrēšanas paneli →</a></p>` : ""}
-</div>`;
+  const body = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 26px"><tr><td style="background:${SURFACE};border-radius:14px;padding:18px 20px">
+${eyebrow("Datums un laiks")}
+<p style="margin:0;font-size:22px;line-height:1.3;font-weight:bold"><span style="white-space:nowrap">${date || "Datums nav norādīts"}</span>${
+    info.time ? ` <span style="white-space:nowrap">plkst. ${escape(info.time)}</span>` : ""
+  }</p>
+${place ? `<p style="margin:6px 0 0;color:${SOFT}">${place}</p>` : ""}
+</td></tr></table>
+${eyebrow("Pieteikums")}
+${facts([
+  [isBusiness ? "Pakalpojums" : "Izklaides programma", info.title ? escape(info.title) : isBusiness ? "" : "Nebūs nepieciešama (tikai telpu noma)"],
+  ["Norises vieta", isBusiness ? "" : travelling ? "Izbraukums" : "Smaidu Darbnīcā"],
+  ["Adrese", travelling ? text("address") : ""],
+  ["Pasākuma veids", text("event_type")],
+  ["Pilsēta / vieta", text("event_city")],
+  ["Bērnu skaits", text("children_count")],
+  ["Gaviļnieka vecums", text("child_age")],
+  ["Dalībnieki", text("participants")],
+  ["Budžets", text("budget_range")],
+])}
+${eyebrow("Klients")}
+${facts([
+  ["Vārds", text("parent_name")],
+  ["Uzņēmums", text("company_name")],
+  ["Amats", text("contact_role")],
+  ["Telefons", phone ? `<a href="tel:${escape(phone.replace(/\s/g, ""))}" style="color:${INK}">${escape(phone)}</a>` : ""],
+  ["E-pasts", email ? `<a href="mailto:${escape(email)}" style="color:${INK}">${escape(email)}</a>` : ""],
+])}
+${
+  row.message
+    ? `${eyebrow("Papildu informācija")}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 24px"><tr><td style="border-left:4px solid ${BRAND};background:#fbf9f5;padding:14px 18px;white-space:pre-wrap">${text("message")}</td></tr></table>`
+    : ""
+}
+${info.costs ? costTable(info.costs) : ""}
+<p style="margin:6px 0 0"><a href="${site}/admin" style="display:inline-block;padding:12px 22px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">Atvērt panelī un apstiprināt →</a></p>
+<p style="margin:14px 0 0;font-size:13px;color:${SOFT}">Atbildot uz šo e-pastu, atbilde aizies klientam.</p>`;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -71,9 +142,9 @@ ${site ? `<p style="margin-top:24px"><a href="${site}/admin" style="color:#1a181
         from: sender(),
         // Visi pieteikumi (uzņēmumu un privātie) nāk uz vienu adresi; ja vajag dalīt — iestatiet NOTIFY_EMAIL uzņēmumiem
         to: [(isBusiness && process.env.NOTIFY_EMAIL) || process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"],
-        reply_to: typeof row.email === "string" && row.email ? row.email : undefined,
+        reply_to: email || undefined,
         subject,
-        html,
+        html: shell(isBusiness ? "Jauns" : "Jauna", isBusiness ? "pieprasījums" : "rezervācija", body),
       }),
       signal: AbortSignal.timeout(8000),
     });
@@ -126,14 +197,7 @@ export async function notifyClientConfirmed(
   const price = (l: BookingCosts["lines"][number]) => (l.amount === null ? "pēc vienošanās" : eur(l.amount));
 
   // Noformējums — lapas krāsās (tumšā galvene ar logo, dzeltenie akcenti). E-pastos der tikai tabulas un stili pie elementa.
-  const INK = "#1a1816";
-  const SOFT = "#5e574f";
-  const BRAND = "#ffd54a";
-  const SURFACE = "#f3eee5";
-  const LINE = "#e6dfd3";
   const p = (html: string, style = "") => `<p style="margin:0 0 16px;${style}">${html}</p>`;
-  const eyebrow = (text: string) =>
-    `<p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:${SOFT}">${text}</p>`;
   // Rinda ar dzeltenu punktu (bērnu skaits, ierašanās laiks)
   const point = (html: string) =>
     `<tr><td style="width:22px;vertical-align:top;padding:0 0 10px"><span style="display:inline-block;width:10px;height:10px;margin-top:6px;border-radius:10px;background:${BRAND}"></span></td><td style="padding:0 0 10px">${html}</td></tr>`;

@@ -1,6 +1,8 @@
 import { after, NextResponse } from "next/server";
 import { bookedSlots } from "@/lib/availability";
+import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
+import { VENUE_SLOTS, bookingCosts, bookingPrices } from "@/lib/pricing";
 import { quoteTravel } from "@/lib/travel";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Validator } from "@/lib/validation";
@@ -9,6 +11,12 @@ import { Validator } from "@/lib/validation";
  * Jauns pieteikums (uzņēmuma pieprasījums vai privāta ballītes rezervācija).
  * Glabājas esošajā `bookings` tabulā, ko redz administrēšanas panelī.
  */
+
+// Pieprasījuma formas papildu izvēles, kas nav pakalpojumu sarakstā (sk. kontakti/page.tsx)
+const EXTRA_TITLES: Record<string, string> = {
+  "ziemassvetku-piedavajums": "Ziemassvētku piedāvājums",
+  "egles-iedegsana": "Egles iedegšana",
+};
 
 // Vienkāršs ātruma ierobežojums vienai servera instancei: 5 pieteikumi / 10 min no vienas IP
 const WINDOW_MS = 10 * 60 * 1000;
@@ -67,7 +75,8 @@ export async function POST(request: Request) {
     inquiry_type: inquiryType,
     parent_name: v.text("parentName", { required: true, max: 120, label: "Vārds" }),
     phone: v.phone("phone"),
-    email: v.email("email", isBusiness),
+    // E-pasts ir obligāts: uz to aiziet rezervācijas apstiprinājums un notiek turpmākā saziņa
+    email: v.email("email", true),
     company_name: v.text("companyName", { required: isBusiness, max: 160, label: "Uzņēmums" }) || null,
     contact_role: v.text("contactRole", { max: 120 }) || null,
     program: v.text("program", { max: 120 }) || null,
@@ -89,6 +98,21 @@ export async function POST(request: Request) {
   };
 
   if (!row.consent) v.errors.consent = "Nepieciešama piekrišana datu apstrādei";
+
+  // Rezervācijas formā visi lauki ir obligāti (forma to jau pārbauda; šī ir pārbaude serverī).
+  // Bērnu skaits un vecums — tikai kopā ar izklaides programmu; izbraukumam vajag adresi un programmu, telpām — laiku.
+  if (!isBusiness) {
+    const need = (field: string, ok: unknown, text: string) => {
+      if (!ok && !v.errors[field]) v.errors[field] = text;
+    };
+    const travelling = row.location === "Izbraukums";
+    need("eventDate", row.event_date, "Izvēlieties datumu.");
+    need("eventTime", travelling || row.event_time, "Izvēlieties laiku.");
+    need("address", !travelling || row.address, "Norādiet ballītes adresi.");
+    need("program", !travelling || row.program, "Izbraukuma ballītei izvēlieties izklaides programmu.");
+    need("childrenCount", !row.program || row.children_count, "Norādiet bērnu skaitu.");
+    need("childAge", !row.program || row.child_age, "Norādiet gaviļnieka vecumu.");
+  }
 
   // Telpu noma: laiku, kas šajā datumā jau aizņemts, rezervēt nevar (forma to jau nerāda, šī ir pārbaude serverī)
   if (!isBusiness && row.location !== "Izbraukums" && row.event_date && row.event_time) {
@@ -144,7 +168,18 @@ export async function POST(request: Request) {
   }
 
   // E-pasta paziņojums tiek sūtīts pēc atbildes nosūtīšanas — lietotājam nav jāgaida
-  after(() => notifyNewBooking(record));
+  // E-pastā ir pilns pieteikums: programmas nosaukums, laika posms un izmaksas (tās pašas, ko klients redz formā)
+  after(async () => {
+    const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
+    const slug = row.service_slug || row.program || "";
+    const service = services.find((s) => s.slug === slug);
+    const start = row.event_time?.slice(0, 5) ?? "";
+    await notifyNewBooking(record, {
+      title: service?.title ?? EXTRA_TITLES[slug] ?? slug,
+      time: VENUE_SLOTS.find((t) => t.value === start)?.label ?? start,
+      costs: isBusiness ? null : bookingCosts(record, service, bookingPrices(settings)),
+    });
+  });
 
   return NextResponse.json({ success: true });
 }

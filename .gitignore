@@ -50,3 +50,6 @@ next-env.d.ts
 /_to_delete/
 /update*.tgz
 /Claude outputs/
+
+# Vienreizējs imports no Google kalendāra (satur klientu vārdus)
+/supabase/PALAIST-KALENDARS.sql
