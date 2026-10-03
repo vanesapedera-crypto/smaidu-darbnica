@@ -3,7 +3,8 @@ import { Building2, Search, User } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { BOOKING_STATUSES, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
-import { getServices } from "@/lib/content/queries";
+import { getServices, getSettings } from "@/lib/content/queries";
+import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
 import StatusSelect from "@/components/admin/StatusSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
@@ -40,12 +41,17 @@ export default async function BookingsPage({ searchParams }: Props) {
     );
   }
 
-  const [{ data, error }, { data: serviceRows }, business, programs] = await Promise.all([
+  const [{ data, error }, { data: serviceRows }, business, programs, settings] = await Promise.all([
     query,
     db.from("services").select("slug, title"),
     getServices("business"),
     getServices("private"),
+    getSettings(),
   ]);
+  const prices = bookingPrices(settings);
+  // Izmaksas ballītēm un telpu nomai — tas pats aprēķins, ko klients redz formā un saņem apstiprinājuma e-pastā
+  const costsOf = (b: Booking) =>
+    b.inquiry_type === "business" ? null : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
   const bookings = (data ?? []) as Booking[];
   // Pakalpojuma slug → nosaukums (vecajos pieteikumos var būt arī brīvs teksts)
   // Ja pakalpojumi vēl nav datubāzē, nosaukumus ņem no lapas satura (lai panelī un kalendārā nav redzams slug)
@@ -182,6 +188,33 @@ export default async function BookingsPage({ searchParams }: Props) {
                         <p className="mt-1 text-sm whitespace-pre-line">{b.message}</p>
                       </div>
                     )}
+                    {(() => {
+                      const costs = costsOf(b);
+                      return (
+                        costs && (
+                          <div>
+                            <p className="text-sm text-ink-soft">Izmaksas (tās pašas klients saņem apstiprinājuma e-pastā)</p>
+                            <dl className="mt-1 space-y-1 text-sm">
+                              {costs.lines.map((l) => (
+                                <div key={l.label} className="flex justify-between gap-4">
+                                  <dt>{l.label}</dt>
+                                  <dd className="font-semibold whitespace-nowrap">
+                                    {l.amount === null ? "pēc vienošanās" : eur(l.amount)}
+                                  </dd>
+                                </div>
+                              ))}
+                              {/* Kopsummu rāda tikai tad, ja visas cenas ir zināmas */}
+                              {costs.exact && (
+                                <div className="flex justify-between gap-4 border-t border-line pt-1">
+                                  <dt className="font-extrabold">Kopā</dt>
+                                  <dd className="font-extrabold whitespace-nowrap">{eur(costs.total)}</dd>
+                                </div>
+                              )}
+                            </dl>
+                          </div>
+                        )
+                      );
+                    })()}
                     {/* Google kalendārs: aizpildīts notikums ar viesiem (tikai pieteikumiem ar datumu) */}
                     {(() => {
                       const event = calendarEvent(b, label(b.service_slug || b.program));
@@ -201,7 +234,13 @@ export default async function BookingsPage({ searchParams }: Props) {
               </details>
               {/* Statusa izvēle ārpus <summary>, lai klikšķis neatvērtu/neaizvērtu detaļas */}
               <div className="absolute bottom-4 left-4 sm:top-5 sm:right-5 sm:bottom-auto sm:left-auto">
-                <StatusSelect id={b.id} status={b.status} />
+                <StatusSelect
+                  id={b.id}
+                  status={b.status}
+                  withHost={b.inquiry_type !== "business"}
+                  guests={calendarEvent(b, label(b.service_slug || b.program))?.guests ?? null}
+                  clientEmail={b.email}
+                />
               </div>
             </li>
           ))}

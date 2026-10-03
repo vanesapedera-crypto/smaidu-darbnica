@@ -6,16 +6,16 @@ import { CALENDAR_HOSTS, calendarUrl, type CalendarEvent } from "@/lib/calendar"
 import { adminInput, adminSecondary } from "./styles";
 
 /**
- * Poga "Pievienot Google kalendāram": atver Google kalendāru ar aizpildītu notikumu.
- * Ballītēm vispirms var izvēlēties, kura vadītāja vadīs programmu — viņa tiek pievienota kā viesis
- * un pēc notikuma saglabāšanas saņem ielūgumu (tāpat kā pārējie viesi, sk. lib/calendar.ts).
+ * Rezerves variants: poga atver Google kalendāru ar aizpildītu notikumu.
+ * Parasti to nevajag — apstiprinot pieteikumu, ielūgums aiziet automātiski (sk. StatusSelect un lib/notify.ts).
+ * Noder, ja notikums kalendārā nav parādījies vai jāpievieno vēl kāds viesis.
  */
 export default function CalendarLink({ event, withHost }: { event: CalendarEvent; withHost: boolean }) {
   const [host, setHost] = useState("");
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-ink-soft">Google kalendārs</p>
+      <p className="text-sm text-ink-soft">Google kalendārs — ar roku</p>
       <div className="flex flex-wrap items-center gap-2">
         {withHost && (
           <select value={host} onChange={(e) => setHost(e.target.value)} aria-label="Programmu vada" className={adminInput} style={{ width: "auto" }}>
@@ -33,7 +33,7 @@ export default function CalendarLink({ event, withHost }: { event: CalendarEvent
         </a>
       </div>
       <p className="text-xs text-ink-soft">
-        Ielūgumu saņems: {[...event.guests, ...(host ? [host] : [])].join(", ")}
+        Apstiprinot pieteikumu, notikums kalendārā tiek ielikts automātiski. Šo pogu lietojiet tikai tad, ja tas tur nav parādījies.
       </p>
     </div>
   );

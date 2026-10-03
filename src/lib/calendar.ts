@@ -1,14 +1,17 @@
 import type { Booking } from "./bookings";
 
 /**
- * Google kalendāra notikums no pieteikuma (administrēšanas panelī — poga "Pievienot kalendāram").
+ * Google kalendāra notikums no pieteikuma.
  *
- * Poga atver Google kalendāru ar jau aizpildītu notikumu; saglabājot Google pats izsūta ielūgumus viesiem.
+ * Automātiski: kad panelī pieteikumu apstiprina, visiem viesiem aiziet e-pasts ar kalendāra ielūgumu
+ * (.ics pielikums) — Google kalendārs šādu ielūgumu pats ieliek kalendārā (sk. calendarIcs un lib/notify.ts).
+ * Ar roku: poga "Pievienot kalendāram" atver Google kalendāru ar jau aizpildītu notikumu (rezerves variants).
+ *
  * Kam notikumu sūtīt, nosaka šie saraksti — mainot cilvēkus, pietiek izlabot e-pastus šeit.
  */
 
-/** Saņem visus kalendāra notikumus */
-export const CALENDAR_ALWAYS = ["smaidu.darbnica@gmail.com"];
+/** Saņem visus kalendāra notikumus (Vanesa un Kristīne) */
+export const CALENDAR_ALWAYS = ["smaidu.darbniica@gmail.com", "smaidu.darbnica@gmail.com"];
 /** Saņem notikumus, kas notiek mūsu telpās (telpu noma) — telpu uzkopšanai */
 export const CALENDAR_VENUE = ["keitaplavina3@gmail.com"];
 /** Izklaides programmu vadītājas — panelī pie pieteikuma izvēlas, kura vadīs */
@@ -79,4 +82,85 @@ export function calendarUrl(e: CalendarEvent, extraGuests: string[] = []): strin
     add: [...e.guests, ...extraGuests].join(","),
   });
   return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+/* ---------------- Kalendāra ielūgums (.ics) automātiskai pievienošanai ---------------- */
+
+const TIME_ZONE = "Europe/Riga";
+
+/** Rīgas laiks → UTC (ņem vērā vasaras / ziemas laiku) */
+function rigaToUtc(ymd: string, hhmmss: string): Date {
+  const guess = Date.UTC(
+    Number(ymd.slice(0, 4)), Number(ymd.slice(4, 6)) - 1, Number(ymd.slice(6, 8)),
+    Number(hhmmss.slice(0, 2)), Number(hhmmss.slice(2, 4)),
+  );
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIME_ZONE, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+  }).formatToParts(new Date(guess));
+  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  const wall = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"));
+  return new Date(guess - (wall - guess));
+}
+
+const utcStamp = (d: Date) => `${day(d)}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+// Teksta vērtībās jāaizsargā \ ; , un rindu pārtraukumi (RFC 5545)
+const icsText = (v: string) => v.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+/** Rindas, kas garākas par 75 baitiem, jāsadala (turpinājums sākas ar atstarpi) */
+function fold(line: string): string {
+  const out: string[] = [];
+  let current = "";
+  let bytes = 0;
+  const encoder = new TextEncoder();
+  for (const ch of line) {
+    const size = encoder.encode(ch).length;
+    if (bytes + size > (out.length ? 74 : 75)) {
+      out.push(current);
+      current = "";
+      bytes = 0;
+    }
+    current += ch;
+    bytes += size;
+  }
+  out.push(current);
+  return out.join("\r\n ");
+}
+
+/**
+ * Kalendāra ielūgums (METHOD:REQUEST). `uid` — nemainīgs pieteikumam, lai atkārtots ielūgums atjauno to pašu notikumu.
+ * `organizer` — sūtītāja e-pasts (tas pats, no kura aiziet e-pasts).
+ */
+export function calendarIcs(e: CalendarEvent, opts: { uid: string; organizer: string; attendees: string[] }): string {
+  const [from, to] = e.dates.split("/");
+  const timed = from.includes("T");
+  const when = timed
+    ? [
+        `DTSTART:${utcStamp(rigaToUtc(from.slice(0, 8), from.slice(9)))}`,
+        `DTEND:${utcStamp(rigaToUtc(to.slice(0, 8), to.slice(9)))}`,
+      ]
+    : [`DTSTART;VALUE=DATE:${from}`, `DTEND;VALUE=DATE:${to}`];
+  const now = new Date();
+  return [
+    "BEGIN:VCALENDAR",
+    "PRODID:-//Smaidu Darbnica//Rezervacijas//LV",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    "METHOD:REQUEST",
+    "BEGIN:VEVENT",
+    `UID:${opts.uid}`,
+    // Secības numurs aug ar laiku — atkārtoti nosūtīts ielūgums aizstāj iepriekšējo
+    `SEQUENCE:${Math.floor(now.getTime() / 1000)}`,
+    `DTSTAMP:${utcStamp(now)}`,
+    ...when,
+    `SUMMARY:${icsText(e.text)}`,
+    `DESCRIPTION:${icsText(e.details)}`,
+    `LOCATION:${icsText(e.location)}`,
+    `ORGANIZER;CN=Smaidu Darbnīca:mailto:${opts.organizer}`,
+    ...opts.attendees.map((a) => `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:${a}`),
+    "STATUS:CONFIRMED",
+    "TRANSP:OPAQUE",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ]
+    .map(fold)
+    .join("\r\n");
 }

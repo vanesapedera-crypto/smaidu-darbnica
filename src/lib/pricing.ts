@@ -116,8 +116,8 @@ export function estimateProgramPrice(pricing: PriceGroup[], children: number, tr
  * panelī kopā ar aprakstu. Atpazīst formulējumus:
  *   "- Virtuļu dekorēšana — 30 €"                    (viena cena)
  *   "- Piekariņš — 1 € / bērnam"                      (cena par bērnu)
- *   "**Mazā grupa (1–6 bērni):**" + "- Saldējuma eksperiments — ~30 € (grupai)"
- *   "**Lielā grupa (7–15 bērni):**" + "- Saldējuma eksperiments — ~40 € (grupai)"   (cena pēc grupas lieluma)
+ *   "**Mazā grupa (1–6 bērni):**" + "- Saldējuma eksperiments — 30 €"
+ *   "**Lielā grupa (7–15 bērni):**" + "- Saldējuma eksperiments — 40 €"   (cena pēc grupas lieluma)
  * Saraksta punkti bez cenas (tikai apraksts) formā netiek rādīti.
  */
 export type Extra = {
@@ -129,8 +129,6 @@ export type Extra = {
   /** Grupu nosaukumi no apraksta, piem. "Mazā grupa (1–6 bērni)" */
   smallLabel?: string;
   largeLabel?: string;
-  /** Cena aprakstā norādīta kā aptuvena ("~30 €") */
-  approx?: boolean;
 };
 
 const num = (s: string) => Number(s.replace(",", "."));
@@ -158,14 +156,13 @@ export function parseExtras(body: string): Extra[] {
       continue;
     }
     const label = (item.match(/\*\*(.+?)\*\*/)?.[1] ?? item.split(/\s+[—–-]\s+/)[0]).trim();
-    const approx = item.includes("~") || undefined;
     const inline = item.match(new RegExp(`mazā grupa[^€]*?${PRICE}.*lielā grupa[^€]*?${PRICE}`, "i"));
     const perChild = item.match(new RegExp(`${PRICE}\\s*\\/\\s*bērn`, "i"));
     const price = item.match(new RegExp(`${PRICE}(?:\\s*\\([^)]*\\))?\\s*$`));
-    if (inline) Object.assign(byLabel(label), { small: num(inline[1]), large: num(inline[2]), approx });
-    else if (perChild) Object.assign(byLabel(label), { perChild: num(perChild[1]), approx });
-    else if (price && group) Object.assign(byLabel(label), { [group.key]: num(price[1]), [`${group.key}Label`]: group.label, approx });
-    else if (price) Object.assign(byLabel(label), { flat: num(price[1]), approx });
+    if (inline) Object.assign(byLabel(label), { small: num(inline[1]), large: num(inline[2]) });
+    else if (perChild) Object.assign(byLabel(label), { perChild: num(perChild[1]) });
+    else if (price && group) Object.assign(byLabel(label), { [group.key]: num(price[1]), [`${group.key}Label`]: group.label });
+    else if (price) Object.assign(byLabel(label), { flat: num(price[1]) });
   }
   return extras;
 }
@@ -183,4 +180,92 @@ export function extraPrice(extra: Extra, children: number, smallMax: number): nu
   if (extra.perChild !== undefined) return Math.round(extra.perChild * children * 100) / 100;
   if (extra.small !== undefined && extra.large !== undefined) return children <= smallMax ? extra.small : extra.large;
   return null;
+}
+
+/**
+ * Rezervācijas izmaksu kopsavilkums — tas pats aprēķins, ko klients redz rezervācijas formā.
+ * Izmanto administrēšanas panelī un apstiprinājuma e-pastā klientam (cenas — pēc pašreizējā cenrāža).
+ */
+export type CostLine = {
+  label: string;
+  amount: number | null;
+  /** Rindas veids — lai e-pastā programmu var noformēt citādi nekā pārējās rindas */
+  kind: "program" | "extra" | "room" | "surcharge" | "travel";
+  /** Programmas cenas grupa, piem. "līdz 6 bērniem" */
+  note?: string;
+};
+export type BookingCosts = {
+  lines: CostLine[];
+  total: number;
+  /** false, ja kāda no cenām ir "pēc vienošanās" — tad kopsummu nerāda */
+  exact: boolean;
+};
+
+/** Cenas formāts: 12,6 → "12,60 €", 185 → "185 €" */
+export const eur = (n: number) =>
+  `${n.toLocaleString("lv-LV", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} €`;
+
+type CostBooking = {
+  location: string | null;
+  event_date: string | null;
+  children_count: number | null;
+  travel_km: number | null;
+  travel_cost: number | null;
+  message: string | null;
+};
+type CostProgram = { title: string; pricing: PriceGroup[]; body: string };
+
+/** Cenas grupa, kurā ietilpst bērnu skaits: "līdz 6 bērniem"; lielākai grupai — "18 bērniem" */
+function tierNote(pricing: PriceGroup[], children: number, travelling: boolean): string | undefined {
+  const group = pickGroup(pricing, travelling);
+  if (!group || !children) return undefined;
+  const { tiers } = parseGroup(group);
+  if (tiers.length === 0) return undefined;
+  const tier = tiers.find((t) => children <= t.max);
+  const n = tier ? tier.max : children;
+  const word = n % 10 === 1 && n % 100 !== 11 ? "bērnam" : "bērniem";
+  return tier ? `līdz ${n} ${word}` : `${n} ${word}`;
+}
+
+export function bookingCosts(b: CostBooking, program: CostProgram | undefined, prices: BookingPrices): BookingCosts | null {
+  const travelling = b.location === "Izbraukums";
+  const children = b.children_count ?? 0;
+  const lines: CostLine[] = [];
+
+  if (program) {
+    lines.push({
+      kind: "program",
+      label: program.title,
+      amount: estimateProgramPrice(program.pricing, children, travelling),
+      note: tierNote(program.pricing, children, travelling),
+    });
+    // Papildu iespējas forma pieraksta ziņojuma rindā "Papildu iespējas: …" — atrodam tās pēc nosaukuma
+    const chosen = b.message?.match(/Papildu iespējas:\s*(.+)/)?.[1] ?? "";
+    if (chosen) {
+      const smallMax = smallGroupMax(program.pricing);
+      for (const x of parseExtras(program.body)) {
+        if (chosen.includes(x.label)) lines.push({ kind: "extra", label: x.label, amount: extraPrice(x, children, smallMax) });
+      }
+    }
+  }
+
+  if (!travelling) {
+    const room = b.event_date ? venuePrice(b.event_date, prices) : null;
+    if (room !== null) lines.push({ kind: "room", label: "Telpu noma", amount: room });
+  } else {
+    // Izbraukuma piemaksa un ceļa izdevumi — adresēm tālāk par freeTravelKm (vienā virzienā), tāpat kā formā.
+    // Ja attālums nav zināms (adresi neizdevās aprēķināt), ceļa izdevumi ir "pēc vienošanās".
+    if (b.travel_km == null) lines.push({ kind: "travel", label: "Ceļa izdevumi", amount: null });
+    else if (b.travel_km / 2 > prices.freeTravelKm) {
+      if (prices.travelSurcharge > 0) lines.push({ kind: "surcharge", label: "Izbraukuma piemaksa", amount: prices.travelSurcharge });
+      if (b.travel_cost) lines.push({ kind: "travel", label: `Ceļa izdevumi (${b.travel_km.toLocaleString("lv-LV")} km)`, amount: b.travel_cost });
+    }
+  }
+
+  if (lines.length === 0) return null;
+  return {
+    lines,
+    total: Math.round(lines.reduce((sum, l) => sum + (l.amount ?? 0), 0) * 100) / 100,
+    exact: lines.every((l) => l.amount !== null),
+  };
 }

@@ -23,7 +23,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
         <div className="lg:col-span-4">
           <Image src="/brand/logo-light.svg" alt="Smaidu Darbnīca" width={489} height={291} className="h-16 w-auto" />
           <p className="mt-6 max-w-sm leading-7">
-            Pasākumu aģentūra uzņēmumiem, pašvaldībām un ģimenēm. Organizējam pasākumus visā Latvijā.
+            Radīt smaidu — tā ir mūsu misija!
           </p>
           <ul className="mt-6 flex gap-3">
             {socials.map(({ href, label, Icon }) => (

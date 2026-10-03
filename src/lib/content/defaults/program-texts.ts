@@ -263,7 +263,7 @@ export const programOverrides: Record<string, Override> = {
       a("Spēle “Jā vai Nē” par jubilāru", "Jautra iepazīšanās un smiekli garantēti."),
     ],
     body:
-      "## Papildu iespējas\n- **Saldējuma eksperiments** — bērni paši gatavo savu saldējumu, vēro pārvērtības un izvēlas piedevas.\n- **Kokteiļu darbnīca** — katrs izveido savu krāsaino dzērienu.\n\n**Mazā grupa (1–6 bērni):**\n- Saldējuma eksperiments — ~30 € (grupai)\n- Kokteiļu darbnīca — ~10 € (grupai)\n\n**Lielā grupa (7–15 bērni):**\n- Saldējuma eksperiments — ~40 € (grupai)\n- Kokteiļu darbnīca — ~20 € (grupai)",
+      "## Papildu iespējas\n- **Saldējuma eksperiments** — bērni paši gatavo savu saldējumu, vēro pārvērtības un izvēlas piedevas.\n- **Kokteiļu darbnīca** — katrs izveido savu krāsaino dzērienu.\n\n**Mazā grupa (1–6 bērni):**\n- Saldējuma eksperiments — 30 €\n- Kokteiļu darbnīca — 10 €\n\n**Lielā grupa (7–15 bērni):**\n- Saldējuma eksperiments — 40 €\n- Kokteiļu darbnīca — 20 €",
   },
 
   "gabbys-dollhouse-ballite": {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CircleCheck, LoaderCircle, MapPin, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PriceGroup } from "@/lib/content/types";
-import { VENUE_SLOTS, estimateProgramPrice, extraPrice, fromPrice, venuePrice, type BookingPrices, type Extra } from "@/lib/pricing";
+import { VENUE_SLOTS, estimateProgramPrice, eur, extraPrice, fromPrice, venuePrice, type BookingPrices, type Extra } from "@/lib/pricing";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
 
@@ -17,10 +17,6 @@ type TravelState =
   | { status: "loading"; address: string }
   | { status: "ok"; address: string; quote: TravelQuote }
   | { status: "error"; address: string; error: string };
-
-// Cenas formāts: 12,6 → "12,60 €", 185 → "185 €"
-const eur = (n: number) =>
-  `${n.toLocaleString("lv-LV", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} €`;
 
 const LOCATIONS = { studio: "Smaidu Darbnīcā", travel: "Izbraukums" } as const;
 
@@ -106,23 +102,20 @@ export default function BookingForm({
   // Papildu iespējas: atzīmētās + to cena (dažām cena atkarīga no bērnu skaita)
   const chosenExtras = (program?.extras ?? [])
     .filter((x) => extras.includes(x.label))
-    .map((x) => ({ label: x.label, approx: x.approx, price: extraPrice(x, Number(form.childrenCount), program?.smallMax ?? 6) }));
+    .map((x) => ({ label: x.label, price: extraPrice(x, Number(form.childrenCount), program?.smallMax ?? 6) }));
   const extrasTotal = chosenExtras.reduce((sum, x) => sum + (x.price ?? 0), 0);
   // Izbraukuma piemaksa — ballītēm tālāk par 10 km no Smaidu Darbnīcas (tāpat kā ceļa izdevumi).
-  // Kamēr adrese nav aprēķināta, piemaksu rāda; kad zināms, ka adrese ir tuvāk, tā pazūd.
-  const nearby = Boolean(travelQuote && travelQuote.oneWayKm <= prices.freeTravelKm);
-  const surcharge = inStudio || nearby ? 0 : prices.travelSurcharge;
-  // Piekrišana izbraukuma izmaksām vajadzīga tikai tad, ja tās tiek pieskaitītas (adrese tālāk par 10 km vai vēl nav zināma)
-  const needsTravelConsent = !inStudio && !nearby;
+  // Par to informējam tikai tad, kad adrese ir aprēķināta un ir tālāk (sk. ceļa izdevumu rezultātu pie adreses).
+  const far = Boolean(travelQuote && travelQuote.oneWayKm > prices.freeTravelKm);
+  const surcharge = far ? prices.travelSurcharge : 0;
   const total = Math.round(((programPrice ?? 0) + extrasTotal + (roomPrice ?? 0) + surcharge + (travelQuote?.cost ?? 0)) * 100) / 100;
-  // Cenas paskaidrojums pie papildu iespējas ("~" — ja cena aprakstā norādīta kā aptuvena)
-  const approx = (x: { approx?: boolean }, n: number) => `${x.approx ? "~" : ""}${eur(n)}`;
+  // Cenas paskaidrojums pie papildu iespējas
   const extraHint = (x: Extra) =>
     x.flat !== undefined
-      ? approx(x, x.flat)
+      ? eur(x.flat)
       : x.perChild !== undefined
-        ? `${approx(x, x.perChild)} / bērnam`
-        : `${x.smallLabel ?? "Mazā grupa"} — ${approx(x, x.small ?? 0)} (grupai) · ${x.largeLabel ?? "Lielā grupa"} — ${approx(x, x.large ?? 0)} (grupai)`;
+        ? `${eur(x.perChild)} / bērnam`
+        : `${x.smallLabel ?? "Mazā grupa"} — ${eur(x.small ?? 0)} · ${x.largeLabel ?? "Lielā grupa"} — ${eur(x.large ?? 0)}`;
 
   /**
    * Ceļa izdevumu aprēķins (pa ceļiem no Pasta ielas 25, Tukumā, turp un atpakaļ).
@@ -169,7 +162,7 @@ export default function BookingForm({
           message: [
             form.message.trim(),
             chosenExtras.length > 0 &&
-              `Papildu iespējas: ${chosenExtras.map((x) => `${x.label}${x.price !== null ? ` (${approx(x, x.price)})` : ""}`).join(", ")}`,
+              `Papildu iespējas: ${chosenExtras.map((x) => `${x.label}${x.price !== null ? ` (${eur(x.price)})` : ""}`).join(", ")}`,
           ]
             .filter(Boolean)
             .join("\n\n"),
@@ -353,35 +346,28 @@ export default function BookingForm({
                   <>
                     <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
                     <div>
-                      {travel.quote.cost === 0 ? (
+                      {travel.quote.oneWayKm <= prices.freeTravelKm ? (
                         <p>
                           <strong>Ceļa izdevumi: 0 €</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km vienā virzienā.
                           Adresēm līdz {prices.freeTravelKm} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.
                         </p>
                       ) : (
-                        <p>
-                          <strong>Ceļa izdevumi: {eur(travel.quote.cost)}</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km
-                          vienā virzienā, {travel.quote.roundTripKm.toLocaleString("lv-LV")} km turp un atpakaļ × {eur(travel.quote.rate)}/km,
-                          noapaļots uz leju līdz veselam eiro.
-                        </p>
+                        <>
+                          <p>
+                            <strong>Ceļa izdevumi: {eur(travel.quote.cost)}</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km
+                            vienā virzienā, {travel.quote.roundTripKm.toLocaleString("lv-LV")} km turp un atpakaļ.
+                          </p>
+                          <p className="mt-1">
+                            Izbraukuma ballītēm tālāk par {prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīta
+                            izbraukuma piemaksa {eur(prices.travelSurcharge)} un ceļa izdevumi — {eur(prices.travelRate)} par km turp un atpakaļ.
+                          </p>
+                        </>
                       )}
                       <p className="mt-1 text-ink-soft">Atrastā adrese: {travel.quote.address}</p>
                     </div>
                   </>
                 )}
               </div>
-            )}
-            {needsTravelConsent && (
-            <label className="flex items-start gap-3 rounded-2xl bg-brand-soft p-4 text-sm leading-6 sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={form.acceptTravelFee}
-                onChange={(e) => setForm((f) => ({ ...f, acceptTravelFee: e.target.checked }))}
-                className="mt-1 size-5 shrink-0 accent-ink"
-              />
-              Esmu informēts(-a), ka izbraukuma ballītēm tālāk par {prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums)
-              tiek pieskaitīta izbraukuma piemaksa {eur(prices.travelSurcharge)} un ceļa izdevumi — {eur(prices.travelRate)} par km turp un atpakaļ.
-            </label>
             )}
           </>
         )}
@@ -424,8 +410,16 @@ export default function BookingForm({
         <Field id="phone" label="Telefons" required error={errors.phone}>
           <input {...fieldProps("phone")} type="tel" autoComplete="tel" placeholder="+371" required />
         </Field>
-        <Field id="email" label="E-pasts" error={errors.email} className="sm:col-span-2">
-          <input {...fieldProps("email")} type="email" autoComplete="email" />
+        {/* Apstiprinājums un visa turpmākā saziņa notiek pa e-pastu — tāpēc tas ir obligāts */}
+        <Field
+          id="email"
+          label="E-pasts"
+          required
+          error={errors.email}
+          hint="Uz šo e-pastu nosūtīsim rezervācijas apstiprinājumu."
+          className="sm:col-span-2"
+        >
+          <input {...fieldProps("email")} type="email" autoComplete="email" required />
         </Field>
         <Field id="message" label="Papildu informācija" error={errors.message} className="sm:col-span-2">
           <textarea {...fieldProps("message")} rows={4} placeholder="Pastāstiet par ballīti…" />
@@ -446,7 +440,7 @@ export default function BookingForm({
             {chosenExtras.map((x) => (
               <div key={x.label} className="flex justify-between gap-3">
                 <dt>{x.label}</dt>
-                <dd className="font-bold whitespace-nowrap">{x.price === null ? "norādiet bērnu skaitu" : approx(x, x.price)}</dd>
+                <dd className="font-bold whitespace-nowrap">{x.price === null ? "norādiet bērnu skaitu" : eur(x.price)}</dd>
               </div>
             ))}
             {roomPrice !== null && (
@@ -518,7 +512,7 @@ export default function BookingForm({
 
       <button
         type="submit"
-        disabled={state === "sending" || (needsTravelConsent && !form.acceptTravelFee) || timeTaken}
+        disabled={state === "sending" || timeTaken}
         className={cn(buttonClass("primary", "lg"), "w-full disabled:opacity-60")}
       >
         {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}

@@ -1,4 +1,5 @@
 import { Baby, Check, Clock, Coffee, Disc3, Gamepad2, MapPin, Mountain, ScrollText, Sparkles } from "lucide-react";
+import OpenOnHash from "./OpenOnHash";
 import Photo from "./Photo";
 import PhotoReel from "./PhotoReel";
 import RichText from "./RichText";
@@ -123,6 +124,7 @@ function Rules({ venue }: { venue: VenueSettings }) {
   if (!venue.rules.trim()) return null;
   return (
     <details id="noteikumi" className="group scroll-mt-24 rounded-2xl bg-white ring-1 ring-line">
+      <OpenOnHash id="noteikumi" />
       <summary className="flex cursor-pointer list-none items-center gap-3 p-5 font-extrabold [&::-webkit-details-marker]:hidden">
         <ScrollText className="size-5 shrink-0" aria-hidden />
         <span className="flex-1">Telpu lietošanas noteikumi</span>

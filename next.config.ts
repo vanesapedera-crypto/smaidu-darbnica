@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
       { source: "/izklaides-programmas/uznemumiem-un-pasvaldibam", destination: "/uznemumiem", permanent: true },
       { source: "/smaidu-darbnicas-telpas", destination: "/telpu-noma", permanent: true },
       { source: "/rezervacijas", destination: "/izklaides-programmas/pieteikt", permanent: true },
+      // Saite no agrāk sūtītajiem apstiprinājuma e-pastiem
+      { source: "/rezervacijas-noteikumi", destination: "/telpu-noma#noteikumi", permanent: true },
       { source: "/musu-komanda", destination: "/par-mums", permanent: true },
       { source: "/par-mums-1", destination: "/kontakti", permanent: true },
     ];
