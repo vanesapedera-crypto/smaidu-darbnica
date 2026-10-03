@@ -269,3 +269,21 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
     exact: lines.every((l) => l.amount !== null),
   };
 }
+
+/**
+ * Izmaksas teksta rindās — tādā pašā secībā un formulējumā kā apstiprinājuma e-pastā klientam
+ * (vispirms telpu noma, tad programma un pārējais). Izmanto kalendāra notikuma aprakstā.
+ */
+export function costLinesText(costs: BookingCosts): string[] {
+  const order = ["room", "program", "extra", "surcharge", "travel"];
+  const lines = [...costs.lines]
+    .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind))
+    .map(
+      (l) =>
+        `${l.kind === "program" ? `Izklaides programma “${l.label}”${l.note ? ` (${l.note})` : ""}` : l.label} – ${
+          l.amount === null ? "pēc vienošanās" : eur(l.amount)
+        }`,
+    );
+  if (lines.length > 1 && costs.exact) lines.push(`Kopā – ${eur(costs.total)}`);
+  return lines;
+}

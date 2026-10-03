@@ -33,6 +33,8 @@ async function onConfirmed(b: Booking, host: string | null) {
   const arrival =
     inVenue && start ? `${String(Math.floor((h * 60 + min - 15) / 60)).padStart(2, "0")}:${String((h * 60 + min - 15) % 60).padStart(2, "0")}` : undefined;
   const phone = isBusiness ? contact.phoneBusiness : contact.phonePrivate;
+  // Uzņēmumiem cenu piedāvājums ir individuāls — izmaksas nerāda
+  const costs = isBusiness ? null : bookingCosts(b, service, bookingPrices(settings));
 
   const client = b.email
     ? notifyClientConfirmed(b as unknown as Record<string, unknown>, {
@@ -41,9 +43,9 @@ async function onConfirmed(b: Booking, host: string | null) {
         place: inVenue ? undefined : (isBusiness ? b.event_city : b.address) || undefined,
         // SMS numurs bez valsts koda un atstarpēm: "+371 28 193 386" → "28193386"
         smsPhone: phone.replace(/^\+371/, "").replace(/\s/g, ""),
-        replyTo: isBusiness ? contact.email : contact.emailPrivate,
-        // Uzņēmumiem cenu piedāvājums ir individuāls — izmaksas e-pastā nerāda
-        costs: isBusiness ? null : bookingCosts(b, service, bookingPrices(settings)),
+        // Klienta atbildes uz apstiprinājumu vienmēr nāk uz rezervāciju e-pastu
+        replyTo: contact.emailPrivate,
+        costs,
         rulesUrl: inVenue ? absoluteUrl("/telpu-noma#noteikumi") : undefined,
         logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
         footer: {
@@ -55,7 +57,8 @@ async function onConfirmed(b: Booking, host: string | null) {
       })
     : null;
 
-  const event = calendarEvent(b, title || (inVenue ? "Telpu noma" : "Pieteikums"));
+  // Kalendāra ielūgumā ir tā pati informācija, ko saņem klients (laiks, izmaksas), plus klienta kontakti
+  const event = calendarEvent(b, title || (inVenue ? "Telpu noma" : "Pieteikums"), costs);
   const calendar = event ? sendCalendarInvite(event, [...event.guests, ...(host ? [host] : [])], `rezervacija-${b.id}@smaidudarbnica.lv`) : null;
 
   await Promise.all([client, calendar]);

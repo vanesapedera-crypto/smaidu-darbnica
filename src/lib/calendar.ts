@@ -1,4 +1,5 @@
 import type { Booking } from "./bookings";
+import { VENUE_SLOTS, costLinesText, type BookingCosts } from "./pricing";
 
 /**
  * Google kalendāra notikums no pieteikuma.
@@ -29,8 +30,12 @@ const day = (d: Date) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(
 
 export type CalendarEvent = { text: string; dates: string; details: string; location: string; guests: string[] };
 
-/** Sagatavo notikuma datus; null, ja pieteikumam nav datuma. `title` — programmas vai pakalpojuma nosaukums. */
-export function calendarEvent(b: Booking, title: string): CalendarEvent | null {
+/**
+ * Sagatavo notikuma datus; null, ja pieteikumam nav datuma. `title` — programmas vai pakalpojuma nosaukums.
+ * Aprakstā ir viss, ko apstiprinājumā saņem klients (laiks, izmaksas, ierašanās laiks), plus klienta kontakti —
+ * lai komandai kalendārā ir tā pati informācija. `costs` — izmaksu kopsavilkums (sk. bookingCosts).
+ */
+export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | null): CalendarEvent | null {
   if (!b.event_date) return null;
   const isBusiness = b.inquiry_type === "business";
   const inVenue = !isBusiness && b.location !== "Izbraukums";
@@ -47,14 +52,24 @@ export function calendarEvent(b: Booking, title: string): CalendarEvent | null {
   }
 
   const who = b.company_name || b.parent_name || "";
+  const slot = time ? (VENUE_SLOTS.find((t) => t.value === `${pad(Number(time[1]))}:${time[2]}`)?.label ?? b.event_time) : "";
+  // Klientu gaidām 15 minūtes pirms sākuma (tikai mūsu telpās) — tāpat kā rakstīts klienta e-pastā
+  const arrival = inVenue && time ? (() => {
+    const minutes = Number(time[1]) * 60 + Number(time[2]) - 15;
+    return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+  })() : "";
   const details = [
-    b.parent_name && `Kontaktpersona: ${b.parent_name}`,
+    `Datums: ${Number(b.event_date.slice(8, 10))}.${b.event_date.slice(5, 7)}.${b.event_date.slice(0, 4)}.${slot ? ` plkst. ${slot}` : ""}`,
+    arrival && `Klients ierodas no plkst. ${arrival}`,
+    b.parent_name && `\nKontaktpersona: ${b.parent_name}`,
     b.phone && `Telefons: ${b.phone}`,
     b.email && `E-pasts: ${b.email}`,
     b.children_count && `Bērnu skaits: ${b.children_count}`,
     b.child_age && `Gaviļnieka vecums: ${b.child_age}`,
     b.participants && `Dalībnieki: ${b.participants}`,
-    b.travel_cost != null && `Ceļa izdevumi: ${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`,
+    costs
+      ? `\nIZMAKSAS\n${costLinesText(costs).map((l) => (l.startsWith("Kopā") ? l : `• ${l}`)).join("\n")}`
+      : b.travel_cost != null && `Ceļa izdevumi: ${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`,
     b.message && `\n${b.message}`,
     b.admin_notes && `\nPiezīmes: ${b.admin_notes}`,
   ]

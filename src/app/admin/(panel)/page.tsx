@@ -217,7 +217,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                     })()}
                     {/* Google kalendārs: aizpildīts notikums ar viesiem (tikai pieteikumiem ar datumu) */}
                     {(() => {
-                      const event = calendarEvent(b, label(b.service_slug || b.program));
+                      const event = calendarEvent(b, label(b.service_slug || b.program), costsOf(b));
                       return event && <CalendarLink event={event} withHost={b.inquiry_type !== "business"} />;
                     })()}
                     <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2">
