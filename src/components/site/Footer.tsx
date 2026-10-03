@@ -22,9 +22,6 @@ export default function Footer({ contact, services }: { contact: ContactSettings
       <Container className="grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-12 lg:py-20">
         <div className="lg:col-span-4">
           <Image src="/brand/logo-light.svg" alt="Smaidu Darbnīca" width={489} height={291} className="h-16 w-auto" />
-          <p className="mt-6 max-w-sm leading-7">
-            Radīt smaidu — tā ir mūsu misija!
-          </p>
           <ul className="mt-6 flex gap-3">
             {socials.map(({ href, label, Icon }) => (
               <li key={label}>

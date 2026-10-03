@@ -13,7 +13,12 @@ import { PROGRAM_IMAGE } from "./service-media";
 const stripEmoji = (s: string) =>
   s.replace(/[\p{Extended_Pictographic}️‍]/gu, "").trim();
 
-export const privateServices: Service[] = programs.map((p, i) => {
+// Programmas, kas sarakstos (kartītes, rezervācijas formas izvēlne) jārāda pirmās — pārējās paliek savā secībā
+const FIRST = ["sejas-apgleznosana"];
+const rank = (slug: string) => (FIRST.includes(slug) ? FIRST.indexOf(slug) : FIRST.length);
+const ordered = [...programs].sort((a, b) => rank(a.slug) - rank(b.slug));
+
+export const privateServices: Service[] = ordered.map((p, i) => {
   // Vecās smaidudarbnica.lv lapas saturs (aktuālākais) pārraksta vecā koda vērtības
   const o = programOverrides[p.slug] ?? {};
   return {

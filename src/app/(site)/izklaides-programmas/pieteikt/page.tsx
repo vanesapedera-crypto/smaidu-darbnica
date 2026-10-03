@@ -19,31 +19,36 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <section className="relative isolate overflow-hidden bg-surface pt-10 pb-28 md:pt-14">
-        <Smile className="absolute -top-10 -right-10 -z-10 w-72 text-ink/[0.07] md:w-96" />
-        <Container className="max-w-3xl">
-          <p className="text-sm font-extrabold tracking-[0.14em] uppercase">Izklaides programmas · Telpu noma</p>
-          <h1 className="display mt-5 text-4xl md:text-6xl">
-            Rezervēt <span className="sticker">ballīti</span>
+      {/* Tumša "skatuves" galvene; forma zemāk daļēji uzbrauc tai virsū */}
+      <section className="relative isolate overflow-hidden bg-ink pt-12 pb-32 text-white md:pt-16 md:pb-36">
+        <Smile className="absolute -top-10 -right-10 -z-10 w-72 text-white/[0.06] md:w-[26rem]" />
+        <Container className="max-w-6xl">
+          <p className="text-sm font-extrabold tracking-[0.14em] text-brand uppercase">Izklaides programmas · Telpu noma</p>
+          <h1 className="display mt-5 text-4xl sm:text-5xl md:text-7xl">
+            Rezervēt <span className="sticker-light">ballīti</span>
           </h1>
-          <p className="mt-5 text-lg leading-8 font-medium">
+          <p className="mt-6 max-w-xl text-lg leading-8 text-white/85">
             Aizpildiet formu, un mēs sazināsimies, lai apstiprinātu datumu. Jautājumi? Zvaniet{" "}
-            <a href={`tel:${settings.contact.phonePrivate.replace(/\s/g, "")}`} className="font-extrabold underline decoration-2 underline-offset-4">
+            <a
+              href={`tel:${settings.contact.phonePrivate.replace(/\s/g, "")}`}
+              className="font-extrabold whitespace-nowrap text-white underline decoration-brand decoration-2 underline-offset-4"
+            >
               {settings.contact.phonePrivate}
             </a>
             .
           </p>
         </Container>
       </section>
-      <Section className="-mt-20 pt-0 md:pt-0">
-        <Container className="max-w-3xl">
+      <Section className="-mt-24 pt-0 md:pt-0">
+        <Container className="max-w-6xl">
           <BookingForm
             key={selected}
             defaultProgram={selected}
             prices={bookingPrices(settings)}
-            programs={programs.map(({ slug, title, pricing, pricingNote, body }) => ({
+            programs={programs.map(({ slug, title, heroImage, pricing, pricingNote, body }) => ({
               slug,
               title,
+              image: heroImage,
               pricing,
               note: pricingNote,
               // Papildu iespējas nolasa no programmas apraksta sadaļas "Papildu iespējas"
