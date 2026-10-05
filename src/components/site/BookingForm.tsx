@@ -7,7 +7,17 @@ import { Car, CircleCheck, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-r
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import type { PriceGroup } from "@/lib/content/types";
-import { VENUE_SLOTS, estimateProgramPrice, eur, extraPrice, fromPrice, venuePrice, type BookingPrices, type Extra } from "@/lib/pricing";
+import {
+  VENUE_SLOTS,
+  estimateProgramPrice,
+  eur,
+  extraPrice,
+  fromPrice,
+  priceVariants,
+  venuePrice,
+  type BookingPrices,
+  type Extra,
+} from "@/lib/pricing";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
 
@@ -67,11 +77,16 @@ export default function BookingForm({
   const [booked, setBooked] = useState<{ date: string; times: string[] }>({ date: "", times: [] });
   // Atzīmētās papildu iespējas (pēc nosaukuma); mainot programmu, izvēle tiek notīrīta
   const [extras, setExtras] = useState<string[]>([]);
+  // Izvēlētais programmas variants (cenu grupas nosaukums), ja programmai tādi ir — piem. sejas apgleznošana ar vai bez tetovējumiem
+  const [variantChoice, setVariantChoice] = useState("");
 
   const inStudio = form.location === LOCATIONS.studio;
   const program = programs.find((p) => p.slug === form.program);
+  // Varianti: pēc noklusējuma izvēlēts pirmais
+  const variants = program ? priceVariants(program.pricing) : [];
+  const variant = variants.find((g) => g.title === variantChoice)?.title ?? variants[0]?.title;
   const programPrice = program
-    ? estimateProgramPrice(program.pricing, Number(form.childrenCount), !inStudio)
+    ? estimateProgramPrice(program.pricing, Number(form.childrenCount), !inStudio, variant)
     : null;
   const roomPrice = inStudio ? venuePrice(form.eventDate, prices) : null;
 
@@ -193,6 +208,8 @@ export default function BookingForm({
           // Papildu iespējas pievieno ziņojumam — tā tās redzamas panelī un e-pasta paziņojumā
           message: [
             form.message.trim(),
+            // Programmas variants — pēc tā serveris rēķina izmaksas e-pastam un panelim (sk. bookingCosts)
+            variant && `Izvēle: ${variant}`,
             chosenExtras.length > 0 &&
               `Papildu iespējas: ${chosenExtras.map((x) => `${x.label}${x.price !== null ? ` (${eur(x.price)})` : ""}`).join(", ")}`,
           ]
@@ -210,6 +227,7 @@ export default function BookingForm({
         setForm({ ...initial, program: defaultProgram });
         setTravel({ status: "idle" });
         setExtras([]);
+        setVariantChoice("");
         return;
       }
       setErrors(data.errors ?? {});
@@ -231,7 +249,12 @@ export default function BookingForm({
 
   if (state === "sent") {
     return (
-      <div role="status" className="mx-auto flex max-w-2xl flex-col items-center rounded-3xl bg-ink p-10 text-center text-white md:p-14">
+      // Pēc nosūtīšanas lapa ir aizritināta līdz formas apakšai — pārceļ skatu uz paziņojumu, lai tas ir redzams ekrāna vidū
+      <div
+        role="status"
+        ref={(el) => el?.scrollIntoView({ behavior: "smooth", block: "center" })}
+        className="mx-auto flex max-w-2xl flex-col items-center rounded-3xl bg-ink p-10 text-center text-white ring-1 ring-white/15 md:p-14"
+      >
         <span className="grid size-16 place-items-center rounded-full bg-brand text-ink">
           <CircleCheck className="size-8" aria-hidden />
         </span>
@@ -279,6 +302,7 @@ export default function BookingForm({
                 onChange={(e) => {
                   setForm((f) => ({ ...f, program: e.target.value }));
                   setExtras([]);
+                  setVariantChoice("");
                   setErrors((er) => ({ ...er, program: "" }));
                 }}
               >
@@ -294,7 +318,49 @@ export default function BookingForm({
             </Field>
 
             {/* Izvēlētās programmas cenrādis (ja ir atsevišķas izbraukuma cenas — tikai izvēlētajai norises vietai) */}
-            {program && program.pricing.length > 0 && (
+            {/* Programmai ar variantiem (piem. sejas apgleznošana ar vai bez tetovējumiem) cenrādis ir izvēle: */}
+            {/* katrs variants ir kartīte ar savām cenām, un izmaksas rēķina pēc izvēlētā */}
+            {program && variants.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-bold" id="variant-label">
+                  Izvēlieties<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
+                <div role="radiogroup" aria-labelledby="variant-label" className="grid gap-3 sm:grid-cols-2">
+                  {variants.map((g) => {
+                    const active = g.title === variant;
+                    return (
+                      <label
+                        key={g.title}
+                        className={cn(
+                          "block cursor-pointer rounded-2xl border-2 p-4 text-sm transition-colors",
+                          active ? "border-ink bg-brand" : "border-line hover:border-ink",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="variant"
+                          value={g.title}
+                          checked={active}
+                          onChange={() => setVariantChoice(g.title)}
+                          className="sr-only"
+                        />
+                        <span className="block leading-snug font-extrabold">{g.title}</span>
+                        <span className="mt-2 block space-y-1">
+                          {g.options.map((o) => (
+                            <span key={o.label} className="flex justify-between gap-3">
+                              <span className={active ? "text-ink/75" : "text-ink-soft"}>{o.label}</span>
+                              <span className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : eur(o.price)}</span>
+                            </span>
+                          ))}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {shownNote && <p className="text-sm text-ink-soft">{shownNote}</p>}
+              </div>
+            )}
+            {program && variants.length === 0 && program.pricing.length > 0 && (
               <div className={cn("grid gap-4 rounded-2xl bg-surface p-5 text-sm", shownPricing.length > 1 && "sm:grid-cols-2")}>
                 {shownPricing.map((g) => (
                   <div key={g.title}>
@@ -587,7 +653,7 @@ export default function BookingForm({
             <p className="text-xs font-extrabold tracking-[0.14em] text-white/60 uppercase">Izmaksas</p>
             {hasCosts ? (
               <dl className="mt-3 space-y-2 text-sm">
-                {program && ticketRow(program.title, programPrice === null ? "pēc vienošanās" : eur(programPrice))}
+                {program && ticketRow(variant ?? program.title, programPrice === null ? "pēc vienošanās" : eur(programPrice))}
                 {chosenExtras.map((x) => (
                   <div key={x.label} className="flex justify-between gap-4">
                     <dt className="text-white/60">{x.label}</dt>

@@ -59,7 +59,7 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
     setNote(
       [
         data.clientEmail === "sent"
-          ? "Klientam nosūtīts apstiprinājums."
+          ? "Klientam nosūtīts e-pasts — gaidām viņa apstiprinājumu."
           : data.clientEmail === "no-email"
             ? "Klients nav norādījis e-pastu — apstiprinājums nav nosūtīts."
             : data.clientEmail === "not-configured"
@@ -109,7 +109,8 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
             <li>
               {clientEmail ? (
                 <>
-                  Klientam uz <b className="font-semibold break-all text-ink">{clientEmail}</b> aizies apstiprinājums ar datumu, laiku un izmaksām.
+                  Klientam uz <b className="font-semibold break-all text-ink">{clientEmail}</b> aizies e-pasts ar datumu, laiku, izmaksām un pogu
+                  “Apstiprinu rezervāciju”. Panelī redzēsiet, kad viņš to nospiež.
                 </>
               ) : (
                 "Klients nav norādījis e-pastu — apstiprinājums viņam netiks nosūtīts."

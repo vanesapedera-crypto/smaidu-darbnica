@@ -30,4 +30,28 @@ export type Booking = {
   travel_cost: number | null;
   message: string | null;
   admin_notes: string | null;
+  /** Klienta apstiprinājums (sk. migrāciju 20261005090000): žetons saitei, kad nosūtīts e-pasts, kad klients apstiprināja */
+  confirm_token?: string | null;
+  confirmation_sent_at?: string | null;
+  client_confirmed_at?: string | null;
+  client_reminded_at?: string | null;
 };
+
+/** Pēc cik dienām bez klienta apstiprinājuma rezervāciju izceļ un atgādina (WhatsApp / SMS) */
+export const CONFIRM_DAYS = 3;
+
+/** Saite, ar kuru klients apstiprina rezervāciju; null, ja žetona vēl nav (migrācija nav palaista) */
+export function confirmPath(b: Pick<Booking, "id" | "confirm_token">): string | null {
+  return b.confirm_token ? `/rezervacija/${b.id}?k=${b.confirm_token}` : null;
+}
+
+/** Telefona numurs starptautiskā formātā bez "+" (WhatsApp saitei): 8 cipari → Latvijas numurs */
+export function phoneDigits(phone: string | null): string {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  return digits.length === 8 ? `371${digits}` : digits;
+}
+
+/** Atgādinājuma teksts klientam (WhatsApp / SMS) ar apstiprināšanas saiti */
+export function reminderText(when: string, url: string): string {
+  return `Sveiki! Rakstām no Smaidu Darbnīcas. Jūsu rezervācija ${when} vēl gaida apstiprinājumu. Lūdzu, apstipriniet to šeit: ${url}`;
+}

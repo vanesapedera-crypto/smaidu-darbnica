@@ -6,6 +6,7 @@ import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
+import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import StatusSelect from "@/components/admin/StatusSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { saveBookingNotes } from "../actions";
@@ -151,6 +152,10 @@ export default async function BookingsPage({ searchParams }: Props) {
                     <p className="text-sm">
                       <span className="block text-ink-soft">Datums</span>
                       {b.event_date ? new Date(b.event_date).toLocaleDateString("lv-LV") : "—"} {b.event_time ?? ""}
+                      {/* Vai klients ir apstiprinājis rezervāciju (redzams, neatverot pieteikumu) */}
+                      <span className="block">
+                        <ConfirmationBadge booking={b} />
+                      </span>
                     </p>
                   </div>
                 </summary>
@@ -182,6 +187,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                       ))}
                   </dl>
                   <div className="space-y-4">
+                    <ClientConfirmation booking={b} />
                     {b.message && (
                       <div>
                         <p className="text-sm text-ink-soft">Ziņojums</p>

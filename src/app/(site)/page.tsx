@@ -66,8 +66,8 @@ export default async function HomePage() {
               <ButtonLink href="/uznemumiem" size="lg" arrow>
                 Uzņēmumiem
               </ButtonLink>
-              <ButtonLink href="/izklaides-programmas" size="lg" variant="ghostLight">
-                Bērnu ballītes
+              <ButtonLink href="/telpu-noma" size="lg" variant="ghostLight">
+                Telpu noma
               </ButtonLink>
             </div>
           </div>

@@ -56,6 +56,13 @@ export async function saveBookingNotes(id: string, form: FormData) {
   revalidatePath("/admin");
 }
 
+/** Klients apstiprināja citā veidā (pa telefonu, WhatsApp) — atzīmē to panelī ar roku */
+export async function markClientConfirmed(id: string) {
+  const { db } = await requireAdmin();
+  await db.from("bookings").update({ client_confirmed_at: new Date().toISOString() }).eq("id", id);
+  revalidatePath("/admin");
+}
+
 /* ------------------------------ Satura ieraksti ------------------------------ */
 
 export async function saveEntity(key: string, id: string | null, _: ActionState, form: FormData): Promise<ActionState> {

@@ -74,8 +74,22 @@ function parseGroup(group: PriceGroup) {
   return { tiers, extra, flat };
 }
 
-/** Izvēlas cenrāža grupu pēc norises vietas (ja programmai ir atsevišķs izbraukuma cenrādis). */
-function pickGroup(pricing: PriceGroup[], travelling: boolean): PriceGroup | undefined {
+/**
+ * Programmas varianti — vairākas cenu grupas, no kurām klients izvēlas vienu
+ * (piem. "Sejas apgleznošana" un "Sejas apgleznošana + glittera tetovējumi").
+ * Ja programmai ir atsevišķs izbraukuma cenrādis, grupas nav varianti (tās izvēlas pēc norises vietas).
+ */
+export function priceVariants(pricing: PriceGroup[]): PriceGroup[] {
+  return pricing.length > 1 && !pricing.some((g) => /izbrauk/i.test(g.title)) ? pricing : [];
+}
+
+/**
+ * Izvēlas cenrāža grupu: klienta izvēlēto variantu (pēc nosaukuma) vai — ja programmai ir atsevišķs
+ * izbraukuma cenrādis — pēc norises vietas.
+ */
+function pickGroup(pricing: PriceGroup[], travelling: boolean, variant?: string): PriceGroup | undefined {
+  const chosen = variant ? priceVariants(pricing).find((g) => g.title === variant) : undefined;
+  if (chosen) return chosen;
   if (pricing.length <= 1) return pricing[0];
   const travelGroup = pricing.find((g) => /izbrauk/i.test(g.title));
   if (travelGroup) return travelling ? travelGroup : pricing.find((g) => g !== travelGroup);
@@ -95,8 +109,8 @@ export function fromPrice(pricing: PriceGroup[]): number | null {
 }
 
 /** Atgriež aptuveno programmas cenu vai null, ja to nevar aprēķināt (pēc vienošanās). */
-export function estimateProgramPrice(pricing: PriceGroup[], children: number, travelling: boolean): number | null {
-  const group = pickGroup(pricing, travelling);
+export function estimateProgramPrice(pricing: PriceGroup[], children: number, travelling: boolean, variant?: string): number | null {
+  const group = pickGroup(pricing, travelling, variant);
   if (!group) return null;
   const { tiers, extra, flat } = parseGroup(group);
 
@@ -216,8 +230,8 @@ type CostBooking = {
 type CostProgram = { title: string; pricing: PriceGroup[]; body: string };
 
 /** Cenas grupa, kurā ietilpst bērnu skaits: "līdz 6 bērniem"; lielākai grupai — "18 bērniem" */
-function tierNote(pricing: PriceGroup[], children: number, travelling: boolean): string | undefined {
-  const group = pickGroup(pricing, travelling);
+function tierNote(pricing: PriceGroup[], children: number, travelling: boolean, variant?: string): string | undefined {
+  const group = pickGroup(pricing, travelling, variant);
   if (!group || !children) return undefined;
   const { tiers } = parseGroup(group);
   if (tiers.length === 0) return undefined;
@@ -233,11 +247,14 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
   const lines: CostLine[] = [];
 
   if (program) {
+    // Programmas variants (ja tādi ir) — forma to pieraksta ziņojuma rindā "Izvēle: …"
+    const picked = b.message?.match(/Izvēle:\s*(.+)/)?.[1]?.trim();
+    const variant = priceVariants(program.pricing).find((g) => g.title === picked)?.title;
     lines.push({
       kind: "program",
-      label: program.title,
-      amount: estimateProgramPrice(program.pricing, children, travelling),
-      note: tierNote(program.pricing, children, travelling),
+      label: variant ?? program.title,
+      amount: estimateProgramPrice(program.pricing, children, travelling, variant),
+      note: tierNote(program.pricing, children, travelling, variant),
     });
     // Papildu iespējas forma pieraksta ziņojuma rindā "Papildu iespējas: …" — atrodam tās pēc nosaukuma
     const chosen = b.message?.match(/Papildu iespējas:\s*(.+)/)?.[1] ?? "";

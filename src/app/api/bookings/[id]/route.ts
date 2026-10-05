@@ -1,7 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdmin } from "@/lib/auth";
-import { BOOKING_STATUSES, type Booking } from "@/lib/bookings";
+import { BOOKING_STATUSES, confirmPath, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientConfirmed, sendCalendarInvite } from "@/lib/notify";
@@ -33,6 +33,7 @@ async function onConfirmed(b: Booking, host: string | null) {
   const arrival =
     inVenue && start ? `${String(Math.floor((h * 60 + min - 15) / 60)).padStart(2, "0")}:${String((h * 60 + min - 15) % 60).padStart(2, "0")}` : undefined;
   const phone = isBusiness ? contact.phoneBusiness : contact.phonePrivate;
+  const confirm = confirmPath(b);
   // Uzņēmumiem cenu piedāvājums ir individuāls — izmaksas nerāda
   const costs = isBusiness ? null : bookingCosts(b, service, bookingPrices(settings));
 
@@ -48,6 +49,8 @@ async function onConfirmed(b: Booking, host: string | null) {
         costs,
         rulesUrl: inVenue ? absoluteUrl("/telpu-noma#noteikumi") : undefined,
         logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
+        // Poga "Apstiprinu rezervāciju" (ja datubāzē jau ir klienta apstiprinājuma lauki)
+        confirmUrl: confirm ? absoluteUrl(confirm) : undefined,
         footer: {
           address: `${contact.address}, ${contact.city}`,
           phone,
@@ -98,6 +101,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       clientEmail = !before.email ? "no-email" : configured ? "sent" : "not-configured";
       calendar = !before.event_date ? "no-date" : configured ? "sent" : "not-configured";
       if (configured) after(() => onConfirmed(before, host));
+      // No šī brīža skaita 3 dienas līdz atgādinājumam; iepriekšējo klienta apstiprinājumu (ja bija) notīra.
+      // Atsevišķs pieprasījums — ja lauku datubāzē vēl nav (migrācija nav palaista), statusa maiņa tāpat ir notikusi.
+      if (clientEmail === "sent") {
+        await admin.db
+          .from("bookings")
+          .update({ confirmation_sent_at: new Date().toISOString(), client_confirmed_at: null, client_reminded_at: null })
+          .eq("id", id);
+      }
     }
 
     revalidatePath("/admin");
