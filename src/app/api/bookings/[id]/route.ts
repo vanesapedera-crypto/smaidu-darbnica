@@ -5,7 +5,8 @@ import { BOOKING_STATUSES, confirmPath, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientConfirmed, sendCalendarInvite } from "@/lib/notify";
-import { VENUE_SLOTS, bookingCosts, bookingPrices } from "@/lib/pricing";
+import { whenLabel } from "@/lib/dates";
+import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
 /**
@@ -23,12 +24,8 @@ async function onConfirmed(b: Booking, host: string | null) {
   const title = service?.title ?? slug;
   const inVenue = !isBusiness && b.location !== "Izbraukums";
 
-  // Datums un laiks kā ierastajā apstiprinājumā: "5.09.2026. plkst. 14:00–17:00"
-  const [y, m, d] = (b.event_date ?? "").split("-");
-  const date = b.event_date ? `${Number(d)}.${m}.${y}.` : "";
-  const start = b.event_time?.slice(0, 5) ?? "";
-  const slot = VENUE_SLOTS.find((t) => t.value === start)?.label ?? start;
   // Klientu gaidām 15 minūtes pirms sākuma (tikai mūsu telpās)
+  const start = b.event_time?.slice(0, 5) ?? "";
   const [h, min] = start.split(":").map(Number);
   const arrival =
     inVenue && start ? `${String(Math.floor((h * 60 + min - 15) / 60)).padStart(2, "0")}:${String((h * 60 + min - 15) % 60).padStart(2, "0")}` : undefined;
@@ -39,7 +36,8 @@ async function onConfirmed(b: Booking, host: string | null) {
 
   const client = b.email
     ? notifyClientConfirmed(b as unknown as Record<string, unknown>, {
-        when: [date, slot && `plkst. ${slot}`].filter(Boolean).join(" "),
+        // Datums ar vārdiem un laiks: "6. oktobris plkst. 14:00–17:00" (izbraukumam — sākuma laiks)
+        when: whenLabel(b.event_date, b.event_time, isBusiness ? null : b.location),
         arrival,
         place: inVenue ? undefined : (isBusiness ? b.event_city : b.address) || undefined,
         // SMS numurs bez valsts koda un atstarpēm: "+371 28 193 386" → "28193386"
@@ -108,6 +106,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           .from("bookings")
           .update({ confirmation_sent_at: new Date().toISOString(), client_confirmed_at: null, client_reminded_at: null })
           .eq("id", id);
+        await admin.db.from("bookings").update({ client_cancelled_at: null }).eq("id", id);
       }
     }
 

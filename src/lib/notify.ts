@@ -11,7 +11,9 @@
  * Kļūda e-pasta sūtīšanā nekad neaptur pieteikumu — tas jau ir saglabāts datubāzē un redzams panelī.
  */
 
+import { needsHeadcount } from "./bookings";
 import { calendarIcs, type CalendarEvent } from "./calendar";
+import { dateWords } from "./dates";
 import { eur, type BookingCosts } from "./pricing";
 
 type Row = Record<string, unknown>;
@@ -69,12 +71,6 @@ const shell = (title: string, sticker: string, body: string) =>
 </table>
 </div>`;
 
-/** Datums kā "5.09.2026." */
-const lvDate = (iso: unknown) => {
-  const [y, m, d] = String(iso ?? "").split("-");
-  return y && m && d ? `${Number(d)}.${m}.${y}.` : "";
-};
-
 /**
  * Paziņojums komandai par jaunu pieteikumu — pilns pieteikums vienā e-pastā:
  * datums un laiks, programma, vieta, bērnu skaits, klienta kontakti, papildu informācija un izmaksas.
@@ -88,7 +84,7 @@ export async function notifyNewBooking(row: Row, info: { title?: string; time?: 
   const isBusiness = row.inquiry_type === "business";
   const text = (k: string) => (row[k] === null || row[k] === undefined || row[k] === "" ? "" : escape(row[k]));
   const who = (row.company_name as string) || (row.parent_name as string) || "Jauns pieteikums";
-  const date = lvDate(row.event_date);
+  const date = dateWords(row.event_date);
   const subject = `${isBusiness ? "Pieprasījums" : "Rezervācija"}: ${who}${date ? ` · ${date}` : ""}${info.time ? ` ${info.time}` : ""}`;
   const travelling = row.location === "Izbraukums";
   const place = isBusiness ? text("event_city") : travelling ? text("address") : "Smaidu Darbnīca, Pasta iela 25, Tukums";
@@ -225,8 +221,8 @@ export async function notifyClientConfirmed(
     : "";
 
   const points = [
-    // Tikai rezervācijām ar izklaides programmu — telpu nomai vien bērnu skaitam nav nozīmes
-    row.program ? point("Ja mainās bērnu skaits, lūdzam paziņot!") : "",
+    // Tikai programmām, kur bērnu skaits ietekmē cenu — ne telpu nomai vien un ne pārsteiguma tēlam
+    needsHeadcount(row.program as string | null) ? point("Ja mainās bērnu skaits, lūdzam paziņot!") : "",
     info.arrival ? point(`Gaidīsim Jūs no plkst. <b>${escape(info.arrival)}</b>, lai būtu iespēja sagatavoties pasākumam!`) : "",
   ].join("");
 
@@ -399,12 +395,31 @@ ${facts([
   );
 }
 
+/** Klients savā lapā nospieda "Atcelt rezervāciju" — paziņojums komandai (laiks formā atkal ir brīvs) */
+export function notifyClientCancelled(info: { name: string; when: string; title: string; place: string }) {
+  return notifyTeam(
+    `Klients ATCĒLA: ${info.name || "rezervācija"} · ${info.when}`,
+    "Klients",
+    "atcēla",
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 22px"><tr><td style="background:${SURFACE};border-radius:14px;padding:18px 20px">
+${eyebrow("Datums un laiks")}
+<p style="margin:0;font-size:22px;line-height:1.3;font-weight:bold">${escape(info.when)}</p>
+${info.place ? `<p style="margin:6px 0 0;color:${SOFT}">${escape(info.place)}</p>` : ""}
+</td></tr></table>
+${facts([
+  ["Klients", escape(info.name)],
+  ["Izklaides programma", escape(info.title)],
+])}
+<p style="margin:0">Rezervācijas statuss panelī ir nomainīts uz “Atcelta”, un laiks rezervācijas formā atkal ir brīvs. <b>Notikums Google kalendārā jāizdzēš ar roku.</b></p>`,
+  );
+}
+
 /**
  * Atgādinājums komandai: klienti, kas 3 dienu laikā nav apstiprinājuši rezervāciju.
  * `dates` — pasākumu datumi (bez klientu datiem); panelī pie šīm rezervācijām ir pogas "WhatsApp" un "SMS".
  */
 export function notifyUnconfirmed(dates: string[]) {
-  const list = dates.map((d) => `<li>${escape(lvDate(d) || "datums nav norādīts")}</li>`).join("");
+  const list = dates.map((d) => `<li>${escape(dateWords(d) || "datums nav norādīts")}</li>`).join("");
   return notifyTeam(
     `Nav apstiprināts: ${dates.length} ${dates.length === 1 ? "rezervācija" : "rezervācijas"}`,
     "Klients nav",

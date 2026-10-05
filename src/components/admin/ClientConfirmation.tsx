@@ -1,7 +1,7 @@
-import { Check, Clock, MessageCircle, MessageSquare } from "lucide-react";
+import { Check, Clock, MessageCircle, MessageSquare, X } from "lucide-react";
 import { markClientConfirmed } from "@/app/admin/actions";
 import { CONFIRM_DAYS, confirmPath, phoneDigits, reminderText, type Booking } from "@/lib/bookings";
-import { VENUE_SLOTS } from "@/lib/pricing";
+import { whenLabel } from "@/lib/dates";
 import { absoluteUrl } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { adminSecondary } from "./styles";
@@ -15,9 +15,11 @@ const lvDate = (iso: string) => new Date(iso).toLocaleDateString("lv-LV");
  *  "confirmed" — klients nospieda "Apstiprinu rezervāciju" (vai atzīmēts ar roku);
  *  "waiting"   — e-pasts nosūtīts, klients vēl nav apstiprinājis;
  *  "overdue"   — nav apstiprinājis CONFIRM_DAYS dienas → jāraksta WhatsApp / SMS;
+ *  "cancelled" — klients pats atcēla rezervāciju no savas saites (statuss "Atcelta");
  *  null        — nav ko rādīt (nav apstiprināta, vai apstiprinājuma e-pasts nav sūtīts).
  */
-export function confirmationState(b: Booking): { state: "confirmed" | "waiting" | "overdue"; days: number } | null {
+export function confirmationState(b: Booking): { state: "confirmed" | "waiting" | "overdue" | "cancelled"; days: number } | null {
+  if (b.status === "Atcelta" && b.client_cancelled_at) return { state: "cancelled", days: 0 };
   if (b.status !== "Apstiprināta") return null;
   if (b.client_confirmed_at) return { state: "confirmed", days: 0 };
   if (!b.confirmation_sent_at) return null;
@@ -29,23 +31,25 @@ const LABEL = {
   confirmed: "Klients apstiprināja",
   waiting: "Gaida klienta apstiprinājumu",
   overdue: "Klients nav apstiprinājis",
+  cancelled: "Klients atcēla",
 };
 const TONE = {
   confirmed: "bg-emerald-50 text-emerald-800 ring-emerald-300",
   waiting: "bg-brand/30 text-ink ring-brand",
   overdue: "bg-red-50 text-red-700 ring-red-200",
+  cancelled: "bg-red-50 text-red-700 ring-red-200",
 };
 
 /** Īsa atzīme pieteikuma galvenē (redzama, neatverot pieteikumu) */
 export function ConfirmationBadge({ booking }: { booking: Booking }) {
   const c = confirmationState(booking);
   if (!c) return null;
-  const Icon = c.state === "confirmed" ? Check : Clock;
+  const Icon = c.state === "confirmed" ? Check : c.state === "cancelled" ? X : Clock;
   return (
     <span className={cn("mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ring-1", TONE[c.state])}>
       <Icon className="size-3.5" aria-hidden />
       {LABEL[c.state]}
-      {c.state !== "confirmed" && ` · ${c.days} d.`}
+      {(c.state === "waiting" || c.state === "overdue") && ` · ${c.days} d.`}
     </span>
   );
 }
@@ -58,10 +62,7 @@ export default function ClientConfirmation({ booking: b }: { booking: Booking })
   const c = confirmationState(b);
   if (!c) return null;
 
-  const [y, m, d] = (b.event_date ?? "").split("-");
-  const start = b.event_time?.slice(0, 5) ?? "";
-  const slot = VENUE_SLOTS.find((t) => t.value === start)?.label ?? start;
-  const when = [b.event_date ? `${Number(d)}.${m}.${y}.` : "", slot && `plkst. ${slot}`].filter(Boolean).join(" ");
+  const when = whenLabel(b.event_date, b.event_time, b.location);
   const path = confirmPath(b);
   const text = path ? encodeURIComponent(reminderText(when, absoluteUrl(path))) : "";
   const digits = phoneDigits(b.phone);
@@ -71,8 +72,10 @@ export default function ClientConfirmation({ booking: b }: { booking: Booking })
       <p className="text-sm font-extrabold">
         {LABEL[c.state]}
         {c.state === "confirmed" && b.client_confirmed_at && ` ${lvDate(b.client_confirmed_at)}`}
+        {c.state === "cancelled" && b.client_cancelled_at && ` rezervāciju ${lvDate(b.client_cancelled_at)}`}
       </p>
-      {c.state !== "confirmed" && (
+      {c.state === "cancelled" && <p className="mt-1 text-sm">Laiks formā atkal ir brīvs. Notikums Google kalendārā jāizdzēš ar roku.</p>}
+      {(c.state === "waiting" || c.state === "overdue") && (
         <>
           <p className="mt-1 text-sm">
             Apstiprinājuma e-pasts nosūtīts {b.confirmation_sent_at && lvDate(b.confirmation_sent_at)} (pirms {c.days} d.).

@@ -35,7 +35,17 @@ export type Booking = {
   confirmation_sent_at?: string | null;
   client_confirmed_at?: string | null;
   client_reminded_at?: string | null;
+  /** Klients pats atcēla rezervāciju no savas saites (statuss tad ir "Atcelta") */
+  client_cancelled_at?: string | null;
 };
+
+/**
+ * Programmas, kurām bērnu skaitam nav nozīmes (cena no tā nav atkarīga) — formā bērnu skaits un vecums
+ * nav obligāti, un apstiprinājumā nav lūguma paziņot par bērnu skaita izmaiņām. Tāpat ir telpu nomai bez programmas.
+ */
+export const NO_HEADCOUNT_PROGRAMS = ["parsteiguma-tels"];
+/** Vai rezervācijai ir svarīgs bērnu skaits (ir izklaides programma, un tā nav izņēmumu sarakstā) */
+export const needsHeadcount = (program: string | null | undefined) => Boolean(program) && !NO_HEADCOUNT_PROGRAMS.includes(program as string);
 
 /** Pēc cik dienām bez klienta apstiprinājuma rezervāciju izceļ un atgādina (WhatsApp / SMS) */
 export const CONFIRM_DAYS = 3;

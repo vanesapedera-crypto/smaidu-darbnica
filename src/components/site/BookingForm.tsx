@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Car, CircleCheck, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
+import { needsHeadcount } from "@/lib/bookings";
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import type { PriceGroup } from "@/lib/content/types";
@@ -82,6 +83,8 @@ export default function BookingForm({
 
   const inStudio = form.location === LOCATIONS.studio;
   const program = programs.find((p) => p.slug === form.program);
+  // Bērnu skaits un vecums ir obligāti tikai programmām, kur tas ietekmē cenu (ne telpu nomai vien, ne pārsteiguma tēlam)
+  const headcount = needsHeadcount(program?.slug);
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant = variants.find((g) => g.title === variantChoice)?.title ?? variants[0]?.title;
@@ -169,7 +172,7 @@ export default function BookingForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Visi lauki ir obligāti (izņemot "Papildu informācija"); bērnu skaits un vecums — tikai kopā ar izklaides programmu.
+    // Visi lauki ir obligāti (izņemot "Papildu informācija"); bērnu skaits un vecums — tikai programmām, kur tas ir svarīgi.
     // Programma jāizvēlas apzināti: vai nu programma, vai "Nebūs nepieciešama" (izbraukumam programma ir obligāta).
     const missing: Record<string, string> = {};
     if (!form.program || (form.program === NO_PROGRAM && !inStudio))
@@ -178,9 +181,9 @@ export default function BookingForm({
         : "Izbraukuma ballītei izvēlieties izklaides programmu.";
     if (!inStudio && !form.address.trim()) missing.address = "Norādiet ballītes adresi.";
     if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
-    if (inStudio && !form.eventTime) missing.eventTime = "Izvēlieties laiku.";
-    if (program && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
-    if (program && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
+    if (!form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : "Norādiet ballītes sākuma laiku.";
+    if (headcount && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
+    if (headcount && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
     if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
     if (!form.email.trim()) missing.email = "Norādiet e-pastu.";
@@ -191,7 +194,7 @@ export default function BookingForm({
       setMessage("Lūdzu, aizpildiet iezīmētos laukus.");
       setState("error");
       // Aizritina līdz pirmajam neaizpildītajam laukam
-      const el = document.getElementById(first === "eventTime" ? "time-label" : first);
+      const el = document.getElementById(first === "eventTime" && inStudio ? "time-label" : first);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) el.focus({ preventScroll: true });
       return;
@@ -215,7 +218,7 @@ export default function BookingForm({
           ]
             .filter(Boolean)
             .join("\n\n"),
-          eventTime: inStudio ? form.eventTime : "",
+          eventTime: form.eventTime,
           inquiryType: "private",
           website,
           startedAt,
@@ -243,7 +246,7 @@ export default function BookingForm({
   const dateLabel = form.eventDate
     ? new Date(`${form.eventDate}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })
     : "";
-  const timeLabel = inStudio ? (VENUE_SLOTS.find((t) => t.value === form.eventTime)?.label ?? "") : "";
+  const timeLabel = inStudio ? (VENUE_SLOTS.find((t) => t.value === form.eventTime)?.label ?? "") : form.eventTime;
   const placeLabel = inStudio ? "Smaidu Darbnīca, Pasta iela 25, Tukums" : form.address.trim();
   const hasCosts = programPrice !== null || roomPrice !== null || chosenExtras.length > 0;
 
@@ -253,16 +256,16 @@ export default function BookingForm({
       <div
         role="status"
         ref={(el) => el?.scrollIntoView({ behavior: "smooth", block: "center" })}
-        className="mx-auto flex max-w-2xl flex-col items-center rounded-3xl bg-ink p-10 text-center text-white ring-1 ring-white/15 md:p-14"
+        className="relative z-10 mx-auto flex max-w-2xl flex-col items-center rounded-3xl bg-white p-10 text-center shadow-xl ring-1 ring-line md:p-14"
       >
         <span className="grid size-16 place-items-center rounded-full bg-brand text-ink">
           <CircleCheck className="size-8" aria-hidden />
         </span>
         <h2 className="display mt-7 text-3xl md:text-4xl">
-          Pieteikums <span className="sticker-light">saņemts</span>
+          Pieteikums <span className="sticker">saņemts</span>
         </h2>
-        <p className="mt-5 max-w-md leading-7 text-white/80">Paldies! Sazināsimies ar jums, lai apstiprinātu rezervāciju.</p>
-        <button type="button" className={cn(buttonClass("ghostLight"), "mt-8")} onClick={() => setState("idle")}>
+        <p className="mt-5 max-w-md leading-7 text-ink-soft">Paldies! Sazināsimies ar jums, lai apstiprinātu rezervāciju.</p>
+        <button type="button" className={cn(buttonClass("outline"), "mt-8")} onClick={() => setState("idle")}>
           Jauns pieteikums
         </button>
       </div>
@@ -445,7 +448,7 @@ export default function BookingForm({
                         name="location"
                         value={loc}
                         checked={active}
-                        onChange={() => setForm((f) => ({ ...f, location: loc }))}
+                        onChange={() => setForm((f) => ({ ...f, location: loc, eventTime: "" }))}
                         className="sr-only"
                       />
                       <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl", active ? "bg-brand text-ink" : "bg-surface")}>
@@ -527,6 +530,12 @@ export default function BookingForm({
             <Field id="eventDate" label="Vēlamais datums" required error={errors.eventDate} className={inStudio ? "sm:col-span-2" : undefined}>
               <input {...fieldProps("eventDate")} type="date" min={today} />
             </Field>
+            {/* Izbraukuma ballītei — brīvi izvēlams sākuma laiks (telpām zemāk ir trīs laika posmi) */}
+            {!inStudio && (
+              <Field id="eventTime" label="Vēlamais laiks" required error={errors.eventTime}>
+                <input {...fieldProps("eventTime")} type="time" step={300} />
+              </Field>
+            )}
 
             {/* Telpu nomas laiki — trīs pogas; aizņemtos laikus izvēlēties nevar */}
             {inStudio && (
@@ -578,10 +587,10 @@ export default function BookingForm({
               </div>
             )}
 
-            <Field id="childrenCount" label="Bērnu skaits" required={Boolean(program)} error={errors.childrenCount}>
+            <Field id="childrenCount" label="Bērnu skaits" required={headcount} error={errors.childrenCount}>
               <input {...fieldProps("childrenCount")} type="number" inputMode="numeric" min={1} />
             </Field>
-            <Field id="childAge" label="Gaviļnieka vecums" required={Boolean(program)} error={errors.childAge}>
+            <Field id="childAge" label="Gaviļnieka vecums" required={headcount} error={errors.childAge}>
               <input {...fieldProps("childAge")} />
             </Field>
           </div>

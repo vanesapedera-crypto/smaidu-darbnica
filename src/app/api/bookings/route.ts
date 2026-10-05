@@ -1,8 +1,10 @@
 import { after, NextResponse } from "next/server";
 import { bookedSlots } from "@/lib/availability";
+import { needsHeadcount } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
-import { VENUE_SLOTS, bookingCosts, bookingPrices } from "@/lib/pricing";
+import { timeLabel } from "@/lib/dates";
+import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import { quoteTravel } from "@/lib/travel";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Validator } from "@/lib/validation";
@@ -107,11 +109,11 @@ export async function POST(request: Request) {
     };
     const travelling = row.location === "Izbraukums";
     need("eventDate", row.event_date, "Izvēlieties datumu.");
-    need("eventTime", travelling || row.event_time, "Izvēlieties laiku.");
+    need("eventTime", row.event_time, travelling ? "Norādiet ballītes sākuma laiku." : "Izvēlieties laiku.");
     need("address", !travelling || row.address, "Norādiet ballītes adresi.");
     need("program", !travelling || row.program, "Izbraukuma ballītei izvēlieties izklaides programmu.");
-    need("childrenCount", !row.program || row.children_count, "Norādiet bērnu skaitu.");
-    need("childAge", !row.program || row.child_age, "Norādiet gaviļnieka vecumu.");
+    need("childrenCount", !needsHeadcount(row.program) || row.children_count, "Norādiet bērnu skaitu.");
+    need("childAge", !needsHeadcount(row.program) || row.child_age, "Norādiet gaviļnieka vecumu.");
   }
 
   // Telpu noma: laiku, kas šajā datumā jau aizņemts, rezervēt nevar (forma to jau nerāda, šī ir pārbaude serverī)
@@ -173,10 +175,9 @@ export async function POST(request: Request) {
     const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
     const slug = row.service_slug || row.program || "";
     const service = services.find((s) => s.slug === slug);
-    const start = row.event_time?.slice(0, 5) ?? "";
     await notifyNewBooking(record, {
       title: service?.title ?? EXTRA_TITLES[slug] ?? slug,
-      time: VENUE_SLOTS.find((t) => t.value === start)?.label ?? start,
+      time: timeLabel(row.event_time, row.location),
       costs: isBusiness ? null : bookingCosts(record, service, bookingPrices(settings)),
     });
   });

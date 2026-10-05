@@ -1,5 +1,6 @@
 import type { Booking } from "./bookings";
-import { VENUE_SLOTS, costLinesText, type BookingCosts } from "./pricing";
+import { whenLabel } from "./dates";
+import { costLinesText, type BookingCosts } from "./pricing";
 
 /**
  * Google kalendāra notikums no pieteikuma.
@@ -23,6 +24,8 @@ export const CALENDAR_HOSTS = [
 
 /** Telpu nomas laika posma garums stundās (10:00–13:00 utt.) */
 const SLOT_HOURS = 3;
+/** Izbraukuma ballītes garums kalendārā (stundās) — programmas parasti ilgst ap stundu */
+const TRAVEL_HOURS = 1;
 const VENUE_ADDRESS = "Smaidu Darbnīca, Pasta iela 25, Tukums";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -41,25 +44,25 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
   const inVenue = !isBusiness && b.location !== "Izbraukums";
   const date = new Date(`${b.event_date}T00:00:00Z`);
 
-  // Ar laiku (telpu nomas posms) — notikums uz 3 stundām; bez laika — visas dienas notikums
+  // Ar laiku: telpu nomas posms — 3 stundas, izbraukuma ballīte — 1 stunda; bez laika — visas dienas notikums
   const time = b.event_time?.match(/^(\d{1,2}):(\d{2})/);
   let dates: string;
   if (time) {
     const h = Number(time[1]);
-    dates = `${day(date)}T${pad(h)}${time[2]}00/${day(date)}T${pad(h + SLOT_HOURS)}${time[2]}00`;
+    const hours = inVenue ? SLOT_HOURS : TRAVEL_HOURS;
+    dates = `${day(date)}T${pad(h)}${time[2]}00/${day(date)}T${pad(h + hours)}${time[2]}00`;
   } else {
     dates = `${day(date)}/${day(new Date(date.getTime() + 24 * 60 * 60 * 1000))}`;
   }
 
   const who = b.company_name || b.parent_name || "";
-  const slot = time ? (VENUE_SLOTS.find((t) => t.value === `${pad(Number(time[1]))}:${time[2]}`)?.label ?? b.event_time) : "";
   // Klientu gaidām 15 minūtes pirms sākuma (tikai mūsu telpās) — tāpat kā rakstīts klienta e-pastā
   const arrival = inVenue && time ? (() => {
     const minutes = Number(time[1]) * 60 + Number(time[2]) - 15;
     return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
   })() : "";
   const details = [
-    `Datums: ${Number(b.event_date.slice(8, 10))}.${b.event_date.slice(5, 7)}.${b.event_date.slice(0, 4)}.${slot ? ` plkst. ${slot}` : ""}`,
+    `Datums: ${whenLabel(b.event_date, b.event_time, isBusiness ? null : b.location)}`,
     arrival && `Klients ierodas no plkst. ${arrival}`,
     b.parent_name && `\nKontaktpersona: ${b.parent_name}`,
     b.phone && `Telefons: ${b.phone}`,
