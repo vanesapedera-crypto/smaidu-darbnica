@@ -261,6 +261,7 @@ ${
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 28px"><tr><td style="background:${INK};border-radius:14px;padding:22px 20px;text-align:center">
 <p style="margin:0 0 14px;color:#ffffff;font-size:16px">Lūdzu, apstipriniet rezervāciju, nospiežot pogu:</p>
 <a href="${info.confirmUrl}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${BRAND};color:${INK};font-size:17px;font-weight:bold;text-decoration:none">Apstiprinu rezervāciju</a>
+<p style="margin:16px 0 0;font-size:14px"><a href="${info.confirmUrl}&amp;atcelt=1" style="color:#ffffff;text-decoration:underline">Atcelt rezervāciju</a></p>
 </td></tr></table>`
     : ""
 }

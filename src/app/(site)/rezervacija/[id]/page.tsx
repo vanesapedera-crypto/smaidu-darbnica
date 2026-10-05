@@ -13,7 +13,7 @@ import { cancelBooking, confirmBooking } from "./actions";
 // Personīga saite no e-pasta — meklētājiem to nerāda
 export const metadata = { title: "Jūsu rezervācija", robots: { index: false, follow: false } };
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; atcelt?: string }> };
 
 /**
  * Lapa, ko klients atver no apstiprinājuma e-pasta (vai WhatsApp / SMS atgādinājuma).
@@ -23,7 +23,8 @@ type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: stri
  * Nekas nenotiek, tikai atverot saiti: vajag nospiest pogu.
  */
 export default async function ClientBookingPage({ params, searchParams }: Props) {
-  const [{ id }, { k = "" }] = await Promise.all([params, searchParams]);
+  // `atcelt=1` — klients e-pastā uzspieda "Atcelt rezervāciju": atcelšanas bloks uzreiz ir atvērts (pati saite neko neatceļ)
+  const [{ id }, { k = "", atcelt }] = await Promise.all([params, searchParams]);
   const [b, programs, settings] = await Promise.all([clientBooking(id, k), getServices("private"), getSettings()]);
   const { contact } = settings;
   const phone = contact.phonePrivate;
@@ -174,7 +175,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
                       Apstiprinu rezervāciju
                     </button>
                   </form>
-                  <details className="group mt-4 text-center">
+                  <details open={atcelt === "1"} className="group mt-4 text-center">
                     <summary className="inline-block cursor-pointer list-none text-sm font-semibold text-ink-soft underline underline-offset-4 hover:text-ink [&::-webkit-details-marker]:hidden">
                       Atcelt rezervāciju
                     </summary>
