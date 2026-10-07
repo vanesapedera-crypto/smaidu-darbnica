@@ -14,7 +14,7 @@
 import { needsHeadcount } from "./bookings";
 import { calendarIcs, type CalendarEvent } from "./calendar";
 import { dateWords } from "./dates";
-import { eur, type BookingCosts } from "./pricing";
+import { VAT_NOTE, amountText, eur, type BookingCosts } from "./pricing";
 
 type Row = Record<string, unknown>;
 
@@ -50,7 +50,7 @@ const costTable = (costs: BookingCosts) => {
         `<tr><td style="padding:10px 12px 10px 0;border-bottom:1px solid ${LINE}">${escape(
           l.kind === "program" ? `Izklaides programma “${l.label}”` : l.label,
         )}${l.kind === "program" && l.note ? `<br><span style="font-size:13px;color:${SOFT}">${escape(l.note)}</span>` : ""}</td><td style="padding:10px 0;border-bottom:1px solid ${LINE};text-align:right;vertical-align:top;white-space:nowrap;font-weight:bold">${
-          l.amount === null ? "pēc vienošanās" : eur(l.amount)
+          amountText(l)
         }</td></tr>`,
     )
     .join("")}${
@@ -58,7 +58,7 @@ const costTable = (costs: BookingCosts) => {
     lines.length > 1 && costs.exact
       ? `<tr><td style="padding:12px 12px 0 0;font-size:17px;font-weight:bold">Kopā</td><td style="padding:12px 0 0;text-align:right;white-space:nowrap;font-size:17px;font-weight:bold">${eur(costs.total)}</td></tr>`
       : ""
-  }</table>`;
+  }${costs.plusVat ? `<tr><td colspan="2" style="padding:6px 0 0;font-size:13px;color:${SOFT}">${VAT_NOTE}</td></tr>` : ""}</table>`;
 };
 /** E-pasta rāmis: tumša galvene ar virsrakstu (otrais vārds dzeltenā uzlīmē), balts saturs */
 const shell = (title: string, sticker: string, body: string) =>
@@ -178,6 +178,8 @@ export async function notifyClientConfirmed(
     costs?: BookingCosts | null;
     /** Saite uz telpu nomas noteikumiem — tikai rezervācijām mūsu telpās */
     rulesUrl?: string;
+    /** Svarīgs brīdinājums no programmas apraksta (sadaļa "## Svarīgi"), piem. par kavēšanos */
+    notice?: string;
     /** Logo attēla adrese (PNG uz tumša fona — galvenei) */
     logoUrl?: string;
     /** Saite, ar kuru klients apstiprina rezervāciju (poga "Apstiprinu rezervāciju"); ja nav — pogas nav */
@@ -192,7 +194,6 @@ export async function notifyClientConfirmed(
 
   const isBusiness = row.inquiry_type === "business";
   const name = String(row.parent_name ?? "").trim().split(/\s+/)[0];
-  const price = (l: BookingCosts["lines"][number]) => (l.amount === null ? "pēc vienošanās" : eur(l.amount));
 
   // Noformējums — lapas krāsās (tumšā galvene ar logo, dzeltenie akcenti). E-pastos der tikai tabulas un stili pie elementa.
   const p = (html: string, style = "") => `<p style="margin:0 0 16px;${style}">${html}</p>`;
@@ -210,14 +211,14 @@ export async function notifyClientConfirmed(
           (l) =>
             `<tr><td style="padding:10px 12px 10px 0;border-bottom:1px solid ${LINE}">${escape(
               l.kind === "program" ? `Izklaides programma “${l.label}”` : l.label,
-            )}${l.kind === "program" && l.note ? `<br><span style="font-size:13px;color:${SOFT}">${escape(l.note)}</span>` : ""}</td><td style="padding:10px 0;border-bottom:1px solid ${LINE};text-align:right;vertical-align:top;white-space:nowrap;font-weight:bold">${price(l)}</td></tr>`,
+            )}${l.kind === "program" && l.note ? `<br><span style="font-size:13px;color:${SOFT}">${escape(l.note)}</span>` : ""}</td><td style="padding:10px 0;border-bottom:1px solid ${LINE};text-align:right;vertical-align:top;white-space:nowrap;font-weight:bold">${amountText(l)}</td></tr>`,
         )
         .join("")}${
         // Kopsummu rāda tikai tad, ja rindas ir vairākas un visas cenas ir zināmas
         costLines.length > 1 && info.costs.exact
           ? `<tr><td style="padding:12px 12px 0 0;font-size:17px;font-weight:bold">Kopā</td><td style="padding:12px 0 0;text-align:right;white-space:nowrap;font-size:17px;font-weight:bold">${eur(info.costs.total)}</td></tr>`
           : ""
-      }</table>`
+      }${info.costs.plusVat ? `<tr><td colspan="2" style="padding:6px 0 0;font-size:13px;color:${SOFT}">${VAT_NOTE}</td></tr>` : ""}</table>`
     : "";
 
   const points = [
@@ -268,13 +269,18 @@ ${
 ${costs}
 ${points ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 14px">${points}</table>` : ""}
 ${
+  info.notice
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 22px"><tr><td style="background:${BRAND};border-radius:14px;padding:16px 18px"><b>Svarīgi!</b> ${escape(info.notice)}</td></tr></table>`
+    : ""
+}
+${
   info.rulesUrl
     ? `${p("Ar telpu nomas noteikumiem varat iepazīties šeit:", "margin-bottom:10px")}
 <p style="margin:0 0 26px"><a href="${info.rulesUrl}" style="display:inline-block;padding:12px 22px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">Telpu lietošanas noteikumi →</a></p>`
     : ""
 }
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 22px"><tr><td style="border-left:4px solid ${BRAND};background:#fbf9f5;padding:14px 18px">
-Ja ${isBusiness ? "pasākuma" : "ballītes"} laikā izdosies iemūžināt kādus skaistus mirkļus, būsim ļoti pateicīgi, ja varēsiet atsūtīt mums dažas fotogrāfijas. Ar Jūsu piekrišanu tās varētu publicēt mūsu sociālo tīklu lapās, lai iedvesmotu arī citus svinēt kopā ar mums.
+Ja ${isBusiness || row.company_name ? "pasākuma" : "ballītes"} laikā izdosies iemūžināt kādus skaistus mirkļus, būsim ļoti pateicīgi, ja varēsiet atsūtīt mums dažas fotogrāfijas. Ar Jūsu piekrišanu tās varētu publicēt mūsu sociālo tīklu lapās, lai iedvesmotu arī citus svinēt kopā ar mums.
 </td></tr></table>
 ${p(`Atcelšanas gadījumā lūdzam sūtīt SMS uz tālr. <b>${escape(info.smsPhone)}</b>, norādot atcelšanas datumu un laiku.`, `font-size:14px;color:${SOFT};margin-bottom:24px`)}
 <p style="margin:0;font-size:17px;font-weight:bold">Tiekamies, lai radītu smaidu!</p>

@@ -43,9 +43,17 @@ export type Booking = {
  * Programmas, kurām bērnu skaitam nav nozīmes (cena no tā nav atkarīga) — formā bērnu skaits un vecums
  * nav obligāti, un apstiprinājumā nav lūguma paziņot par bērnu skaita izmaiņām. Tāpat ir telpu nomai bez programmas.
  */
-export const NO_HEADCOUNT_PROGRAMS = ["parsteiguma-tels"];
+export const NO_HEADCOUNT_PROGRAMS = ["parsteiguma-tels", "ziemassvetki-bernudarza"];
 /** Vai rezervācijai ir svarīgs bērnu skaits (ir izklaides programma, un tā nav izņēmumu sarakstā) */
 export const needsHeadcount = (program: string | null | undefined) => Boolean(program) && !NO_HEADCOUNT_PROGRAMS.includes(program as string);
+
+/**
+ * Programmas iestādēm (bērnudārziem) — notiek tikai izbraukumā, un tām ir sava lapa ar rezervācijas formu:
+ * cena ir bez PVN ("+ PVN"), izbraukuma piemaksu nepiemēro (ceļa izdevumi par km — kā izbraukuma ballītēm),
+ * un kopējā ballīšu rezervācijas formā tās neparādās.
+ */
+export const INSTITUTION_PROGRAMS = ["ziemassvetki-bernudarza"];
+export const isInstitutionProgram = (program: string | null | undefined) => INSTITUTION_PROGRAMS.includes(program ?? "");
 
 /** Pēc cik dienām bez klienta apstiprinājuma rezervāciju izceļ un atgādina (WhatsApp / SMS) */
 export const CONFIRM_DAYS = 3;

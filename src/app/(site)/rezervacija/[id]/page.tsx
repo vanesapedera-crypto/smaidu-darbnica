@@ -2,11 +2,11 @@ import Link from "next/link";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Smile } from "@/components/site/stage";
 import { ButtonLink, Container, buttonClass } from "@/components/site/ui";
-import { needsHeadcount } from "@/lib/bookings";
+import { isInstitutionProgram, needsHeadcount } from "@/lib/bookings";
 import { clientBooking } from "@/lib/client-booking";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { dateWords, timeLabel } from "@/lib/dates";
-import { bookingCosts, bookingPrices, eur, priceVariants } from "@/lib/pricing";
+import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur, priceVariants } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { cancelBooking, confirmBooking } from "./actions";
 
@@ -66,7 +66,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
         ["Vieta", inVenue ? `Smaidu Darbnīca, ${contact.address}, ${contact.city}` : (b!.address ?? "")],
         ["Izklaides programma", variant ?? program?.title ?? ""],
         ["Papildu iespējas", extras],
-        ["Bērnu skaits", needsHeadcount(b!.program) && b!.children_count ? String(b!.children_count) : ""],
+        ["Bērnu skaits", (needsHeadcount(b!.program) || isInstitutionProgram(b!.program)) && b!.children_count ? String(b!.children_count) : ""],
         ["Gaviļnieka vecums", needsHeadcount(b!.program) ? (b!.child_age ?? "") : ""],
       ]
     : [];
@@ -154,7 +154,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
                           {l.kind === "program" ? `Izklaides programma “${l.label}”` : l.label}
                           {l.kind === "program" && l.note && <span className="block text-xs text-ink-soft">{l.note}</span>}
                         </dt>
-                        <dd className="font-bold whitespace-nowrap">{l.amount === null ? "pēc vienošanās" : eur(l.amount)}</dd>
+                        <dd className="font-bold whitespace-nowrap">{amountText(l)}</dd>
                       </div>
                     ))}
                     {costLines.length > 1 && costs.exact && (
@@ -164,6 +164,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
                       </div>
                     )}
                   </dl>
+                  {costs.plusVat && <p className="mt-3 text-sm text-ink-soft">{VAT_NOTE}</p>}
                 </div>
               )}
 

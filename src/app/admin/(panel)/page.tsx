@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { BOOKING_STATUSES, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
+import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import StatusSelect from "@/components/admin/StatusSelect";
@@ -205,7 +205,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                                 <div key={l.label} className="flex justify-between gap-4">
                                   <dt>{l.label}</dt>
                                   <dd className="font-semibold whitespace-nowrap">
-                                    {l.amount === null ? "pēc vienošanās" : eur(l.amount)}
+                                    {amountText(l)}
                                   </dd>
                                 </div>
                               ))}
@@ -216,6 +216,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                                   <dd className="font-extrabold whitespace-nowrap">{eur(costs.total)}</dd>
                                 </div>
                               )}
+                              {costs.plusVat && <p className="text-ink-soft">{VAT_NOTE}</p>}
                             </dl>
                           </div>
                         )

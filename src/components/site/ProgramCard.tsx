@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Baby, Clock, Euro } from "lucide-react";
 import type { Service } from "@/lib/content/types";
+import { isInstitutionProgram } from "@/lib/bookings";
 import { fromPrice } from "@/lib/pricing";
 import Photo from "./Photo";
 
@@ -11,7 +12,8 @@ import Photo from "./Photo";
 export default function ProgramCard({ program, index = 0 }: { program: Service; index?: number }) {
   const price = fromPrice(program.pricing);
   const facts = [
-    { icon: Euro, label: "Cena", value: price !== null ? `no ${price} €` : "pēc vienošanās" },
+    // Programmām iestādēm cena ir bez PVN
+    { icon: Euro, label: "Cena", value: price !== null ? `no ${price} €${isInstitutionProgram(program.slug) ? " + PVN" : ""}` : "pēc vienošanās" },
     { icon: Clock, label: "Ilgums", value: program.duration.replace(/\s*\(.*\)/, "") }, // bez piezīmes iekavās
     { icon: Baby, label: "Vecums", value: program.age },
   ].filter((f) => f.value);

@@ -71,7 +71,7 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
     b.child_age && `Gaviļnieka vecums: ${b.child_age}`,
     b.participants && `Dalībnieki: ${b.participants}`,
     costs
-      ? `\nIZMAKSAS\n${costLinesText(costs).map((l) => (l.startsWith("Kopā") ? l : `• ${l}`)).join("\n")}`
+      ? `\nIZMAKSAS\n${costLinesText(costs).map((l) => (l.startsWith("Kop") ? l : `• ${l}`)).join("\n")}`
       : b.travel_cost != null && `Ceļa izdevumi: ${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`,
     b.message && `\n${b.message}`,
     b.admin_notes && `\nPiezīmes: ${b.admin_notes}`,

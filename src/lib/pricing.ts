@@ -1,3 +1,4 @@
+import { isInstitutionProgram } from "@/lib/bookings";
 import type { PriceGroup, SiteSettings } from "@/lib/content/types";
 
 /**
@@ -181,6 +182,14 @@ export function parseExtras(body: string): Extra[] {
   return extras;
 }
 
+/**
+ * Svarīgs brīdinājums klientam no programmas apraksta sadaļas "## Svarīgi" (piem. par kavēšanos) —
+ * rāda programmas lapā pie rezervācijas formas un apstiprinājuma e-pastā. Labojams panelī kopā ar aprakstu.
+ */
+export function parseNotice(body: string): string {
+  return body.match(/(?:^|\n)##\s*Svarīgi[^\n]*\n([\s\S]*?)(?=\n##\s|$)/)?.[1]?.trim() ?? "";
+}
+
 /** Mazās grupas lielākais bērnu skaits pēc programmas cenrāža (piem. "Mazā grupa (1–6 bērni)" → 6) */
 export function smallGroupMax(pricing: PriceGroup[]): number {
   const tiers = pricing.flatMap((g) => parseGroup(g).tiers);
@@ -207,13 +216,24 @@ export type CostLine = {
   kind: "program" | "extra" | "room" | "surcharge" | "travel";
   /** Programmas cenas grupa, piem. "līdz 6 bērniem" */
   note?: string;
+  /** Cena ir bez PVN — rāda kā "150 € + PVN" (programmas iestādēm) */
+  plusVat?: boolean;
 };
 export type BookingCosts = {
   lines: CostLine[];
   total: number;
   /** false, ja kāda no cenām ir "pēc vienošanās" — tad kopsummu nerāda */
   exact: boolean;
+  /** true, ja kopsummā nav iekļauts PVN (kāda rinda ir "+ PVN") — zem kopsummas rāda VAT_NOTE */
+  plusVat: boolean;
 };
+
+/** Piezīme zem kopsummas, ja cenas ir bez PVN */
+export const VAT_NOTE = "Kopsummā nav iekļauts PVN.";
+
+/** Rindas summa tekstā: "pēc vienošanās", "185 €" vai "150 € + PVN" */
+export const amountText = (l: Pick<CostLine, "amount" | "plusVat">) =>
+  l.amount === null ? "pēc vienošanās" : `${eur(l.amount)}${l.plusVat ? " + PVN" : ""}`;
 
 /** Cenas formāts: 12,6 → "12,60 €", 185 → "185 €" */
 export const eur = (n: number) =>
@@ -227,7 +247,7 @@ type CostBooking = {
   travel_cost: number | null;
   message: string | null;
 };
-type CostProgram = { title: string; pricing: PriceGroup[]; body: string };
+type CostProgram = { slug?: string; title: string; pricing: PriceGroup[]; body: string };
 
 /** Cenas grupa, kurā ietilpst bērnu skaits: "līdz 6 bērniem"; lielākai grupai — "18 bērniem" */
 function tierNote(pricing: PriceGroup[], children: number, travelling: boolean, variant?: string): string | undefined {
@@ -245,6 +265,8 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
   const travelling = b.location === "Izbraukums";
   const children = b.children_count ?? 0;
   const lines: CostLine[] = [];
+  // Programmas iestādēm (bērnudārziem): cena bez PVN un bez izbraukuma piemaksas
+  const institution = isInstitutionProgram(program?.slug);
 
   if (program) {
     // Programmas variants (ja tādi ir) — forma to pieraksta ziņojuma rindā "Izvēle: …"
@@ -255,6 +277,7 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
       label: variant ?? program.title,
       amount: estimateProgramPrice(program.pricing, children, travelling, variant),
       note: tierNote(program.pricing, children, travelling, variant),
+      ...(institution ? { plusVat: true } : {}),
     });
     // Papildu iespējas forma pieraksta ziņojuma rindā "Papildu iespējas: …" — atrodam tās pēc nosaukuma
     const chosen = b.message?.match(/Papildu iespējas:\s*(.+)/)?.[1] ?? "";
@@ -274,7 +297,7 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
     // Ja attālums nav zināms (adresi neizdevās aprēķināt), ceļa izdevumi ir "pēc vienošanās".
     if (b.travel_km == null) lines.push({ kind: "travel", label: "Ceļa izdevumi", amount: null });
     else if (b.travel_km / 2 > prices.freeTravelKm) {
-      if (prices.travelSurcharge > 0) lines.push({ kind: "surcharge", label: "Izbraukuma piemaksa", amount: prices.travelSurcharge });
+      if (prices.travelSurcharge > 0 && !institution) lines.push({ kind: "surcharge", label: "Izbraukuma piemaksa", amount: prices.travelSurcharge });
       if (b.travel_cost) lines.push({ kind: "travel", label: `Ceļa izdevumi (${b.travel_km.toLocaleString("lv-LV")} km)`, amount: b.travel_cost });
     }
   }
@@ -284,6 +307,7 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
     lines,
     total: Math.round(lines.reduce((sum, l) => sum + (l.amount ?? 0), 0) * 100) / 100,
     exact: lines.every((l) => l.amount !== null),
+    plusVat: lines.some((l) => l.plusVat && l.amount !== null),
   };
 }
 
@@ -297,10 +321,9 @@ export function costLinesText(costs: BookingCosts): string[] {
     .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind))
     .map(
       (l) =>
-        `${l.kind === "program" ? `Izklaides programma “${l.label}”${l.note ? ` (${l.note})` : ""}` : l.label} – ${
-          l.amount === null ? "pēc vienošanās" : eur(l.amount)
-        }`,
+        `${l.kind === "program" ? `Izklaides programma “${l.label}”${l.note ? ` (${l.note})` : ""}` : l.label} – ${amountText(l)}`,
     );
   if (lines.length > 1 && costs.exact) lines.push(`Kopā – ${eur(costs.total)}`);
+  if (costs.plusVat) lines.push(VAT_NOTE);
   return lines;
 }

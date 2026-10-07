@@ -173,6 +173,32 @@
       ]
     },
     {
+      "slug": "ziemassvetki-bernudarza",
+      "title": "Ziemassvētki bērnudārzā",
+      "category": "ziemassvetki",
+      "hidden": false,
+      "images": [
+        {
+          "src": "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-01.webp",
+          "width": 1206,
+          "height": 1359,
+          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAwAgCdASoOABAAA4BaJQBWAMYYxgLPTOyIwADOD6NclYij+7/QYAFJvku+HiAOuLAqCV6qMnGAtMjBNZkU+W/iZIDaztmJ6eup4Q7npGI/wOPL0ZVjEa7UxyjjXvh/rPR2wgXh92aAAA=="
+        },
+        {
+          "src": "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-02.webp",
+          "width": 1206,
+          "height": 1358,
+          "blur": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAADwAQCdASoOABAAA4BaJQBOgBkvp4bpAAAA/pqOuiOvLjAEexkgy8oirL1oAtNgqdSfuZ34XMmpb+IJI2BTHx816MLowpZNsOicFHbyW/SFEujLYAA="
+        },
+        {
+          "src": "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-03.webp",
+          "width": 1054,
+          "height": 1474,
+          "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwAgCdASoLABAAA4BaJZgCdAYt9bEwcKcpYAD9xwr6pAfxj4g7bbOp1frqIQBixBHXtDX+HVfF2Yxkhrdk0D3cRLImFNcQV/9E5yi3xUubkx0U476K+osRqKG5O5To5aKZBE8nOQF/OjUdGGfF+5iQ3kQgQe40AAA="
+        }
+      ]
+    },
+    {
       "slug": "tukuma-rozu-svetki-2025",
       "title": "Tukuma Rožu svētki 2025",
       "category": "pilsetu-svetki",
@@ -823,6 +849,12 @@
           "width": 1280,
           "height": 1920,
           "blur": "data:image/webp;base64,UklGRlQAAABXRUJQVlA4IEgAAADwAQCdASoLABAAA4BaJQAAXa0GYJlkk0gA/vYQlN2ZT8hlXWnJntOAugMls9CZcE9H3bHTMRFz87/pBCAQ/UrVhNGlgq5uAAA="
+        },
+        {
+          "src": "/media/wednesday-ballite/wednesday-ballite-14.webp",
+          "width": 998,
+          "height": 1500,
+          "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAAAQAgCdASoLABAAA4BaJZACdADp6Hdek4oAAPr+tq/3XfkQuddGKbTRZKmuYpeZrDIaw+/hw/UStBQM3bOx6SaN4bvWeaqZkLQcgSyawlQpAvcsSoibsDAA"
         }
       ]
     },

@@ -9,6 +9,7 @@ import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import type { PriceGroup } from "@/lib/content/types";
 import {
+  VAT_NOTE,
   VENUE_SLOTS,
   estimateProgramPrice,
   eur,
@@ -36,6 +37,7 @@ const LOCATIONS = { studio: "Smaidu Darbnīcā", travel: "Izbraukums" } as const
 const NO_PROGRAM = "none";
 
 const initial = {
+  companyName: "",
   parentName: "",
   phone: "",
   email: "",
@@ -55,18 +57,27 @@ const initial = {
  * Bērnu ballītes rezervācijas forma (privātpersonām).
  * Pārveidota no iepriekšējās versijas: tie paši lauki un `bookings` tabula,
  * bet cena tiek aprēķināta no programmas cenrāža (lib/pricing.ts).
+ *
+ * `institution` — forma vienai noteiktai izbraukuma programmai iestādei (piem. "Ziemassvētki bērnudārzā"):
+ * programma (`defaultProgram`) un norises vieta nav jāizvēlas, papildus jānorāda iestādes nosaukums,
+ * cena ir bez PVN un izbraukuma piemaksu nepiemēro (tāpat rēķina serveris — sk. bookingCosts).
  */
 export default function BookingForm({
   programs,
   prices,
   defaultProgram = "",
+  institution,
 }: {
   programs: Program[];
   /** Telpu nomas un izbraukuma cenas no paneļa */
   prices: BookingPrices;
   defaultProgram?: string;
+  /** Iestādes forma: lauku nosaukumi (piem. "Bērnudārza nosaukums", "Bērnudārza adrese") */
+  institution?: { nameLabel: string; addressLabel: string };
 }) {
-  const [form, setForm] = useState({ ...initial, program: defaultProgram });
+  // Sākuma stāvoklis: iestādes formā programma un izbraukums ir noteikti jau iepriekš
+  const start = { ...initial, program: defaultProgram, ...(institution ? { location: LOCATIONS.travel as string } : {}) };
+  const [form, setForm] = useState(start);
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
   const [today] = useState(() => new Date().toISOString().slice(0, 10));
@@ -85,6 +96,8 @@ export default function BookingForm({
   const program = programs.find((p) => p.slug === form.program);
   // Bērnu skaits un vecums ir obligāti tikai programmām, kur tas ietekmē cenu (ne telpu nomai vien, ne pārsteiguma tēlam)
   const headcount = needsHeadcount(program?.slug);
+  // Cena bez PVN — rāda kā "150 € + PVN" (iestādes formā)
+  const vat = institution ? " + PVN" : "";
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant = variants.find((g) => g.title === variantChoice)?.title ?? variants[0]?.title;
@@ -129,7 +142,8 @@ export default function BookingForm({
   // Izbraukuma piemaksa — ballītēm tālāk par 10 km no Smaidu Darbnīcas (tāpat kā ceļa izdevumi).
   // Par to informējam tikai tad, kad adrese ir aprēķināta un ir tālāk (sk. ceļa izdevumu rezultātu pie adreses).
   const far = Boolean(travelQuote && travelQuote.oneWayKm > prices.freeTravelKm);
-  const surcharge = far ? prices.travelSurcharge : 0;
+  // Iestādēm izbraukuma piemaksu nepiemēro — tikai ceļa izdevumus par km
+  const surcharge = far && !institution ? prices.travelSurcharge : 0;
   const total = Math.round(((programPrice ?? 0) + extrasTotal + (roomPrice ?? 0) + surcharge + (travelQuote?.cost ?? 0)) * 100) / 100;
   // Cenas paskaidrojums pie papildu iespējas
   const extraHint = (x: Extra) =>
@@ -179,10 +193,11 @@ export default function BookingForm({
       missing.program = inStudio
         ? "Izvēlieties izklaides programmu vai “Nebūs nepieciešama”."
         : "Izbraukuma ballītei izvēlieties izklaides programmu.";
-    if (!inStudio && !form.address.trim()) missing.address = "Norādiet ballītes adresi.";
+    if (institution && !form.companyName.trim()) missing.companyName = "Norādiet nosaukumu.";
+    if (!inStudio && !form.address.trim()) missing.address = institution ? "Norādiet adresi." : "Norādiet ballītes adresi.";
     if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
-    if (!form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : "Norādiet ballītes sākuma laiku.";
-    if (headcount && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
+    if (!form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : institution ? "Norādiet sākuma laiku." : "Norādiet ballītes sākuma laiku.";
+    if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
     if (headcount && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
     if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
@@ -227,7 +242,7 @@ export default function BookingForm({
       const data = await res.json();
       if (data.success) {
         setState("sent");
-        setForm({ ...initial, program: defaultProgram });
+        setForm(start);
         setTravel({ status: "idle" });
         setExtras([]);
         setVariantChoice("");
@@ -295,10 +310,11 @@ export default function BookingForm({
       <Honeypot value={website} onChange={setWebsite} />
 
       <div className="space-y-6">
-        {/* 1. solis — izklaides programma (vai "Nebūs nepieciešama", ja vajag tikai telpas) */}
+        {/* 1. solis — izklaides programma (vai "Nebūs nepieciešama", ja vajag tikai telpas); iestādes formā — tikai varianta izvēle */}
         <fieldset className={step}>
-          {stepHead("01", "Izklaides programma")}
+          {stepHead("01", institution ? "Programma" : "Izklaides programma")}
           <div className="clear-both grid gap-5">
+            {!institution && (
             <Field id="program" label="Izklaides programma" required error={errors.program}>
               <select
                 {...fieldProps("program")}
@@ -319,6 +335,7 @@ export default function BookingForm({
                 ))}
               </select>
             </Field>
+            )}
 
             {/* Izvēlētās programmas cenrādis (ja ir atsevišķas izbraukuma cenas — tikai izvēlētajai norises vietai) */}
             {/* Programmai ar variantiem (piem. sejas apgleznošana ar vai bez tetovējumiem) cenrādis ir izvēle: */}
@@ -352,7 +369,7 @@ export default function BookingForm({
                           {g.options.map((o) => (
                             <span key={o.label} className="flex justify-between gap-3">
                               <span className={active ? "text-ink/75" : "text-ink-soft"}>{o.label}</span>
-                              <span className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : eur(o.price)}</span>
+                              <span className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : `${eur(o.price)}${vat}`}</span>
                             </span>
                           ))}
                         </span>
@@ -423,6 +440,12 @@ export default function BookingForm({
         <fieldset className={step}>
           {stepHead("02", "Vieta un laiks")}
           <div className="clear-both grid gap-5 sm:grid-cols-2">
+            {institution && (
+              <Field id="companyName" label={institution.nameLabel} required error={errors.companyName} className="sm:col-span-2">
+                <input {...fieldProps("companyName")} autoComplete="organization" />
+              </Field>
+            )}
+            {!institution && (
             <div className="space-y-2 sm:col-span-2">
               <p className="text-sm font-bold" id="location-label">
                 Norises vieta<span className="ml-0.5 text-destructive" aria-hidden> *</span>
@@ -463,6 +486,7 @@ export default function BookingForm({
                 })}
               </div>
             </div>
+            )}
 
             {inStudio ? (
               <p className="rounded-2xl bg-surface p-4 text-sm leading-6 sm:col-span-2">
@@ -470,7 +494,7 @@ export default function BookingForm({
               </p>
             ) : (
               <>
-                <Field id="address" label="Ballītes adrese" required error={errors.address} className="sm:col-span-2">
+                <Field id="address" label={institution?.addressLabel ?? "Ballītes adrese"} required error={errors.address} className="sm:col-span-2">
                   <div className="flex gap-2">
                     <input
                       {...fieldProps("address")}
@@ -504,7 +528,9 @@ export default function BookingForm({
                           {travel.quote.oneWayKm <= prices.freeTravelKm ? (
                             <p>
                               <strong>Ceļa izdevumi: 0 €</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km vienā virzienā.
-                              Adresēm līdz {prices.freeTravelKm} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.
+                              {institution
+                                ? `Adresēm līdz ${prices.freeTravelKm} km ceļa izdevumus nerēķinām.`
+                                : `Adresēm līdz ${prices.freeTravelKm} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.`}
                             </p>
                           ) : (
                             <>
@@ -513,8 +539,9 @@ export default function BookingForm({
                                 vienā virzienā, {travel.quote.roundTripKm.toLocaleString("lv-LV")} km turp un atpakaļ.
                               </p>
                               <p className="mt-1">
-                                Izbraukuma ballītēm tālāk par {prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīta
-                                izbraukuma piemaksa {eur(prices.travelSurcharge)} un ceļa izdevumi — {eur(prices.travelRate)} par km turp un atpakaļ.
+                                {institution
+                                  ? `Adresēm tālāk par ${prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīti ceļa izdevumi — ${eur(prices.travelRate)} par km turp un atpakaļ.`
+                                  : `Izbraukuma ballītēm tālāk par ${prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīta izbraukuma piemaksa ${eur(prices.travelSurcharge)} un ceļa izdevumi — ${eur(prices.travelRate)} par km turp un atpakaļ.`}
                               </p>
                             </>
                           )}
@@ -587,12 +614,20 @@ export default function BookingForm({
               </div>
             )}
 
-            <Field id="childrenCount" label="Bērnu skaits" required={headcount} error={errors.childrenCount}>
+            <Field
+              id="childrenCount"
+              label="Bērnu skaits"
+              required={headcount || Boolean(institution)}
+              error={errors.childrenCount}
+              className={institution ? "sm:col-span-2" : undefined}
+            >
               <input {...fieldProps("childrenCount")} type="number" inputMode="numeric" min={1} />
             </Field>
-            <Field id="childAge" label="Gaviļnieka vecums" required={headcount} error={errors.childAge}>
-              <input {...fieldProps("childAge")} />
-            </Field>
+            {!institution && (
+              <Field id="childAge" label="Gaviļnieka vecums" required={headcount} error={errors.childAge}>
+                <input {...fieldProps("childAge")} />
+              </Field>
+            )}
           </div>
         </fieldset>
 
@@ -600,7 +635,7 @@ export default function BookingForm({
         <fieldset className={step}>
           {stepHead("03", "Kontakti")}
           <div className="clear-both grid gap-5 sm:grid-cols-2">
-            <Field id="parentName" label="Vārds" required error={errors.parentName}>
+            <Field id="parentName" label={institution ? "Kontaktpersona" : "Vārds"} required error={errors.parentName}>
               <input {...fieldProps("parentName")} autoComplete="name" required />
             </Field>
             <Field id="phone" label="Telefons" required error={errors.phone}>
@@ -618,7 +653,7 @@ export default function BookingForm({
               <input {...fieldProps("email")} type="email" autoComplete="email" required />
             </Field>
             <Field id="message" label="Papildu informācija" error={errors.message} className="sm:col-span-2">
-              <textarea {...fieldProps("message")} rows={4} placeholder="Pastāstiet par ballīti…" />
+              <textarea {...fieldProps("message")} rows={4} placeholder={institution ? undefined : "Pastāstiet par ballīti…"} />
             </Field>
           </div>
         </fieldset>
@@ -648,6 +683,7 @@ export default function BookingForm({
           <dl className="mt-5 space-y-2 text-sm">
             {dateLabel && ticketRow("Datums", dateLabel)}
             {timeLabel && ticketRow("Laiks", timeLabel)}
+            {institution && form.companyName.trim() && ticketRow(institution.nameLabel.split(" ")[0], form.companyName.trim())}
             {placeLabel && ticketRow("Vieta", placeLabel)}
             {form.childrenCount && ticketRow("Bērnu skaits", form.childrenCount)}
           </dl>
@@ -662,7 +698,7 @@ export default function BookingForm({
             <p className="text-xs font-extrabold tracking-[0.14em] text-white/60 uppercase">Izmaksas</p>
             {hasCosts ? (
               <dl className="mt-3 space-y-2 text-sm">
-                {program && ticketRow(variant ?? program.title, programPrice === null ? "pēc vienošanās" : eur(programPrice))}
+                {program && ticketRow(variant ?? program.title, programPrice === null ? "pēc vienošanās" : `${eur(programPrice)}${vat}`)}
                 {chosenExtras.map((x) => (
                   <div key={x.label} className="flex justify-between gap-4">
                     <dt className="text-white/60">{x.label}</dt>
@@ -680,8 +716,9 @@ export default function BookingForm({
             ) : (
               <p className="mt-3 text-sm leading-6 text-white/60">Izvēlieties programmu un datumu — šeit parādīsies izmaksas.</p>
             )}
+            {vat && hasCosts && <p className="mt-3 text-sm text-white/60">{VAT_NOTE}</p>}
             {!inStudio && !travelQuote && hasCosts && (
-              <p className="mt-3 text-sm text-white/60">Ievadiet ballītes adresi, lai aprēķinātu ceļa izdevumus.</p>
+              <p className="mt-3 text-sm text-white/60">Ievadiet {institution ? "adresi" : "ballītes adresi"}, lai aprēķinātu ceļa izdevumus.</p>
             )}
           </div>
 
@@ -734,7 +771,7 @@ export default function BookingForm({
             className={cn(buttonClass("primary", "lg"), "mt-6 w-full disabled:opacity-60")}
           >
             {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-            {state === "sending" ? "Sūta…" : form.program === NO_PROGRAM ? "Rezervēt telpas" : "Pieteikt ballīti"}
+            {state === "sending" ? "Sūta…" : institution ? "Rezervēt" : form.program === NO_PROGRAM ? "Rezervēt telpas" : "Pieteikt ballīti"}
           </button>
         </div>
       </aside>

@@ -158,12 +158,13 @@
     text-wrap: balance;
   }
   /* Vārds tumšā "uzlīmē" dzeltenā virsrakstā */
+  /* Augšā — vieta garumzīmēm (Ā, Ē, Ī, Ū): citādi tās izlien ārpus uzlīmes un saplūst ar fonu */
   .sticker {
-    @apply inline-block rounded-[0.18em] bg-ink px-[0.18em] pb-[0.04em] text-brand;
+    @apply inline-block rounded-[0.18em] bg-ink px-[0.18em] pt-[0.14em] pb-[0.04em] text-brand;
     transform: rotate(-1.5deg);
   }
   .sticker-light {
-    @apply inline-block rounded-[0.18em] bg-brand px-[0.18em] pb-[0.04em] text-ink;
+    @apply inline-block rounded-[0.18em] bg-brand px-[0.18em] pt-[0.14em] pb-[0.04em] text-ink;
     transform: rotate(-1.5deg);
   }
 

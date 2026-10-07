@@ -10,7 +10,7 @@ const range = (folder: string, prefix: string, count: number) =>
   Array.from({ length: count }, (_, i) => `/media/${folder}/${prefix}-${String(i + 1).padStart(2, "0")}.webp`);
 
 export const SERVICE_PHOTOS: Record<string, string[]> = {
-  "pasakumu-organizesana": range("pasakumu-organizesana", "pasakums", 15),
+  "pasakumu-organizesana": range("pasakumu-organizesana", "pasakums", 22),
   "sporta-speles": range("uznemumiem-sporta-speles", "sporta-speles", 8),
   "radosas-darbnicas": range("uznemumiem-radosas-darbnicas", "radosas-darbnicas", 10),
   "mazulu-zona": range("uznemumiem-mazulu-zona", "mazulu-zona", 10),
@@ -81,6 +81,8 @@ export const HERO_MOBILE: Record<string, string> = {
 /** Kura bildes daļa paliek redzama galvenē, ja bilde neietilpst vesela (CSS object-position) */
 export const HERO_POSITION: Record<string, string> = {
   "/media/hero/parsteiguma-tels-wide-v2.webp": "100% 50%",
+  // Ziemassvētki bērnudārzā: stāva bilde — rāda augšdaļu ar sejām
+  "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-03.webp": "50% 22%",
 };
 
 /** Pārsteiguma tēli (programmas "Pārsteiguma tēls" lapā): nosaukums + bilde no mapes public/media/parsteiguma-tels */

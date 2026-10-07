@@ -6,7 +6,7 @@ import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientConfirmed, sendCalendarInvite } from "@/lib/notify";
 import { whenLabel } from "@/lib/dates";
-import { bookingCosts, bookingPrices } from "@/lib/pricing";
+import { bookingCosts, bookingPrices, parseNotice } from "@/lib/pricing";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
 /**
@@ -46,6 +46,7 @@ async function onConfirmed(b: Booking, host: string | null) {
         replyTo: contact.emailPrivate,
         costs,
         rulesUrl: inVenue ? absoluteUrl("/telpu-noma#noteikumi") : undefined,
+        notice: service ? parseNotice(service.body) || undefined : undefined,
         logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
         // Poga "Apstiprinu rezervāciju" (ja datubāzē jau ir klienta apstiprinājuma lauki)
         confirmUrl: confirm ? absoluteUrl(confirm) : undefined,

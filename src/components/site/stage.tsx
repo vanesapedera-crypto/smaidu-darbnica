@@ -160,7 +160,8 @@ export function StageHero({
             </nav>
           )}
           {eyebrow && <p className="mb-5 text-sm font-extrabold tracking-[0.14em] text-brand uppercase">{eyebrow}</p>}
-          <Tag className="display text-[2.35rem] sm:text-6xl lg:text-7xl xl:text-[5.2rem]">
+          {/* Telefonā burtu izmērs seko ekrāna platumam (9vw), lai gari vārdi ("Ziemassvētku", "uzņēmumiem") ietilpst vienā rindā */}
+          <Tag className="display text-[length:min(2.35rem,9vw)] sm:text-6xl lg:text-7xl xl:text-[5.2rem]">
             {title}
             {highlight && (
               <>
