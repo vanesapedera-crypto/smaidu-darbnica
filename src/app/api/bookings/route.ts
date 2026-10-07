@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { bookedSlots } from "@/lib/availability";
-import { needsHeadcount } from "@/lib/bookings";
+import { FULLY_BOOKED_TEXT, isFullyBooked, needsHeadcount } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
 import { timeLabel } from "@/lib/dates";
@@ -115,6 +115,9 @@ export async function POST(request: Request) {
     need("childrenCount", !needsHeadcount(row.program) || row.children_count, "Norādiet bērnu skaitu.");
     need("childAge", !needsHeadcount(row.program) || row.child_age, "Norādiet gaviļnieka vecumu.");
   }
+
+  // Programmai pilnībā aizņemts datums (sk. FULLY_BOOKED_DATES) — forma to jau neļauj, šī ir pārbaude serverī
+  if (!isBusiness && isFullyBooked(row.program, row.event_date)) v.errors.eventDate = FULLY_BOOKED_TEXT;
 
   // Telpu noma: laiku, kas šajā datumā jau aizņemts, rezervēt nevar (forma to jau nerāda, šī ir pārbaude serverī)
   if (!isBusiness && row.location !== "Izbraukums" && row.event_date && row.event_time) {

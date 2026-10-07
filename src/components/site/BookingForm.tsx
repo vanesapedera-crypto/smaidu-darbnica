@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Car, CircleCheck, Clock, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
-import { needsHeadcount } from "@/lib/bookings";
+import { FULLY_BOOKED_TEXT, fullyBookedDates, isFullyBooked, needsHeadcount } from "@/lib/bookings";
+import { dateWords } from "@/lib/dates";
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import type { PriceGroup } from "@/lib/content/types";
@@ -99,6 +100,9 @@ export default function BookingForm({
   const program = programs.find((p) => p.slug === form.program);
   // Bērnu skaits un vecums ir obligāti tikai programmām, kur tas ietekmē cenu (ne telpu nomai vien, ne pārsteiguma tēlam)
   const headcount = needsHeadcount(program?.slug);
+  // Programmai pilnībā aizņemtie datumi (sk. FULLY_BOOKED_DATES): rezervēt nevar; zem datuma lauka rāda, kuri tie ir
+  const dateBooked = isFullyBooked(program?.slug, form.eventDate);
+  const bookedDates = fullyBookedDates(program?.slug).filter((d) => d >= today);
   // Cena bez PVN — rāda kā "150 € + PVN" (iestādes formā)
   const vat = institution ? " + PVN" : "";
   // Varianti: pēc noklusējuma izvēlēts pirmais
@@ -199,6 +203,7 @@ export default function BookingForm({
     if (institution && !form.companyName.trim()) missing.companyName = "Norādiet nosaukumu.";
     if (!inStudio && !form.address.trim()) missing.address = institution ? "Norādiet adresi." : "Norādiet ballītes adresi.";
     if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
+    else if (dateBooked) missing.eventDate = FULLY_BOOKED_TEXT;
     if (!form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : institution ? "Norādiet sākuma laiku." : "Norādiet ballītes sākuma laiku.";
     if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
     if (headcount && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
@@ -557,8 +562,15 @@ export default function BookingForm({
               </>
             )}
 
-            <Field id="eventDate" label="Vēlamais datums" required error={errors.eventDate} className={inStudio ? "sm:col-span-2" : undefined}>
-              <input {...fieldProps("eventDate")} type="date" min={today} />
+            <Field
+              id="eventDate"
+              label="Vēlamais datums"
+              required
+              error={dateBooked ? FULLY_BOOKED_TEXT : errors.eventDate}
+              hint={bookedDates.length > 0 ? `Aizņemts: ${bookedDates.map((d) => dateWords(d)).join(", ")}.` : undefined}
+              className={inStudio ? "sm:col-span-2" : undefined}
+            >
+              <input {...fieldProps("eventDate")} type="date" min={today} aria-invalid={dateBooked || errors.eventDate ? true : undefined} />
             </Field>
             {/* Izbraukuma ballītei — brīvi izvēlams sākuma laiks (telpām zemāk ir trīs laika posmi) */}
             {!inStudio && (
@@ -785,7 +797,7 @@ export default function BookingForm({
 
           <button
             type="submit"
-            disabled={state === "sending" || timeTaken}
+            disabled={state === "sending" || timeTaken || dateBooked}
             className={cn(buttonClass("primary", "lg"), "mt-6 w-full disabled:opacity-60")}
           >
             {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}

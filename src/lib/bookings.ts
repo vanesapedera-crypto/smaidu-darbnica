@@ -55,6 +55,19 @@ export const needsHeadcount = (program: string | null | undefined) => Boolean(pr
 export const INSTITUTION_PROGRAMS = ["ziemassvetki-bernudarza"];
 export const isInstitutionProgram = (program: string | null | undefined) => INSTITUTION_PROGRAMS.includes(program ?? "");
 
+/**
+ * Pilnībā aizņemtie datumi pa programmām (YYYY-MM-DD): šajos datumos programmu rezervēt nevar —
+ * forma to neļauj, un serveris pieteikumu noraida. Pārējās programmas un telpu nomu tas neietekmē.
+ * Jaunu datumu pievieno šeit.
+ */
+export const FULLY_BOOKED_DATES: Record<string, string[]> = {
+  "ziemassvetki-bernudarza": ["2026-12-11", "2026-12-18"],
+};
+export const fullyBookedDates = (program: string | null | undefined) => FULLY_BOOKED_DATES[program ?? ""] ?? [];
+export const isFullyBooked = (program: string | null | undefined, date: string | null | undefined) =>
+  Boolean(date) && fullyBookedDates(program).includes((date as string).slice(0, 10));
+export const FULLY_BOOKED_TEXT = "Šis datums ir pilnībā aizņemts — lūdzu, izvēlieties citu datumu.";
+
 /** Pēc cik dienām bez klienta apstiprinājuma rezervāciju izceļ un atgādina (WhatsApp / SMS) */
 export const CONFIRM_DAYS = 3;
 
