@@ -86,12 +86,21 @@ export const getGallery = cache(async (): Promise<GalleryImage[]> =>
   ),
 );
 
-/** Attēli konkrētiem albumiem (piem. pakalpojuma lapas galerijai). */
+/**
+ * Attēli konkrētiem albumiem (piem. pakalpojuma lapas galerijai).
+ * Ja datubāzes bilžu sarakstā albumam nav nevienas bildes (piem. albums pievienots projektā vēlāk,
+ * nekā datubāzē ievietots saraksts), ņem projekta bilžu sarakstu (src/data/media.json) —
+ * citādi jauns albums lapā nebūtu redzams.
+ */
 export async function getAlbumImages(albums: string[], limit = 12): Promise<GalleryImage[]> {
   if (albums.length === 0) return [];
   const gallery = await getGallery();
+  const local = manifestGallery();
   // Ņem pa kārtai no katra albuma, lai galerijā būtu dažādība
-  const lists = albums.map((a) => gallery.filter((img) => img.album === a));
+  const lists = albums.map((a) => {
+    const stored = gallery.filter((img) => img.album === a);
+    return stored.length > 0 ? stored : local.filter((img) => img.album === a);
+  });
   const result: GalleryImage[] = [];
   for (let i = 0; result.length < limit && lists.some((l) => l[i]); i++) {
     for (const list of lists) if (list[i] && result.length < limit) result.push(list[i]);
@@ -123,6 +132,7 @@ export const getPageSeo = cache(async (path: string): Promise<PageSeo | undefine
 /** Attēli sadaļas fotolentei pēc kategorijām — pa kārtai no katra albuma, lai lente būtu daudzveidīga. */
 export async function getCategoryImages(categories: string[], limit = 16): Promise<GalleryImage[]> {
   const gallery = await getGallery();
-  const albums = [...new Set(gallery.filter((g) => categories.includes(g.category)).map((g) => g.album))];
+  // Albumi no datubāzes saraksta un no projekta saraksta (sk. getAlbumImages)
+  const albums = [...new Set([...gallery, ...manifestGallery()].filter((g) => categories.includes(g.category)).map((g) => g.album))];
   return getAlbumImages(albums, limit);
 }

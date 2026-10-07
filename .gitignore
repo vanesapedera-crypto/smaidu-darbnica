@@ -53,3 +53,6 @@ next-env.d.ts
 
 # Vienreizējs imports no Google kalendāra (satur klientu vārdus)
 /supabase/PALAIST-KALENDARS.sql
+
+# no projekta izņemtās bildes, kuras lapa nerāda (rezerves kopija uz datora)
+/_neizmantotas-bildes/

@@ -12,14 +12,6 @@ export function generateMetadata() {
   });
 }
 
-/**
- * Izrāžu bloka izkārtojums (sk. VideoShowcase):
- *  "kino" — tumšs fons, liels video + apraksts zem tā;
- *  "kartites" — trīs kartītes blakus;
- *  "atskanotajs" — viens liels atskaņotājs + izrāžu saraksts.
- */
-const LAYOUT = "atskanotajs" as const;
-
 export default async function ShowsPage() {
-  return <ShowsView variant={LAYOUT} />;
+  return <ShowsView />;
 }

@@ -62,6 +62,6 @@ export default function RichText({ text, className }: { text: string; className?
 
 function inline(text: string): React.ReactNode {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? <strong key={i} className="text-ink in-[.prose-light]:text-white">{part.slice(2, -2)}</strong> : part,
+    part.startsWith("**") && part.endsWith("**") ? <strong key={i} className="text-ink">{part.slice(2, -2)}</strong> : part,
   );
 }

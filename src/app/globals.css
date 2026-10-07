@@ -206,13 +206,6 @@
   .prose-sd ul:has(> li:nth-child(8)) > li {
     @apply break-inside-avoid;
   }
-  /* Uz tumša fona */
-  .prose-light {
-    @apply text-white/75;
-  }
-  .prose-light strong {
-    @apply text-white;
-  }
   /* Kartītēs — mazāks teksts */
   .prose-compact {
     @apply text-base leading-7;
@@ -303,18 +296,6 @@
   }
   .animate-hero-zoom {
     animation: hero-zoom 2.4s var(--ease-out-soft) both;
-  }
-
-  @keyframes marquee {
-    to {
-      transform: translateX(-50%);
-    }
-  }
-  .animate-marquee {
-    animation: marquee 40s linear infinite;
-  }
-  .animate-marquee:hover {
-    animation-play-state: paused;
   }
 
   /* Fotokartītes nedaudz "atlec", uzbraucot ar peli */

@@ -1,13 +1,13 @@
 import PhotoReel from "./PhotoReel";
-import VideoShowcase, { type ShowcaseVariant } from "./VideoShowcase";
+import VideoShowcase from "./VideoShowcase";
 import { StageHeading, StageHero } from "./stage";
 import { ButtonLink, Container } from "./ui";
 import { SHOW_PHOTOS } from "@/lib/content/defaults/service-media";
 import { mediaInfo } from "@/lib/content/media";
 import { getServices, getSettings } from "@/lib/content/queries";
 
-/** Lapas saturs (atsevišķi, lai priekšskatījumā var salīdzināt izkārtojumus) */
-export default async function ShowsView({ variant }: { variant: ShowcaseVariant }) {
+/** Lapas "Izrādes" saturs: galvene, izrāžu atskaņotājs un bilžu karuselis */
+export default async function ShowsView() {
   const [{ shows }, services] = await Promise.all([getSettings(), getServices("business")]);
   // Bilžu karuselis lapas apakšā — bilžu saraksts no paneļa (Izrādes → "Bilžu karuselis").
   // Platums un augstums (bildes proporcijai): zināmajām bildēm no service-media.ts, pārējām no bilžu saraksta.
@@ -46,25 +46,16 @@ export default async function ShowsView({ variant }: { variant: ShowcaseVariant 
       </StageHero>
 
       {shows.videos.length > 0 && (
-        // "Kino" izkārtojumam — tumšs fons
-        <section
-          id="video"
-          className={`scroll-mt-20 py-20 md:py-28 ${variant === "kino" ? "bg-ink text-white" : variant === "kartites" ? "bg-surface" : ""}`}
-        >
+        <section id="video" className="scroll-mt-20 py-20 md:py-28">
           <Container>
             <StageHeading
               eyebrow={`${shows.videos.length} izrādes`}
               title={shows.videosTitle}
               highlight="izrādes"
               text="Noskatieties fragmentus un izvēlieties savam pasākumam piemērotāko."
-              light={variant === "kino"}
               className="mb-14 md:mb-20"
             />
-            <VideoShowcase
-              variant={variant}
-              videos={shows.videos}
-              bookHref={shows.videos.map((v) => bookHref(v.title))}
-            />
+            <VideoShowcase videos={shows.videos} bookHref={shows.videos.map((v) => bookHref(v.title))} />
           </Container>
         </section>
       )}

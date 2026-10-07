@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Photo from "./Photo";
-import { Smile } from "./stage";
 
 /*
  * Ritināšanas un 3D efektu bloki "Skatuves" dizainā. Visi ir servera komponentes —
@@ -29,109 +28,6 @@ export function LineTitle({
         </span>
       ))}
     </Tag>
-  );
-}
-
-/**
- * Teksts, kura vārdi "iedegas" pa vienam, ritinot lapu (sadaļa piesprausta ekrānā).
- * Katra vārda necaurspīdīgums = f(--p, vārda numurs). `highlight` vārdi ir dzelteni.
- */
-export function WordReveal({ text, highlight = [], kicker }: { text: string; highlight?: string[]; kicker?: string }) {
-  const words = text.split(/\s+/);
-  const n = words.length;
-  return (
-    <section data-scene className="relative h-[220vh] bg-ink text-white">
-      <div className="sticky top-0 flex h-svh items-center overflow-hidden">
-        <Smile className="absolute -right-[8%] -bottom-[12%] w-[40%] max-w-[560px] text-white/[0.03]" />
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-          {kicker && <p className="mb-8 text-sm font-extrabold tracking-[0.14em] text-brand uppercase">{kicker}</p>}
-          <p className="display text-[1.9rem] leading-[1.15] sm:text-5xl md:text-6xl lg:text-[4.2rem]">
-            {words.map((w, i) => (
-              <span
-                key={i}
-                className={highlight.includes(w.replace(/[.,—]/g, "")) ? "text-brand" : undefined}
-                style={{
-                  // Vārds sāk iedegties, kad progress sasniedz tā vietu tekstā
-                  opacity: `clamp(0.12, calc(var(--p, 0) * ${(n * 1.3).toFixed(1)} - ${i} + 1), 1)`,
-                }}
-              >
-                {w}{" "}
-              </span>
-            ))}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
- * 3D fotogrāfiju gredzens: fotokartītes izvietotas pa cilindru, kas griežas, ritinot lapu.
- * Sadaļa ir piesprausta, kamēr gredzens apgriežas.
- */
-export function PhotoRing({
-  photos,
-  kicker,
-  title,
-  highlight,
-  children,
-}: {
-  photos: string[];
-  kicker?: string;
-  title: string;
-  highlight?: string;
-  children?: React.ReactNode;
-}) {
-  const n = photos.length;
-  return (
-    <section data-scene className="relative h-[300vh] bg-surface">
-      <div className="sticky top-0 h-svh overflow-hidden [perspective:1600px]">
-        <Smile className="absolute -top-[10%] -left-[6%] w-[40%] max-w-[560px] text-ink/[0.06]" />
-        {/* Gredzens — rādiuss (--r) aprēķināts no kartīšu platuma un skaita */}
-        <div
-          aria-hidden
-          className="absolute top-[62%] left-1/2 z-0 [--card:160px] [transform-style:preserve-3d] sm:[--card:220px] lg:[--card:260px]"
-          style={
-            {
-              "--r": `calc(var(--card) * ${((n * 1.2) / (2 * Math.PI)).toFixed(3)})`,
-              transform: "translateZ(calc(var(--r) * -1)) rotateX(-7deg) rotateY(calc(var(--p, 0) * -300deg - 20deg))",
-            } as React.CSSProperties
-          }
-        >
-          {photos.map((src, i) => (
-            <div
-              key={src}
-              className="absolute top-0 left-0 w-(--card) rounded-[20px] bg-white p-2 shadow-[0_30px_50px_-24px_rgba(31,41,55,0.55)] [backface-visibility:hidden]"
-              style={{
-                // Centrē kartīti uz gredzena ass (augstums ≈ platums × 4/3)
-                marginLeft: "calc(var(--card) / -2)",
-                marginTop: "calc(var(--card) * -2 / 3)",
-                transform: `rotateY(${((360 / n) * i).toFixed(2)}deg) translateZ(var(--r))`,
-              }}
-            >
-              <div className="relative aspect-[3/4] overflow-hidden rounded-[14px] bg-surface">
-                <Photo src={src} alt="" fill sizes="260px" className="object-cover" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Virsraksts virs gredzena */}
-        <div className="pointer-events-none absolute inset-x-0 top-[11%] z-20 px-4 text-center md:top-[12%]">
-          {kicker && <p className="text-sm font-extrabold tracking-[0.14em] uppercase">{kicker}</p>}
-          <h2 className="display mt-4 text-3xl sm:text-5xl lg:text-6xl">
-            {title}
-            {highlight && (
-              <>
-                {" "}
-                <span className="sticker">{highlight}</span>
-              </>
-            )}
-          </h2>
-          {children}
-        </div>
-      </div>
-    </section>
   );
 }
 

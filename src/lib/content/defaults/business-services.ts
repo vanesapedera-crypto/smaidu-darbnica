@@ -40,7 +40,7 @@ const drafts: Draft[] = [
     duration: "", // saskaņojam ar klientu
     participants: "", // saskaņojam ar klientu
     heroImage: "/media/speles/jenga.webp",
-    albums: ["lielformata-speles", "vimbu-svetki-2026", "bauska-taste-2024"],
+    albums: ["lielformata-speles"],
     seasons: ["visu-gadu"],
     sort: 10,
   },
@@ -96,7 +96,7 @@ const drafts: Draft[] = [
     duration: "", // saskaņojam ar klientu
     participants: "", // saskaņojam ar klientu
     heroImage: "/media/pasakumu-organizesana/pasakums-09.webp",
-    albums: ["vizium-jubileja", "elyndi-fest-2026", "bauska-taste-2024", "bauska-taste-2022"],
+    albums: ["vizium-jubileja"],
     seasons: ["visu-gadu", "ziema"], // rāda arī Ziemassvētku blokā
     sort: 30,
   },
@@ -120,7 +120,7 @@ const drafts: Draft[] = [
     duration: "", // saskaņojam ar klientu
     participants: "", // saskaņojam ar klientu
     heroImage: "/media/uznemumiem-mazulu-zona/mazulu-zona-09.webp",
-    albums: ["mazulu-sturitis", "bauska-taste-2022", "tukuma-rozu-svetki-2025"],
+    albums: ["mazulu-sturitis", "tukuma-rozu-svetki-2025"],
     seasons: ["visu-gadu"],
     sort: 40,
   },
@@ -195,7 +195,7 @@ const drafts: Draft[] = [
     duration: "", // saskaņojam ar klientu
     participants: "", // saskaņojam ar klientu
     heroImage: "/media/uznemumiem-sporta-speles/sporta-speles-01.webp",
-    albums: ["stiga-meza-dienas", "lielformata-speles", "vimbu-svetki-2026"],
+    albums: ["stiga-meza-dienas", "lielformata-speles"],
     seasons: ["visu-gadu"],
     sort: 70,
   },

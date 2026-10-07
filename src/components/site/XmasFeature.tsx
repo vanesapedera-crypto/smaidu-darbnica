@@ -8,6 +8,7 @@ import { ButtonLink, Container } from "./ui";
  * Ziemassvētku sezonas bloki. Ieslēdz/izslēdz panelī (Sākumlapa → "Rādīt Ziemassvētku reklāmu").
  *  - XmasBanner: neliela reklāma sākumlapā
  *  - XmasFeature: pilns bloks lapā "Uzņēmumiem" ar Ziemassvētku piedāvājumiem
+ *  - XmasOffers: piedāvājumu kartītes atsevišķajā lapā "Ziemassvētki uzņēmumiem" (rāda visu gadu)
  */
 
 // Sniegpārsliņu fons — viens neliels SVG raksts, kas atkārtojas (bez attēlu failiem)
@@ -56,14 +57,10 @@ export function XmasBanner({ home }: { home: HomeSettings }) {
   );
 }
 
-export type XmasVariant = "tumsais" | "foto" | "saraksts";
-
 type FeatureProps = {
   home: HomeSettings;
   /** Uzņēmumu pakalpojumi — tikai kartīšu ikonām (pēc nosaukuma) */
   services: Service[];
-  /** Izkārtojums — sk. zemāk */
-  variant?: XmasVariant;
 };
 
 // Pieprasījuma formā uzreiz izvēlēts "Ziemassvētku piedāvājums" (sk. EXTRA_OPTIONS lapā "Kontakti")
@@ -84,19 +81,6 @@ const toCards = (home: HomeSettings, services: Service[]): XmasCard[] =>
     icon: services.find((s) => s.title === c.title)?.icon ?? "TreePine",
     photo: c.image,
   }));
-
-/**
- * Ziemassvētku bloks lapā "Uzņēmumiem". Trīs izkārtojumi:
- *  - "tumsais"  — tumšs fons ar zvaigznēm: teksts + fotogrāfija, zem tiem piedāvājumu kartītes;
- *  - "foto"     — fotogrāfija pa visu platumu fonā, teksts centrā, kartītes zem tā;
- *  - "saraksts" — gaišs fons: kreisajā pusē teksts, labajā — piedāvājumi kā kompakts saraksts.
- */
-export function XmasFeature({ home, services, variant = "tumsais" }: FeatureProps) {
-  if (!home.xmasEnabled) return null;
-  if (variant === "foto") return <XmasPhoto home={home} services={services} />;
-  if (variant === "saraksts") return <XmasList home={home} services={services} />;
-  return <XmasDark home={home} services={services} />;
-}
 
 /**
  * Piedāvājumu kartītes — tikai informācijai (nav saites).
@@ -143,8 +127,9 @@ function Points({ home }: { home: HomeSettings }) {
   );
 }
 
-/* ── A: tumšais ────────────────────────────────────────────────────── */
-function XmasDark({ home, services }: FeatureProps) {
+/** Ziemassvētku bloks lapā "Uzņēmumiem": tumšs fons ar sniegpārsliņām — teksts + fotogrāfija, zem tiem piedāvājumu kartītes. */
+export function XmasFeature({ home, services }: FeatureProps) {
+  if (!home.xmasEnabled) return null;
   return (
     <section id="ziemassvetki" aria-labelledby="ziemassvetki-virsraksts" className="xmas-red relative isolate scroll-mt-20 overflow-hidden bg-ink py-16 text-white md:py-24">
       <div aria-hidden className="absolute inset-0 -z-10 opacity-60" style={stars} />
@@ -178,87 +163,11 @@ function XmasDark({ home, services }: FeatureProps) {
   );
 }
 
-/* ── B: fotogrāfija fonā ───────────────────────────────────────────── */
-function XmasPhoto({ home, services }: FeatureProps) {
-  const photo = home.xmasPhotos[0];
-  return (
-    <section id="ziemassvetki" aria-labelledby="ziemassvetki-virsraksts" className="xmas-red scroll-mt-20">
-      <div className="relative isolate overflow-hidden bg-ink pt-20 pb-40 text-center text-white md:pt-28 md:pb-52">
-        {photo && <Photo src={photo.src} alt="" fill sizes="100vw" className="-z-20 object-cover" />}
-        <div aria-hidden className="absolute inset-0 -z-10 bg-ink/70" />
-        <Container>
-          <div data-reveal className="mx-auto max-w-3xl">
-            <p className="inline-flex rounded-full bg-brand px-4 py-1.5 text-xs font-extrabold tracking-[0.12em] text-ink uppercase">{home.xmasEyebrow}</p>
-            <h2 id="ziemassvetki-virsraksts" className="display mt-6 text-4xl sm:text-5xl lg:text-6xl">
-              Ziemassvētku <span className="sticker-light">piedāvājumi</span>
-            </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/85">{home.xmasText}</p>
-            <div className="mt-9 flex flex-wrap justify-center gap-3">
-              <ButtonLink href={INQUIRY} size="lg" arrow>
-                Pieprasīt piedāvājumu
-              </ButtonLink>
-              <ButtonLink href={XMAS_PAGE} size="lg" variant="ghostLight">
-                Uzzināt vairāk
-              </ButtonLink>
-            </div>
-          </div>
-        </Container>
-      </div>
-      {/* Kartītes pārklājas ar fotogrāfijas apakšu */}
-      <Container className="relative -mt-28 pb-16 md:-mt-36 md:pb-24">
-        <Cards home={home} services={services} />
-      </Container>
-    </section>
-  );
-}
-
-/* ── C: gaišais ar sarakstu ────────────────────────────────────────── */
-function XmasList({ home, services }: FeatureProps) {
-  return (
-    <section id="ziemassvetki" aria-labelledby="ziemassvetki-virsraksts" className="xmas-red scroll-mt-20 bg-surface py-16 md:py-24">
-      <Container className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
-        <div data-reveal>
-          <p className="inline-flex rounded-full bg-ink px-4 py-1.5 text-xs font-extrabold tracking-[0.12em] text-brand uppercase">{home.xmasEyebrow}</p>
-          <h2 id="ziemassvetki-virsraksts" className="display mt-6 text-4xl sm:text-5xl">
-            Ziemassvētku <span className="sticker">piedāvājumi</span>
-          </h2>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-ink-soft">{home.xmasText}</p>
-          <Points home={home} />
-          <div className="mt-10 flex flex-wrap gap-3">
-            <ButtonLink href={INQUIRY} size="lg" variant="dark" arrow>
-              Pieprasīt piedāvājumu
-            </ButtonLink>
-            <ButtonLink href={XMAS_PAGE} size="lg" variant="outline">
-              Uzzināt vairāk
-            </ButtonLink>
-          </div>
-        </div>
-
-        <ul data-reveal className="divide-y divide-line overflow-hidden rounded-[1.75rem] bg-white ring-1 ring-line">
-          {toCards(home, services).map((c) => (
-            <li key={c.key}>
-              <div className="flex items-center gap-5 p-4 sm:p-5">
-                <span className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-surface sm:size-24">
-                  {c.photo && <Photo src={c.photo} alt="" fill sizes="96px" className="object-cover" />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-display text-base font-bold uppercase sm:text-lg">{c.title}</span>
-                  <span className="mt-1 line-clamp-2 text-sm leading-6 text-ink-soft">{c.text}</span>
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Container>
-    </section>
-  );
-}
-
 /**
  * Piedāvājumu bloks lapai "Ziemassvētki uzņēmumiem": virsraksts, teksts un tās pašas kartītes.
  * Bez pogas un fotogrāfijas — tās jau ir lapas galvenē. Rāda arī tad, ja sezonas reklāma ir izslēgta.
  */
-export function XmasOffers({ home, services }: { home: HomeSettings; services: Service[] }) {
+export function XmasOffers({ home, services }: FeatureProps) {
   return (
     <section id="piedavajumi" aria-labelledby="piedavajumi-virsraksts" className="xmas-red relative isolate scroll-mt-20 overflow-hidden bg-ink py-16 text-white md:py-24">
       <div aria-hidden className="absolute inset-0 -z-10 opacity-60" style={stars} />

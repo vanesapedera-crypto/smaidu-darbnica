@@ -18,9 +18,6 @@ export function generateMetadata() {
   });
 }
 
-/** Ziemassvētku bloka izkārtojums: "tumsais" | "foto" | "saraksts" (sk. XmasFeature) */
-const XMAS_LAYOUT = "tumsais" as const;
-
 /**
  * Lapa "Uzņēmumiem": īsi un konkrēti — galvene, piedāvājumu kartītes (viens režģis),
  * klientu logotipi un kontakti. Pakalpojumi un to secība — panelī "Pakalpojumi".
@@ -60,7 +57,7 @@ export default async function BusinessPage() {
       </Section>
 
       {/* Ziemassvētki — atsevišķs bloks; kartītes rediģē panelī (Sākumlapa → Ziemassvētku bloka kartītes) */}
-      <XmasFeature home={home} services={services} variant={XMAS_LAYOUT} />
+      <XmasFeature home={home} services={services} />
 
       <Partners items={clients} />
 

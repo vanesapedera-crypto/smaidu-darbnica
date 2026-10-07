@@ -17,232 +17,16 @@
       "hidden": false,
       "images": [
         {
-          "src": "/media/vizium-jubileja/vizium-jubileja-01.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAwAgCdASoQAAsAA4BaJaACdAYv12vvVibaAAD+rZwH9Wrq/VaDOpYD7+ZKfCdOoXBWWBH7DntBTy2lMht38K3jknOi+N9/GZ4O9x5Na22r2ayY/wLRgZJzzwjWDokPSA48i3hhiDmytAAA"
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-02.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAADwAQCdASoQAAsAA4BaJYwCdAEf5ujxxjgA/uGJUt1V5GTcn8OOCURk0YY9wy6aAZJCrL8aTldQohL4hlpiZNybqcp8x3vQQWRcAAAA"
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-03.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAwAgCdASoQAAsAA4BaJbACdADw/23nSJGwAAD+CIDMpP0IwXvhcj87sUylxNm+XkLQW6Us034zm4NmVn7XQDXCOlqr1+BHryEtgkwO4WXNsq2uLimZAktLtKP8+0JeE5XyLvZ+RgAAAA=="
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-04.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAADwAQCdASoQAAsAA4BaJQBOgMXr2vexNgAA/tfpvYYSn7v1LsoQhWARODl6+zcE772sjgjZTzd0GXPZ387ddKoY1Fxq3VnnGJpgHbWYeQ00JvaiFsMZZ+fu/PtgIAAA"
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-05.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAQAgCdASoQAAsAA4BaJQBOgMYT3kBh5v8AAP2de3yeusTjPa8afaUERb3sLPR+h8rW5GZj81ZvqQUO8u19zsVOdSQ+QqvebspzZgHcVvpoOibfEpO6F/K/pNtKGEUWAD2vBlNtgye+/FQ0AAA="
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-06.webp",
-          "width": 1440,
-          "height": 1800,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAQAgCdASoNABAAA4BaJQBOgMVQtO3eTmUAAP7m8S5eFzyfyFZSBlvPIVISDxmtzQor/zqMRmAv01sl75p2orxLZilFp0XSC3vSiscpQiXws1le3qBFYZ1YlJiuyFYQQazXO1KkIqeMwzPUAAA="
-        },
-        {
           "src": "/media/vizium-jubileja/vizium-jubileja-07.webp",
           "width": 1440,
           "height": 1800,
           "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAAAQAgCdASoNABAAA4BaJaACdAEUz2K8ziCAAP6JRY5uQJwFXFBgkEWtE/MsRZXiNPUNVbX+32LwvGF/LgLizDLIzZlAn8mO+ViwQLwdPgopGTzSFb8ZqTGYB21KQAnJvZQAAA=="
         },
         {
-          "src": "/media/vizium-jubileja/vizium-jubileja-08.webp",
-          "width": 1440,
-          "height": 1800,
-          "blur": "data:image/webp;base64,UklGRk4AAABXRUJQVlA4IEIAAADQAQCdASoNABAAA4BaJYwC7AEO/OOeAAD+8dPMO4kc8e6u5hXwJb/HP3N3+/aBb5eV6VYDKLhL3SYq3TjYqOBGAAA="
-        },
-        {
           "src": "/media/vizium-jubileja/vizium-jubileja-09.webp",
           "width": 1440,
           "height": 1800,
           "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAwAgCdASoNABAAA4BaJbACdAYuvvsddqmIgAD+8F/Dq6sc+GdWQRUWMsDHkIdGHOQQ8Dw//YHAa604FiB12lIkeQj1PYHzAu6TByeUZkle1AXTzT0bfgHZRLzl/AJgAAA="
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-10.webp",
-          "width": 1440,
-          "height": 1800,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAQAgCdASoNABAAA4BaJZAC7AD+m9w5vdsgAOJ8QjIL+re6R2r+Z78BAqbfNrlFrnncAleajXZVQxlJJKxeHjXD7rzZkQh11s6P8KIEfEFogTI4f0XUT85tGPFDfMtvvTHZpxKHVNe03AAA"
-        },
-        {
-          "src": "/media/vizium-jubileja/vizium-jubileja-11.webp",
-          "width": 1440,
-          "height": 1800,
-          "blur": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAADwAQCdASoNABAAA4BaJbAC7AYtBuKBOjAA/mqFZEX9XfxYWQ/Pav16Pj3imYD5MUBlNJ1ZWT+5PX3i9eTXDqKyeDptE+wGTKhzqp4wxrC8sA5FOeC3Vr57aFFg9Pf2bgi1DSFkLSX53gZwOTEwC6gmA4juQVMgqf2AAA=="
-        }
-      ]
-    },
-    {
-      "slug": "bauska-taste-2024",
-      "title": "Bauska TASTE 2024",
-      "category": "uznemumu-pasakumi",
-      "hidden": false,
-      "images": [
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-01.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAQAgCdASoQAAsAA4BaJZACdAYr7npB3KQAAPz7TXdCWNhjtY7J56n3G9pYgPx/2b5/W9VK8JBc4IRTSNRRnFpzVN0B9XEz1o1wbTyIIp/tK6dIUwEjiWS/A9MMdG5GAAA="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-02.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAABQAgCdASoQAAsAA4BaJbACdB2gDY9p/VohHAAA/cS+3Tkgpd79GPm7G7ewLOIeLqaCycXYcjtsk34HPVr7ur4NEdjKrWvsLPzg0UoSj51qkWQ11Novhflz3a47wn1t55LYYT5b+tZ545+zwxoAAA=="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-03.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAQAgCdASoQAAsAA4BaJbACdAD0CLa55hwAAP634z2R5sW2GqtEPUydopMO1EB0p6NfdwWgIcXt0GmG1nRrZUNgdL+dExbLbpzKUHX9B3ArPyvSZ8yBR4RCWgAAAA=="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-04.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAABQAgCdASoQAAsAA4BaJbAC7AYuH22YasgzS4AA/s3Kvvv5Rf1Nzp6h/VVQ6Ms+9d016FXnYzv2UCRgEnx+hCD3MHMwtt36KHLZ3VRVrA5HgSr0TpYV0f67IhaZbSurvL/GBaXGQjUZBGK0rT8si7nGKuAAAA=="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-05.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAADwAQCdASoQAAsAA4BaJbACdAYv1F3hXQAA/tHjQHpfDfG+tUVvumkVdZQQ1vC2i0ExFwhx86ndW4EhJhTmBv4vFI/dr+AQFKmsghppf2VML6GVzvXFs0PkaDkj8DkDAAA="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-06.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAADwAQCdASoQAAsAA4BaJZgCdAELGEZHLAAA/u0cQCyzCZXi4kFrB4C3qWSZgPWoTjvXhYjacO+iLLLVHAblObmLyr8ABnk8MXKxX44gmogKMxT3WH5E3ghFCsXzwBeVLvk0AA=="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-07.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAQAgCdASoQAAsAA4BaJagCdAYsPaCEvoAAAPuditDhBb+dG4+V5BISIN1eSm4loaiXgEwgXAoBDcyjF0Zt40BLgo9vHCpg6UFOg94QMRgv6wo8lhJzR5Q+5WMYwAAA"
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-08.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAADwAQCdASoQAAsAA4BaJbACdADHn5h/ogAA/kgDcW7hZLFLsEJLkc37wV6ZsiQ8S3PtmSyTJScHP2VKKm+xnWCox8AbxdfuopUhhGWWPHDJqfeyLrWn5vCHYRgGZ5PMKBrwAA=="
-        },
-        {
-          "src": "/media/bauska-taste-2024/bauska-taste-2024-09.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAADwAQCdASoQAAsAA4BaJZACdADIR5GuGgAA/ublHLcDxOztC8y7isCTVQ9PAT8zZr5LPrkC5Gbu65Z+LGDQF1cI3pQ156QvLTWcmFEL6vB/Hq36ErJGSYlL+VUf2/eAAAA="
-        }
-      ]
-    },
-    {
-      "slug": "bauska-taste-2022",
-      "title": "Bauska TASTE 2022",
-      "category": "uznemumu-pasakumi",
-      "hidden": false,
-      "images": [
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-01.webp",
-          "width": 640,
-          "height": 960,
-          "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAAAQAgCdASoLABAAA4BaJaACdADciKVKTU4AAP5k3t586F7FxiA7rpO1h5GFPJmCMfF2WvpteFClXmEDa0RbD/m0WvjuR2+8RyJF4iQ6CEBmOt8g6W6j2AAA"
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-02.webp",
-          "width": 640,
-          "height": 960,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAQAgCdASoLABAAA4BaJQBOkERwWIzPY8tAAP2ZxzeYwv/MLcUsINbpATP0SXyYZ+j+Ud7TPlP+rPgYNLeWVGGBelryNr+HApjqbOVeCJVBzib1UBdEWCFNjqE3C6rSCrAbLzQYAAA="
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-03.webp",
-          "width": 700,
-          "height": 525,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAwAgCdASoQAAwAA4BaJYgCdAEP5ql9YlEAAAD+1xPIC6AMlt+Sz7X25uGvFnvBwGoe/qmcBlXRViwziySlmhg+TbO5DnAXuzKjpvsFcbRXiSBeicxxH6Ivodaepy8AAAA="
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-04.webp",
-          "width": 700,
-          "height": 525,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAwAgCdASoQAAwAA4BaJYwC7AEfcYIRDpmaAADeZ6X9SL6xo9k9Nrr+8KP6vAzfhCLejyLANSPdkV9G2nV2rhzgcKOXaVuJ4ufIrsgDqGdJ4gw/pKcXgG37O+WUwAAA"
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-05.webp",
-          "width": 700,
-          "height": 525,
-          "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAAAQAgCdASoQAAwAA4BaJbACdAEYAIreYnQAAP68bALQYlB7CjISKLZfMwRen/mEVwur9IWxJvFUaNsAuCCBKHN7E8K5aZMduZCMa5ws32szNoE4UOpMo5uwAAA="
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-06.webp",
-          "width": 700,
-          "height": 525,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAwAgCdASoQAAwAA4BaJQBdgMXX5zh5WwVZdAD+rfEAFW3eRKeQ7ocK8NjFY9e26Z9xqqOfMBdIqiYDKPjdX0tOafJDsv868fGWB4RmLUFHeS9d2Yj+F0qLCcztN8+bB/fnJjkwhggAAA=="
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-07.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAQAgCdASoQAAsAA4BaJZgCdAYwc9bpkGdAAP7Q+GPmI3gi7XtgoRLHzxucGCD5WLsbeakHY+OeECPAhmGTSAz57GhTlsY8InA8aEFMihgvVKxtz8tkBNQlCn1cYNMzGzB0AqQAAAA="
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-08.webp",
-          "width": 640,
-          "height": 960,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAAAwAgCdASoLABAAA4BaJQBdgMW05i1r12ECAAD+eFNfseZQwtYZUu/A4j4zJzUEejyekwrGtSkwNy85DF7lBoLgi5QRenQ2IlDWIsvnpgGdPMIWCJBYnhBkBA4xgaSMkAdQAA=="
-        },
-        {
-          "src": "/media/bauska-taste-2022/bauska-taste-2022-09.webp",
-          "width": 640,
-          "height": 960,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAwAgCdASoLABAAA4BaJQBOgMXm27PU8ZksgAD+1QjJqB/jVWS8tVlzI1rptHtvtiDfKSIzmz3wKN4LykQmxjhmisuLml+Rk5HkY49CQa7bfsb+B4J0zWf6vKWqAA=="
-        }
-      ]
-    },
-    {
-      "slug": "elyndi-fest-2026",
-      "title": "ELYNDI fest 2026",
-      "category": "uznemumu-pasakumi",
-      "hidden": false,
-      "images": [
-        {
-          "src": "/media/elyndi-fest-2026/elyndi-fest-2026-01.webp",
-          "width": 1707,
-          "height": 2276,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAACQAgCdASoMABAAA4BaJZAC7AYuvkzTG+kw6KcoAAD+8bvucjGoEhf1m363WWQKyJ5cHekGtS2+HM0lAMBmmz+ZF25Hk0fZnHc/reBjt4RkBtTRiN6vaoeSPboV6fuf6kyr/S6roAA="
-        },
-        {
-          "src": "/media/elyndi-fest-2026/elyndi-fest-2026-02.webp",
-          "width": 1707,
-          "height": 2276,
-          "blur": "data:image/webp;base64,UklGRlAAAABXRUJQVlA4IEQAAAAQAgCdASoMABAAA4BaJZQC7AEVYmG/QqwAAP7vwxOfnS2sQE9sITjH2ry6eCAudTFv/kcJvBbtyNgO8i2zYUDpvgAAAA=="
-        },
-        {
-          "src": "/media/elyndi-fest-2026/elyndi-fest-2026-03.webp",
-          "width": 1707,
-          "height": 2276,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAABwAgCdASoMABAAA4BaJQBOgMWC5PAvXZJ+d0oAAPa9ti/dhBdJ9PZxU2MsPUp5ZY0RFgg3cEmRfH3DT08CgUv9JgiQaBVNNEawO12P904yZMkchNr23JnBqILlHOW1KbQJ7IbwaNIgAA=="
-        },
-        {
-          "src": "/media/elyndi-fest-2026/elyndi-fest-2026-04.webp",
-          "width": 1707,
-          "height": 2276,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAwAgCdASoMABAAA4BaJQBdgOsAR+sISH4ecAD+wbFPDr72SHM99Py6TVabG/4zon9IEU5bP8y6LW+HQVqpSBmdKUe/D1rvNyhMVFIAItssW+0lc6xKxC9ss8eFAnHsS3kSTSpe2lktW6MAAAA="
-        },
-        {
-          "src": "/media/elyndi-fest-2026/elyndi-fest-2026-05.webp",
-          "width": 1707,
-          "height": 2276,
-          "blur": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAAAwAgCdASoMABAAA4BaJQBYdiP7fgfHy4UUAAD+84uZHSgZoECJbL5t04HQUOc3Fw3B/N7eO1Nfxxjb6J/caDn+U12RNnLuCNCZ4eyBAIljqAAA"
         }
       ]
     },
@@ -253,40 +37,10 @@
       "hidden": false,
       "images": [
         {
-          "src": "/media/stiga-meza-dienas/stiga-meza-dienas-01.webp",
-          "width": 1200,
-          "height": 1600,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAwAgCdASoMABAAA4BaJZgCdAYwTvtlokG7AAD+1/+hAAcH3HFIFZXBxfRW8WsFwyq6v67ord8yHxeu6duBz0dFPLEHaT8XJZfyMdjZWTOvS3D/Z4EFnnMlNv4dDOIoIre7/K8AAAA="
-        },
-        {
           "src": "/media/stiga-meza-dienas/stiga-meza-dienas-02.webp",
           "width": 1200,
           "height": 1600,
           "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAACQAgCdASoMABAAA4BaJbACdAYvX2cPX7PZW+6qAADfjT+/ndFQxNHO8egAjkR+FMY8fPFU2gifXfEC7jhIMQ1Hfw/YsU8016b9Ak8nScfjtObV0mdoIj6vLCe6RN19eD8ffj/Jp0LpODdQMzQAAA=="
-        },
-        {
-          "src": "/media/stiga-meza-dienas/stiga-meza-dienas-03.webp",
-          "width": 1200,
-          "height": 1600,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAQAgCdASoMABAAA4BaJZgCdAYsjZsuUsQAAPwLBl45Jjsvh8uiI7SdnzoxDsU18uUOkfKwk9SKHaWraBVRornZPgdxqKkZDW6UvlGTsda2s44kMs2am8FfFJLwuCM7alXfyQwW/VJgAA=="
-        },
-        {
-          "src": "/media/stiga-meza-dienas/stiga-meza-dienas-04.webp",
-          "width": 1440,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAAAwAgCdASoMABAAA4BaJYgC7AEf2yaNz+1aAAD+2ZAzqXZ/pGm5lh3ERErNojRHdFJ5XhZ6opqEl4qfgz68+zgKTWsXGc/X62bnPGYyfciIY8XDFx4tAAAA"
-        },
-        {
-          "src": "/media/stiga-meza-dienas/stiga-meza-dienas-05.webp",
-          "width": 1200,
-          "height": 1600,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAQAgCdASoMABAAA4BaJQBOgCHed/fJ9XIgAMtO/XDMj64tkWdLUCGhN+gZWLftGzaE20xXL6auG1KP1r+XQ+swQp3zlzYE1+35PYcy/duM1zwbrW8wWgnjq94Ut+yy1RpNfQAA"
-        },
-        {
-          "src": "/media/stiga-meza-dienas/stiga-meza-dienas-06.webp",
-          "width": 1200,
-          "height": 1600,
-          "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAAAwAgCdASoMABAAA4BaJYwCdAYtzzFnq4jTwAD2vDOtEi3a16SD9M31gYHFs25sNrGb7xDND5LoLf23rKZCK4cAqLvsK7qOlLktJI9r0QZRGTBuTLit6YMb2RODiARu3iRNOboA6pIJMuqMySAAAA=="
         }
       ]
     },
@@ -405,58 +159,10 @@
           "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAABQAgCdASoQAAsAA4BaJYwCdAYuRqv7FqbmScAA/t4nbdWpI+N/aLXd8d4Z2WKvV3fSroNmavRIswVZUo8Vi766ZFZ2am5Vz2wy5btO7n64y3l+Mlrm6jT59hpxMfShoVC1IFRKeNTWNeHkZAAAAA=="
         },
         {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-19.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAAAwAgCdASoQAAsAA4BaJQBOgMU3qCuOYtq9QAD83792MRoRfStSpxIrI8xYlmjdwlx6TC2jfkXhKz7bXaG2oUhckBgWRerj+pMCiV//XFLczjWh/6GNbqnpJR0CocLuZHPISt4Kw8KO96mgzYadUSR74AA="
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-20.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAAAwAgCdASoLABAAA4BaJbACdAYtpj7rTFqnoAD2QzzmfePFFsur6P0c/PLEPGqJuh0IUEnxDzbD4QSbZXbfjLb3MJXavE3XdXt6Q1LsHKkAuBGXKbRhaXCUd0ryA1ERp4FUX5DkHjNVuela9396IIAA"
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-21.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAADwAQCdASoLABAAA4BaJYgCdADhAz1yWlgA+pBN+qKOp3dTwysxwPWpQeJcS8BZdbsKgXuqxhQY+GF1coYcCq0umEyOLtzQSzjQH7Bo3xnE4EFad9WffBuYZMmDVdH9F8miwG9wuzjqAAAA"
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-22.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAABQAgCdASoQAAsAA4BaJZgCdAYtfbPm/r1Q9AAA/vGM8j5e2WldYoivkeGKfFM/iPtV5cdTcJjYg2A27HRbDRfxUKkNlKWXPJbV/QSnLY+BHqXHcTIxPTwPxvTiThwFOtUwcVMIXAxx2UAA"
-        },
-        {
           "src": "/media/ziemassvetki-2025/ziemassvetki-2025-23.webp",
           "width": 1280,
           "height": 1920,
           "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAwAgCdASoLABAAA4BaJbACdAYtfvoGu7qQIAD++JFQG1weHu7gocg3fhCh38g8RGUB1xLwWlXqtUy8nmlLNs4Qxcte7F786HlByRJ/ZBLWRhYDZcE9Xp51P4HYOly2eT0F1BE3W1Rbrk4AAAA="
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-24.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAAAQAgCdASoQAAsAA4BaJbACdAEfXFuZ6ABAAP6s2qXPdWp5GP5oPanFx+3/+CbryrVOWLtJEc7GjG7LsOjr+N43oZddFAkfQ2+JWHpZwDKrnDuIzqu52K55GDXySaWIUw4X8DamUXZ78noEGyIUAA=="
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-25.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAAAwAgCdASoQAAsAA4BaJZACdADiV287Df+rAAD+6eQJXVe9wwA0nPFF0VFo/Hu8htKBcDq3LXZRuPiXWYRgJ0opmL0yUO0v0HGGXSSDD5+zonM4SFd90JmV5pt0QKyITgAAAA=="
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-26.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAABQAgCdASoQAAsAA4BaJZACdAYu5vvOKKJkvAAA/vS1BI5levCaeBUprUn8O+xqDZSGx8S4EWmBFmDZjlSe44HHLCmDzeH+rNGqir+yVzlBAgndJV9djZmf4uAAAA=="
-        },
-        {
-          "src": "/media/ziemassvetki-2025/ziemassvetki-2025-27.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAQAgCdASoLABAAA4BaJbACdAELVK1iGqfAAP6JMubqgH97CZsCTv3vVhi7SOnBG6o/CLKYeWR4ElXUZ5wdjSTi3zUlATHp2dEkI2s1q44roKw8hXRYJje+zAQ6YgcJUnWVfrEdlsrCKkAA"
         },
         {
           "src": "/media/ziemassvetki-2025/ziemassvetki-2025-28.webp",
@@ -473,42 +179,6 @@
       "hidden": false,
       "images": [
         {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-01.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAQAgCdASoNABAAA4BaJQBOgMYYzlkLY00AAP3U16DII6szb15FbM646J1LbWQUP97fvP3OiT+f7C8xqTXe/0DK3lAkhhNzusHPWB553wpgZ7qt5OGSoEjWJOLz+KgA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-02.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAACwAQCdASoLABAAA4BaJagAAlq0fK3wAP6s01zLWfbxVDwyjCXlT4kUHQngPtgrSc+9lRHxJuMEh0/kWNDy9KSwz2F+mPOirSUFjjihELxRKLtmikOFhn+z07zlEjsxwxAAAA=="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-03.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAABwAgCdASoNABAAA4BaJaACdAYwxlIPOD92v6gAAPo+LObuPb0REtM1SdKPwZ1bkc5QtoUG3rAZr9wYOqYgFzWPolvUNAQnaZMt7PytudsW1S00M8Z9K7nb0G6iINxxrlxfoZA8tREXeVK8VCTfcd0AAAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-04.webp",
-          "width": 1282,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAADQAQCdASoLABAAA4BaJYgCdADzckKA4AD+xGbX7W/WcStwSh36En+OSAEjY0TTTEkpGyueoU1js9KbKxU/3PIKQc6YZHb4WldXhTlWtLpEajzizDzl08l0AAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-05.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAwAgCdASoNABAAA4BaJZACdAYu5UZBzqubAAD8yk3kEa/6Y74DMyV6PdnI5K3q0oKNoKLP7lod9QqKkbIzNopdViUZK+ZiMtVWYY0z73d7e1ugNkDl8QgGuT4O7fPW7XM0zqko0S2ToAAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-06.webp",
-          "width": 1282,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAwAgCdASoLABAAA4BaJaACdAEUVipgghwZwADMo/OUmpXuRDdUAZgXkhzkbuxWyFfDNIyPA4SplxHU2y7Si3QLszSMxklOXh0vDwSMCp2yva8jzgEG8IoDaqlQAA=="
-        },
-        {
           "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-07.webp",
           "width": 1282,
           "height": 1920,
@@ -519,134 +189,6 @@
           "width": 962,
           "height": 1204,
           "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAADwAQCdASoNABAAA4BaJYgCdAYu5BWEkTAA4mLM37j/PvgrgkAjp2I/uonpALUwVLslfLpSggBYuo6Rp/vWXFtCzBGHneYrWpNum3lKqUJayNtUK9HHIyeyBXbTAGJiJSjHPCiAAAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-09.webp",
-          "width": 1282,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAABwAgCdASoLABAAA4BaJbACdH8AgsicZjWY39IAAOJuloi0i/57nIOz49cfD6xPRvMD3mAraYvBvz49a3Ew0hSfodZ6C2G1F9BjfcIquG9wnqUNdpSjlHHUtPq0ealB1UeqM2bc7QTMrAAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-10.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAACwAQCdASoNABAAA4BaJQBOj+ABnDEgAOHwlNSXbnNBafr8QEC4+JmjE29d7xzK8bDFlqvA4oEnF6dCP0fZFunEjjPvas2IZKXmOmvURPkiaAJCgVJYFllM05b0YmbbOTe4AA=="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-11.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAwAgCdASoNABAAA4BaJZgCdAYu5ahSCvH34AD+whV+vmy84QUv9QFKg2lMAviOOFmTSHDLb/k00twXdOp85m2ghVQb45RJSmDZUpsnXV8a++BlaZmZlqaTZYSfyZ3VkOi5OiAUSAc7IAAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-12.webp",
-          "width": 1282,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAQAgCdASoLABAAA4BaJbACdAYtLbPckLgAAP60JRUD3yDgO2qHAB+HUYjrU/1LGSBZHVUN3JDv945HX769GpOzusYEuFuIW/7qnZgJfenLinMlv79G3MROcKgAAA=="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-13.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAQAgCdASoNABAAA4BaJbACdAYvDKu9yxUAAP7ogbePgByn6G9w5Y1Qs4RsS1hxAgCRMK3Bb89afmZxeNxp5xK0l8XM11h/TYtA5pFO4zmuhx8eCKR8s1NYMtETo6+z95ke0Ony7Vv8wD8IKaFdDAvZjHj/9qgAAAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-14.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAABwAgCdASoNABAAA4BaJbACdAYuH28VTfMevv7AAP7uWkEaJrEOwfEn7qUSCI5PI/p0jGwJQ5xdNwtmJeBtWnOIWp292yFDPJI7VY/5qhkbGLUOdFptRaHw6LP6JHQhCqd8griZytp9SP238wz+MD8RiUw+Bj1Dm6AAAA=="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-15.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAADQAQCdASoNABAAA4BaJYgCdADCDeR0YAD+8mhUaFzHiD6OFxj3GECWwGe4TCqpjKlGHyvwrQ1OVImLAngetIV/c69nkgXLvyf9Z/DDYTqizteHkpZVpEbPhSvuR2ntFXiYTAAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2025/tukuma-rozu-svetki-2025-16.webp",
-          "width": 962,
-          "height": 1204,
-          "blur": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAABQAgCdASoNABAAA4BaJYgCdAYvX0gAeUBwa2AA/sh0LW1Q+IFgYPup9CIACf9qJCcwmh21b251FsV1HYNCFLcs9osuD9ds37UXFD1aHK7L9VBZfobptLCV40ZIZXXcEyIgkJTAxI+btZcRcYhUNBsEzbgAAA=="
-        }
-      ]
-    },
-    {
-      "slug": "tukuma-rozu-svetki-2024",
-      "title": "Tukuma Rožu svētki 2024",
-      "category": "pilsetu-svetki",
-      "hidden": false,
-      "images": [
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-01.webp",
-          "width": 746,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAwAgCdASoLABAAA4BaJagCdAYvNbHifKCmAAD+7e7kbr6qHntu7X22yLI4MtQE/zMvkpC+Ih8G1B/CJkPkpAx9HpWS9d3wrjd3BB/oPU49jcuGUBFX8jw7vNmvV81/KV2w3OAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-02.webp",
-          "width": 896,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAAAwAgCdASoNABAAA4BaJbACdAYv/dDJ/QOwYAD+toxa4MabYmspwEdLrO+fUMgGLBq17PNw6gbgNHm0/oyciILrSZVxbs3VbiWBqt0+8JgsxC0+frJiJ3iFf6eJrDyXuWtq2n3jkn7zlqHC27lq6AAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-03.webp",
-          "width": 896,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRooAAABXRUJQVlA4IH4AAAAQAgCdASoNABAAA4BaJZACdADO+Ka0EwAAAP6Ywyv1ImtESNNlizOMIePm5BwjOgTB7FepU9gCfZDB8iDyqDFVsAMFKHbkBcXVs3xjir6a5cmdVYR75vLYICS3JUQXht2I+xIxwV2bqRsonjWQuZvTm/WFI+edbDUjMwEjAAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-04.webp",
-          "width": 896,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAAAwAgCdASoNABAAA4BaJbACdDiAByn2pun+gAD+2tb+MLKwGPlolwUaFTLazYNYll8qBX0YQ3yEI1nZJ1IcbDbQG/6vkTiR/hfhrFlGjyBoBBCtY1ITZR1hAn9j3+OyEIgNO/gI6l8gGFDKA5opBcAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-05.webp",
-          "width": 896,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwAgCdASoNABAAA4BaJaAC7AYtzTQsXsadGAD+8Ze/7DMq8zmHies0JsSe5v3Zry3psRodoapHkIWSsFMCVB7AHl14u/fkmvoJTB9zPKE/UEh5Js3u2ZqEcOTZQL/+4c7UoBciRgONT0oWOvYHrgIkeHZyrKEELAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-06.webp",
-          "width": 896,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAADwAQCdASoNABAAA4BaJbACdADND49uwwAA/on1a2juZLw3lZwn0TQPoRttWi1MeWeBE8RpuPTp9Hy4AOACIODDRLFIQdW/9IIU/Osia9P5lr4Sf7lx3elyAwv0AA=="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-07.webp",
-          "width": 896,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAABQAgCdASoNABAAA4BaJbACdAYvXnBgPc6KeEAA/vMl8c2W1PY+9fI6/V1bGeiqBiAUw/0fndG9Iyfq/SztqqgpNUoonKxSJzToDOBoHS+QPeaPazcEMOhWPB4j3atE8zfJAAAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-08.webp",
-          "width": 746,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAADwAQCdASoLABAAA4BaJZwAD4zOyBe2UGAA/vhpzgcDMuRDipE07egngRBIETMMl16TNnfIns7drlsRZrq4k7vJ3Jd9dt8fk2Pp2AAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-09.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAABwAgCdASoQAAsAA4BaJbACdAYs3gK9iEmdedcAAP71suAc07Zmxfuk0qyUfUsmcHT5dUZ/kiGA6XtGPgb6P104DGEAXSWUzSI3cN1YuGC86XMH3DZUoAcWob//nKP5V53ZxBl3+VQtKzxIAAA="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-10.webp",
-          "width": 746,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAACQAgCdASoLABAAA4BaJQBOgMXv/cmA+FKOWx8GgAD+7J6G2nZJpmZ28XChGSsDpWTl4+VNf+Mxpd45r0woKp5sawtjqXZ2mStvlc54qZKiNm5QwVJvYkjP3QWuSOMsWpL+bDJnF/KCHAAA"
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-11.webp",
-          "width": 746,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAABQAgCdASoLABAAA4BaJYwCdAYtBnYjzkzSTgAA/tK5heNJq9RUtFl0L9J12uykd5a0nndvYUfzbll+FbjixL/KeOLKOECdEw1PkyFZEA75N7y+Fs/NQsEFgIxCDirmi631KuMU1gAAAA=="
-        },
-        {
-          "src": "/media/tukuma-rozu-svetki-2024/tukuma-rozu-svetki-2024-12.webp",
-          "width": 746,
-          "height": 1120,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAADwAQCdASoLABAAA4BaJbACdADbzok20gAA/vNc5kJDIYDOnfxm16r7OGS4AIkOPnrS7e8YbBzAcC+3sQZHX/lbjmoj28qgexENuVBXfSvruO2k78bthZNIR0J3N8/dUQ9KCFaux4AAAA=="
         }
       ]
     },
@@ -657,200 +199,10 @@
       "hidden": false,
       "images": [
         {
-          "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-01.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAQAgCdASoLABAAA4BaJagCdAEDfutDo5+EAP7CYhgg5Yj+UsXQPNVdsz3prtfs4BLFU/DVDuuvzoLWdcH6q32DhBfhuFwhRaL9xxdBNsbduDqQt4wtkMvP8YwrbCmT42yggKFxV8AAAA=="
-        },
-        {
-          "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-02.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAwAgCdASoLABAAA4BaJZQCdAYyLkS8zgzRAAD+0pQ9Kq2I19B88cORGSuusympnG6hKE5W5fRFRcfRI8n1woiBL3zqH6nwYS7eJWrO6D/aBMMME5Y14znkjdITI3AWCQNMAAAA"
-        },
-        {
-          "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-03.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAwAgCdASoLABAAA4BaJZgCdAYwnyurcOmsAAD+ji3K0C//mcoU7ifH30zqwT2LtBR7ON/yuifP3KQijzGF55SVpVwJouxVJGUWzd0MrSevqzyXTIMoihl8LK5ohvmgAAA="
-        },
-        {
-          "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-04.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAABwAgCdASoLABAAA4BaJbACdEf/gZbCT1+jDuBAAPfEKvqAiPUubcNFykPdUt8qAlhEEBCvzLVMYAr3vNlAKRXOSg2KquL6RJcyBqWYdMPvjKfIyeky+/iD7OO05m1Saz/tbud8bIeSbtPQAAA="
-        },
-        {
           "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-05.webp",
           "width": 1365,
           "height": 2048,
           "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAABQAgCdASoLABAAA4BaJaACdAYv1q1oJpbQoAAA/q1E7sH4/1gls1NP08wccM5x2DoAKcEBTelgA8zT3Vb3qtf7EcUh9iVJWDxqZtOeIsp14Wq73M+E5IeCE2tCwAAA"
-        },
-        {
-          "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-06.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAAAQAgCdASoLABAAA4BaJbACdADcYWxaWGwAAP7eAqW/v1Q0Vroca9H3uzaH6F9A1CoKjLdW2UTZEIJxuYcO7Oi7iTPkLazmiOpOA++sRh5u+Du8CA+6AAAA"
-        },
-        {
-          "src": "/media/dobeles-pilsetas-svetki-2026/dobeles-pilsetas-svetki-2026-07.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAQAgCdASoLABAAA4BaJbACdAYwdZjdU+uAAP64L8lkfBja48x1YytyVZWKerDK4QihOSRbFtMYNXNqkYfh7GfsJu6GUSFi08eC6xiXU/DojbGTdIdXxyyiJ5xeainoI3E7wDAzik6AAA=="
-        }
-      ]
-    },
-    {
-      "slug": "dobeles-abolu-svetki-2024",
-      "title": "Dobeles ābolu svētki 2024",
-      "category": "pilsetu-svetki",
-      "hidden": false,
-      "images": [
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-01.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAAAQAgCdASoQABAAA4BaJbACdH8AGK1M/UAAAP5m3wdrirpZJC71YZuHPOdamk+L0RpBlFtRa+ckEx0UbfpAdXPVJYNRT/s/H00IT5MYC/ZhthX8k6yHW6e+heM/Izg9dqjZrSqF2whJ6ad/XIxOWN0bQ/Q1MebIHUAAAA=="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-02.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAADwAQCdASoQABAAA4BaJZgCdAEUnoNwXkAA/sdwUo8Q0Pub9mbmAGtqAHzUG5Y53rBe5eThy5Go+dgh6ehF7ZKTVVruyVFgEAMg0u5uguOM+1W8QOkrCv+fjVYCO+hakltegOQ1ywAAAA=="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-03.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAADwAQCdASoQABAAA4BaJYgCdAYsZZ/4a4AA/u2e2OYM86qfIwZbFbjerQVRETPoKwfkldUtLagBmsrh6Nzs1Mq9/+QElwlGxV7zIpJW1Jyy+2kS1VZA1p4cH45XxVk+rt/LtrEG1Nq1soGLI1zYWTrQ1yxxaxXh0lyAAA=="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-04.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAABwAgCdASoQABAAA4BaJZACdH8AgrS/3ScobugwAPaiQvhjAEn2xOG4mk2MXdHIZdswVmfdtVnRSmp9VkOtNoOXZTXdTVlseMgwt3q11a/zOxf7TaFA72+ndrD31wbzIxuGYlY6a1q9Ig3/FBGgwYeNuJyRZBdjUiEAAA=="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-05.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAADwAQCdASoQABAAA4BaJbACdAEOzqhxggAA/PFfHESBUkUzbbXPkyUDfwJJFfoy6VYXr80EKLWG+F18RFveDfl2RouphGm/SmfD1szIJ+awu61me4wQAs3o32MmDUVi4xVO5//sCl7lN/H59AA="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-06.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAQAgCdASoQABAAA4BaJbACdH8AE56JdFEAANvw4N7Hud5NiY8D+GBeG4gwMb8i5AzkUqe8KJKCfDy1yNoyjvG+KAPcPcqBkaY/juULBMZMZ2aO/w6hC7pJniUrVCZC4JajCMHUAHkcAA=="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-07.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRowAAABXRUJQVlA4IIAAAABwAgCdASoQABAAA4BaJbACdIExgnSSb7uYqbgAAM2lyBFEp2deJx9riYbkdUxto/Jr/pFp/uZN3rYmCwYysqHnvd3prb1Cqxd5FH8yh1ZAusU7kXPb31X5KXIcCnZwnZXBfrh1ZVsCVpAr1ziWkYJ6ZW1fsXZe01cqzRyoJmAAAA=="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-08.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADQAQCdASoQABAAA4BaJQBdgMXXxjSwcAD+8myfAAWQxFPcyGBepMzj/ayQ21mHLLjIJw8zF75T0Iy5gFNIsJAVonWivHNgKzWJBmdJ5y6rrRywp9VcXeYroWfoG78YmGfb8mUN6Yls2sbQkjEE7xwAAAA="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-09.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAACQAgCdASoQABAAA4BaJZACsAdwLfI7f6J2bMTdSAD+1zuuE7GwoRru0D1orZncZsRpUJ/5adCMkFCK09S+4jErZWahkRwY2PYTVWnEJdNX6zONtT1ONiBwtRgJwTpmy8MzNY9KdJt1I+eUwAA="
-        },
-        {
-          "src": "/media/dobeles-abolu-svetki-2024/dobeles-abolu-svetki-2024-10.webp",
-          "width": 700,
-          "height": 700,
-          "blur": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAACQAgCdASoQABAAA4BaJQBOj+AQTRiD3Ohx7pqUgAD+m1IX6bWMzh03S+M5/tEVi4EWixOrlZUUNLZg86cl2aneifLoQtzFiaw7ib7r09xjDJDsyPHVGSLLlBAcorovkYxZFwcvBdy1aHkyKbPI2Ba9KeDgAA=="
-        }
-      ]
-    },
-    {
-      "slug": "vimbu-svetki-2026",
-      "title": "Vimbu svētki 2026",
-      "category": "pilsetu-svetki",
-      "hidden": false,
-      "images": [
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-01.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAwAgCdASoQAAsAA4BaJYgCdAYt9LtZPa6AAAD+L8ep/zZnEnyW8nGs26xDGGU117FZkVVVMocImCla8aFoT8MT6yoQL+K3/czrIM9BWtmVTKUzUM0iWiO+YUZOpB7owpg2Uc+udWoAAA=="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-02.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAADwAQCdASoQAAsAA4BaJYgCdAD6KIaOnUAA9r25y7ZochqNtGPel0fMBVOatv+Qql8+co5HjQPlOOS7F0Vufe4vSEldmUwWRRTJq3n1g7bysx3z62PYAA=="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-03.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAwAgCdASoQAAsAA4BaJaACdAYwngZFPie7AAD+wGuPz01GFAjcKYAw3qbRoXGJmFL5fN3uz1TOQ+B+XNkFZ4cg+LWRVQqy4ZyFMo53jG8Tu9KsG7YRRxxLWmAL4Y4/9gA="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-04.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAwAgCdASoQAAsAA4BaJQBOgMX/xhxB97QqAAD+0NVzRUo0k3+cgxp6Ygo6pXNmqgdIHo83iYcbwWkI5HxS3GajQXHn7j/lgYJanUJCuniv5DvBecCeTlESgmPuhrwGiGCwIAAA"
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-05.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAABQAgCdASoLABAAA4BaJZACdAEerqq9+uadHAAA/q2YUBDfdNAm+uvfIsAwCG/eoiYPQU+HJshOMzLJ0RicGNPVGj9Qk4vjW6BTgRwwMgvKKgNxKDHROHn8j5lKmUYA"
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-06.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwAgCdASoQAAsAA4BaJQBOgMVVmCC6VZCOgAD+q+Chc2ReckdqkKnMF/BgOz5fNf9jq/eQCvSU3L6hAnK8+HXS/2iOlx5e5bZiwC0NhOS2CgBcC6lHk56pnNhRc6eZM1BUwUwfe6BI5jvO4ezOQ1p1LryC0J2AAAA="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-07.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAwAgCdASoQAAsAA4BaJYgCdAYvDN33vbrZgAD+3gSurir/Q0+9QUfHHpGIEELcfvkFp5gfpyO8em9JgM17hHw3/V+9Zsg1BKOdhxFMbDr2KYOID53s/jzADFc8U7N3hRa6dGlWpB/AAA=="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-08.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAAAQAgCdASoQAAsAA4BaJQBOgCPRtsBfN38AAM43vDrdvG0n1u1DnJ93HPgRlQvW17dTqGiM0d8QHQI3Q6BlIISE9rpIvi66wPllNEEumZEFL+wAAAA="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-09.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAADwAQCdASoQAAsAA4BaJQAB8jU48Wr/awAA/ofSM3LxSubhTQw3ff7HQO4lOEDLUtmfFykaHvrc+Q7EVHgF9N3RqLeQAXMmFFGZlyoFx4Vkk16jT1wBAHptuAAAAA=="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-10.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAAAwAgCdASoQAAsAA4BaJQBOgMXw2MMpBbEfAAD+abyWSGro62fPLwXoJ2c6rQF/ZzoWX4wNxuZlau92xoHeiP1ogblF2FN1dema8dCDbD4NdC/BLX0FxsbG+9FM/c+wuL9AAA=="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-11.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAAAQAgCdASoQAAsAA4BaJYgCdH8AE4gQJvUgAP6Z8pbKveRnPTl9o7WkBulWXReEVhVIKBaO7H5C5dBhBnnwsYr0xb7Ipmx1OcoWwB11RQ1jnZrQdjXAAA=="
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-12.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAADQAQCdASoQAAsAA4BaJQBOgMW5a+fo0AD+6iRtH9knuZOB2DEqPhxrI796wixcPVWVU1i6Z5/ewZUojGxC3ERIzBdyuSVAg3te4+6vZVPPPlWSRE0EIt7D/Bcw4AAA"
-        },
-        {
-          "src": "/media/vimbu-svetki-2026/vimbu-svetki-2026-13.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAABQAgCdASoLABAAA4BaJYwC7AYubn0j0jiCc0AA/u4P9QGMlEowXgE6PHWstFZfPYoAykJ4amjTgn7ijCXbizXs3TAxxPa4aetjTB9Y4Up/czrGvozl7Dz65v+jDygvOgAAAA=="
         }
       ]
     },
@@ -861,76 +213,10 @@
       "hidden": false,
       "images": [
         {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-01.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAwAgCdASoQAAsAA4BaJYwC7AYrJUGfvDF9dAD98DQ00yrXN/QH9s2ehRevHIJs/rH/Q2dpOiKEh1fWNahr5pA87KkBf4+cM7OkADx2JC+wdsFHWGHGmltc4D3Thh1d/KXCvrDTjTFNAAAA"
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-02.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAABQAgCdASoQAAsAA4BaJQBOgjgD+oUvEzfv0gAA/njW4QB6tDsODU3loNQjspDj28mt9+C7iP/CC9ZTiOub98yNikDkDTT88Bf3zh7sS/tEc2Xshz5gvx7mQAAAAA=="
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-03.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAABwAgCdASoQAAsAA4BaJbACdAdwLe+z9WmvP+IgAP6F4HbF/DNAIp3z7T7Y9FqPvDNAfevUaSni1YEQa538tY58yrECdmazAJ5LW7rle7vA+82rjpf3BkdU0uWgaYmZNq3EPGrUBePSOcgbzIMIAA=="
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-04.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAABwAgCdASoQAAsAA4BaJZQCdAYsFzC9ifU4yvKgAPlIA9L9ZIMtEx76CZOz7OOh1evaGIbjPYs1EORytxSX+IMVciaPVFVJeYDaVC78Z3Xm+cYDfaXXsfd9CF9vFNpIA4bzAQAA"
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-05.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAwAgCdASoQAAsAA4BaJQBOgCBZ8JgUxfaIAAD+oWn2ctBiL8HZk1ZqbkwOqoTQ+cTqWOdBTJ8HNorKrYWO67yMRQtC11qon6K7DoAbc+sYjjCdvPe5SkHTAKeYAA=="
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-06.webp",
-          "width": 700,
-          "height": 466,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAACwAQCdASoQAAsAA4BaJbACdAYwScToAP5A8e+vRhGx7Iy+h/ZCcefEYgRrwRUH1kHSIFN2olnEj88zjl7K2u3/ktQqZRuPPlABf2m/2EqqhXP7GgLjqiinN2KlbnIAAAA="
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-07.webp",
-          "width": 1279,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAwAgCdASoLABAAA4BaJbACdAE2/x+4Mn2jwADMknD9BbjyvWqUaC1SBv7iJk0ltDhhNXNmqXaA6hTDs0XT6eRetgtLrYgal8N2nRAjCw4N8comPmEwir9PYTFtAAAA"
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-08.webp",
-          "width": 1279,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAAAQAgCdASoLABAAA4BaJZACdAEO9NDTS5gAAP71BMHSSk8kLnSulUrEh+YrpRSgyyt7XEhIjv+ZQOb4GdZrYpuHs1/cpq0XF2bNsyVyoIe0FhC2jOe9X7AA"
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-09.webp",
-          "width": 1279,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAADwAQCdASoLABAAA4BaJbACdAELL74MDAAA/uGmDG91NstHos9B/c9mjHGwITPXb5r+A7BCNP2165qwCLh3x47gkEN5HH48jzP8KHMyxCRq4p5FuyMJsEehVKlfk3WlAND0TQ6AAAA="
-        },
-        {
           "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-10.webp",
           "width": 1279,
           "height": 1920,
           "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAQAgCdASoLABAAA4BaJYwCdADdJ+1kaQ6wAP7NyqwI26xg+cumP0jH1fpb9/5+hMtKoG9tEF0UkVLn1B18JRGVOuNtOu+5DRijBNWFF1WeNNWuFLIyYVFAMzQAAA=="
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-11.webp",
-          "width": 1279,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAABQAgCdASoLABAAA4BaJbAAD5XPqv5to4bKEQAA9q1SOtV6aN802nhkqI1NaeotHwvhnF7S7kb3dCAKrEXhTEFMBwCYCE0b/D5hIMZt+lLB4d6DTOIMfkPds+yXO0+i9iz2rLAAAAA="
-        },
-        {
-          "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-12.webp",
-          "width": 1279,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAADQAQCdASoLABAAA4BaJZwAApeaZeAkAAD+8IETyfB5N3BWQbIIFRTm5/27tLQ97DSgQ2FEVB/ICAKAQzziKSPQOTLIF7JCvPDiKiy2zDfZr+cuX3S5AAAA"
         },
         {
           "src": "/media/valpurgu-nakts-tervete-2026/valpurgu-nakts-tervete-2026-13.webp",
@@ -953,58 +239,16 @@
           "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAADQAQCdASoLABAAA4BaJbACdADZGidAAAD+ZXUh8FVF3lF2l22ycwZL5RPt1A9uNPe2u/p5ZaJraYj06rKv2Y5jqKwhEdZPV9iMF7643NRzfCBXOoqV/ExgAAA="
         },
         {
-          "src": "/media/lielformata-speles/lielformata-speles-02.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAABwAgCdASoLABAAA4BaJagCsEf/gZao/bj1w74AAP7pkPAWlMmS6QsutBzWTSY0PqClHYi88s9wngrtQ5NbxZnRUcEqc2CyuBN0Ai6klO99wirhsKAzFl6h7ZMPNGtVftl4J8fZyI9VpalkhrDWkAAA"
-        },
-        {
-          "src": "/media/lielformata-speles/lielformata-speles-03.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAQAgCdASoLABAAA4BaJbACdAEfsahOiuoAAP6FZgOr2uu/Crzyh2ktMz76a0EM3KxsT5tWAXuoTrByxxzV09hH6C3kTGwPP+LGNgBTvWYdWks5/EFo63tMLeVjzCFEwAA="
-        },
-        {
-          "src": "/media/lielformata-speles/lielformata-speles-04.webp",
-          "width": 843,
-          "height": 1265,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAADwAQCdASoLABAAA4BaJbACdAEU94UQ6BAA/tbUOd5IrzRHvICMYyvok4/R4yIFYS2X3nvcBEZy/VfBoQLPt14ZWJjF0GL4GkdKBoik/DSATOrzQzoRG3Y0FSwJCrk46AA="
-        },
-        {
-          "src": "/media/lielformata-speles/lielformata-speles-05.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAQAgCdASoLABAAA4BaJbACdAD5jofAkm1QAP6bal/a+lXbcCl+oXZnVARc8SrRkh9ncA4MuVC/c2NKncrHx27Pjwilq29WRlZCsz9GWh3q/LgFDVPyqgUGFcSQAA=="
-        },
-        {
           "src": "/media/lielformata-speles/lielformata-speles-06.webp",
           "width": 1365,
           "height": 2048,
           "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAQAgCdASoLABAAA4BaJbACdAEDeSeM+FCAAP7AB13OOy+gw5/MUv+H2AN+vvncduadnYOsn5TlYl7YlyMDsPKojh0a9o9oYbramToWgbqKQ7cAlyzWWwwnR0TpTlcPiBj27UsIAAA="
         },
         {
-          "src": "/media/lielformata-speles/lielformata-speles-07.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAwAgCdASoLABAAA4BaJbACdAYtzZxLCIJ00AD970YV53wTgPMKeYBR5/AyAy8gkZmZ2Rz9Zxy6u6VS7/jXzd3nhDcXfq3hnSUEOK+tX9Og1sMCjXGy83B4QQGLgs3Z8dVy+Md0AAA="
-        },
-        {
-          "src": "/media/lielformata-speles/lielformata-speles-08.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAwAgCdASoLABAAA4BaJbACdAEWgb192zFa8AD+6IgQG71v9kZAu/K0WyCVRoeYvoVa5SdzCj2sqeK6ssbKFNH+oIeFQodBKslYfzDFsFL3tQxdnM4PGLLYvd2UgQZ4PPMTJxMXQzt1iEgAAAA="
-        },
-        {
           "src": "/media/lielformata-speles/lielformata-speles-09.webp",
           "width": 1365,
           "height": 2048,
           "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAQAgCdASoLABAAA4BaJbAC7ADOa4b0MpZAAP7Q9Ubc4gsxeFmRSHhktQ4cu6teJrPu0fgvvPGf3dTYrKWlh8vTlUZTFFMn4C9JqDfbNDV494dQc7hFzPSqWLGLTyTZKOx5ceSI+uxkSHz+AAA="
-        },
-        {
-          "src": "/media/lielformata-speles/lielformata-speles-10.webp",
-          "width": 843,
-          "height": 1265,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAQAgCdASoLABAAA4BaJbACdAD0Fl7SyhYAAP7tCc24+RwbPf/LvNnZDLJuZ3j8DaCsHwvsUNbbJbxshBBVxQXxt5uaUYt2d3upxnrVe5nxQChQ/pLIAPJHPF3eAAAA"
         }
       ]
     },
@@ -1019,24 +263,6 @@
           "width": 2048,
           "height": 1365,
           "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAABQAgCdASoQAAsAA4BaJaAAD5LQ9vK2pp8vQAAA9ke9ASrltIImO2bxt5s49NPz6Hsw0uu9jh754g5WyfKkWhrcUGJ3Sy0Za9C/crf7FC9E7Oslls+ntZwzoSr6oixV+sTzSFPiakXboAJ7nNGAAA=="
-        },
-        {
-          "src": "/media/mazulu-sturitis/mazulu-sturitis-02.webp",
-          "width": 2048,
-          "height": 1365,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAADwAQCdASoQAAsAA4BaJYwCdAEQ7dMdlEgA/XjO2oRVoLYCOAWg80wnX+qP4NlPz1MVjx33/8cWkB+VvC7RnulniU/1FbsnpUT5SLfDlHxT65F674B5IUroa9xAV3h4s2agGKAAAAA="
-        },
-        {
-          "src": "/media/mazulu-sturitis/mazulu-sturitis-03.webp",
-          "width": 2048,
-          "height": 1365,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAQAgCdASoQAAsAA4BaJQBOgB61pjCsm03AAP27hkS3eB1DTzTJr0gGp+OcgK/+FCGpj1pHuXEJF9tQCL6xa5LBb1+ZKKf3UENe+dNWJUb7MASwbb37kouGBmsmoNnItISoKDywLAAAAA=="
-        },
-        {
-          "src": "/media/mazulu-sturitis/mazulu-sturitis-04.webp",
-          "width": 2048,
-          "height": 1365,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAAAQAgCdASoQAAsAA4BaJYwC7AEJ9KhT2saAAP4LpoTvEOvohcj43ph8KBbZ8z/yLI9tGTIOLobZ/2Na92JSFE28dzD5h1jZm/XYBSqeQlm7FegaylcgLoZUSmQjSvpq7kvmO9hY7cwaUQrqzXn2lgAA"
         }
       ]
     },
@@ -1053,46 +279,10 @@
           "blur": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAQAgCdASoQAAsAA4BaJbACdAYwTa29iJtAAP7xQdlp5cO6Mro/Gc7Xpux9H3iLJEprGi46832iblXQtO9rVd1CCHWDXTehMCdbEAHwDUAMYeB7YgJFt42CfjXI+5IJNE7ZEuMkKk8UhqKBoAA="
         },
         {
-          "src": "/media/smaidu-darbnica/smaidu-darbnica-02.webp",
-          "width": 960,
-          "height": 1276,
-          "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAAAQAgCdASoMABAAA4BaJYwCdADdbBEkclMAAP6cEeXut6lzKBtgNmnsONb7nhTe7nqtE1qRHDsEPYwsVM7MYdJWkgAD3/NI4XPa2ewUqkpXIawjKVC53gv4r93McYcAZ2GHWF4HRtZFl+3DjvkAAA=="
-        },
-        {
-          "src": "/media/smaidu-darbnica/smaidu-darbnica-03.webp",
-          "width": 960,
-          "height": 1280,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAAAwAgCdASoMABAAA4BaJbACdADdbBehe3luIAD+rA4edGcTnTufT8JXknaYxoDt/2ckxBhvlZPwcwR7EtOTXIMQnHeoNp3sZpcakH36s2JdeI6WOqk9w33uhoDoE5+tYcKzsku+8MAAAA=="
-        },
-        {
-          "src": "/media/smaidu-darbnica/smaidu-darbnica-04.webp",
-          "width": 1000,
-          "height": 1250,
-          "blur": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAAAwAgCdASoNABAAA4BaJagCdAYyfqaFyj71AAD9U/rYPv4sO21aNvWIndlVt7r4uz0ucra9SKlydaMXtAVGbf/za44pS1aXpLbh7wY8YziBlrRQiEDWYbMyS6LtgSm9AchLXF6y3GmLJmu0DfaEd1JOiEAAAA=="
-        },
-        {
-          "src": "/media/smaidu-darbnica/smaidu-darbnica-05.webp",
-          "width": 1152,
-          "height": 1440,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAADQAQCdASoNABAAA4BaJbACsADgz7DVAAD+96i9Z3K98Euxsj5Vu27TbCZTr5LmO9est4s71ZYZY7kUW2vM47vhGgy7ra3KwuV+GTXIyCUZSIjfcRYqkOR7yVDVC7eX+PNARpzekkAAAA=="
-        },
-        {
-          "src": "/media/smaidu-darbnica/smaidu-darbnica-06.webp",
-          "width": 1440,
-          "height": 960,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAABQAgCdASoQAAsAA4BaJZACdAfwIusgiv+UK84A/mbaVRk2L1gtZDaltg1A9CqyHTp9buzD1B+pE8vitrmd0wuh2/bD0Lgh6M2Efd7Cd3RlP0lSwUNuvrd26cxbaO0RwovywprjGUyJj0FEnZV5iigA"
-        },
-        {
           "src": "/media/smaidu-darbnica/smaidu-darbnica-07.webp",
           "width": 2048,
           "height": 1365,
           "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAADQAQCdASoQAAsAA4BaJbACdAEMMikXgAD+vovGrJyLC/Yn/jsREB2b35Bhd4eoOf/aq3aEvYBsJVnbUmxkM0GKzUbg1937sko58K7Yjzg/F/JifmeRhtvqAAA="
-        },
-        {
-          "src": "/media/smaidu-darbnica/smaidu-darbnica-08.webp",
-          "width": 1365,
-          "height": 2048,
-          "blur": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAADwAQCdASoLABAAA4BaJYwAAuXjedVIzFAA/vHaU1u1WOxSkhW/aAdztIlsJk852K24ME6wXgugc0b6goVxbLb/GsPv/S7+IFZm+JB/Tuwt7LIA"
         },
         {
           "src": "/media/smaidu-darbnica/smaidu-darbnica-09.webp",
@@ -1127,12 +317,6 @@
           "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAwAgCdASoLABAAA4BaJQBOj+AQVpOVsrKwlAD+4eDoD6/GT4igvkWFY1n96CBqcJqh/fayb2EYqDqTfIoBH1FFofB+O6g/ODvZUDGdOwcD3fVrdiTOptOvuoIAxz9VSKMYS0FfQAA="
         },
         {
-          "src": "/media/komanda/komanda.webp",
-          "width": 1440,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAACQAgCdASoMABAAA4BaJZQAD5LTZjepTTkZrSoDgAD+79PTpYuXs74DedCSQjSz8TpWOdqCzYKqLRSXZ76W8EPM9Kv/zWuTAsDdjbbVfD3OXO5ZiuaAvHEP1Yp1FWr8fgAAAA=="
-        },
-        {
           "src": "/media/komanda/kristine.webp",
           "width": 1080,
           "height": 1350,
@@ -1164,6 +348,24 @@
       "category": "telpas",
       "hidden": false,
       "images": [
+        {
+          "src": "/media/telpas/telpas-27.webp",
+          "width": 1080,
+          "height": 1350,
+          "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAADwAQCdASoNABAAA4BaJQBOgBj4ooSmzAAA9EBpHwmVcZfSjtdUV4fa2o02wq8aF/qPUxgVqdc2ZaNZqAaxSHhxjGfNyLIsoZSeS4y5EezNGBcNAhogjI8AAAA="
+        },
+        {
+          "src": "/media/telpas/telpas-28.webp",
+          "width": 1080,
+          "height": 1440,
+          "blur": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAADwAQCdASoMABAAA4BaJZQCdACRrFq+EAAA/e74bYyJ/UxM69IjJDGjGbVnY7ZoZ2372zaHpPfLBTMwM5otAI2xA4LM0vmK+xYvthkTypwsoEgA"
+        },
+        {
+          "src": "/media/telpas/telpas-29.webp",
+          "width": 1080,
+          "height": 1440,
+          "blur": "data:image/webp;base64,UklGRlwAAABXRUJQVlA4IFAAAADQAQCdASoMABAAA4BaJQBOgBttqEbZ+ADN5EsIztyhdTooyQ6BT7btFooThYZ88QGEitntHXtwFKrU+2Qfcu752ero8UrHQDWxcI7iPAAAAA=="
+        },
         {
           "src": "/media/telpas/telpas-01.webp",
           "width": 1280,
@@ -1265,24 +467,6 @@
           "width": 769,
           "height": 960,
           "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwAgCdASoNABAAA4BaJYwCdAYsjkyJTIALgAD+5odm73dEHvQMUNWLNkgaiKHeCjTHHJx1J2tBJrwOe95loCeq/wNz50AGuBzoY9ZIbystgosw+5yQyVLKbWAth18tb7ITEvBxcYvMssIJsUbMDcK8vQaILEgAAAA="
-        },
-        {
-          "src": "/media/telpas/telpas-27.webp",
-          "width": 1080,
-          "height": 1350,
-          "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAADwAQCdASoNABAAA4BaJQBOgBj4ooSmzAAA9EBpHwmVcZfSjtdUV4fa2o02wq8aF/qPUxgVqdc2ZaNZqAaxSHhxjGfNyLIsoZSeS4y5EezNGBcNAhogjI8AAAA="
-        },
-        {
-          "src": "/media/telpas/telpas-28.webp",
-          "width": 1080,
-          "height": 1440,
-          "blur": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAADwAQCdASoMABAAA4BaJZQCdACRrFq+EAAA/e74bYyJ/UxM69IjJDGjGbVnY7ZoZ2372zaHpPfLBTMwM5otAI2xA4LM0vmK+xYvthkTypwsoEgA"
-        },
-        {
-          "src": "/media/telpas/telpas-29.webp",
-          "width": 1080,
-          "height": 1440,
-          "blur": "data:image/webp;base64,UklGRlwAAABXRUJQVlA4IFAAAADQAQCdASoMABAAA4BaJQBOgBttqEbZ+ADN5EsIztyhdTooyQ6BT7btFooThYZ88QGEitntHXtwFKrU+2Qfcu752ero8UrHQDWxcI7iPAAAAA=="
         }
       ]
     },
@@ -1639,12 +823,6 @@
           "width": 1280,
           "height": 1920,
           "blur": "data:image/webp;base64,UklGRlQAAABXRUJQVlA4IEgAAADwAQCdASoLABAAA4BaJQAAXa0GYJlkk0gA/vYQlN2ZT8hlXWnJntOAugMls9CZcE9H3bHTMRFz87/pBCAQ/UrVhNGlgq5uAAA="
-        },
-        {
-          "src": "/media/wednesday-ballite/wednesday-ballite-13.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAADwAQCdASoQAAsAA4BaJbACdACq2u1N9sgA/pFlxFAN4/e5vAiubbNWx1SI6LNsMhK9KAyatAEU6N6i/FNW+5XRi4LGNadsPyGXc4FH8wDVR/ERHAAQkwBEB9EfAAAA"
         }
       ]
     },
@@ -1843,60 +1021,6 @@
           "width": 1280,
           "height": 1920,
           "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAABQAgCdASoLABAAA4BaJQBOgMWvtPalr2HYywAA/uJ8pDjJds0e0TiP8VbnKpfSOinFZQ96ljpboLw1QyOhMPl5srFeeoVwcvWAEbpwCrsv7XYJML5L+vet7Bp6vN0YV1fd6FQeSlEkgAAA"
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-13.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAACwAgCdASoLABAAA4BaJYwC7Ef/i16+YZPsb5E+w0AA/vaYHMzl6dOYa/6B983M/BKJ3XR15HBbxNMx8RvuDsa9q2deHht1mBmRVTLT7yPq7xKc72d7qX0hLJTaTWHd7ib9l3Nj7j4Pil2zYP50g20gAAA="
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-14.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAAAQAgCdASoQAAsAA4BaJZQAD4owCNUPzOIAAPqLwsktDeBrxgV+yxZvWWlsKzZvRLgxdImRmDDzJIBlAbgPy6xFWt9x8+iHMYEfcbzJGE2rMVAgAAA="
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-15.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAABQAgCdASoQAAsAA4BaJYgCdAYsZ29VkRmpawAA/eOd3WKgssF6H1hfdHKdlgHicdWfyd33j47G+AQcR0PrZnGO7n27IovmQBtlhnFdIIsYUx7n6Grieg3Cy5ns+G4QfgX2bHUTJTEpfK3lZAp9CiAA"
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-16.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAAAwAgCdASoLABAAA4BaJZgCdAYxFbY2zRezFAD+uCTtSlIW5eMPR6cszX0yAC9miWh6qPeLABeF+KJ5ING7uCttn/zEN8e1fUT+EgiYli+xGdGd5881Xxzs69wDLjXtmFwkj6xBR3KjNI/vCJcMLGlQAAA="
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-17.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAABwAgCdASoLABAAA4BaJagCdAYt9bSgLEvTI+oAAM4+rhxgtaZoDH6D6ULfr2opcNczg/RX9p92/8fOSheVEZp/K3otTPa5Wfg+0oQ0jUeOuELCozI7UGuFUaCac5VhBKGy7LNEUGF0qWKIGXOBh3ogAAA="
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-18.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAABQAgCdASoLABAAA4BaJagCdAYsZc/FXvnccgAA/ppRv8Msd9fE5UWLzQdv/yHYMYqzknwWa7gzVUMy9jkwvzDBQfB7DZvEz/DFOKLwavncS6YQ4wJ9B9qvmuyqC3Id8V+VTErGNm8RRgyHGhZAcbl0QAZE9iAA"
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-19.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAwAgCdASoQAAsAA4BaJQBOgMXIqyJ7WHvwwAD86qAYmGYIOnwQvlZfkyXmLybBxuOLEOqI0Jf9rjq0UEzDtFJBcueh+FFLVONm33CKO1pNtMFbD8zxXvV7icArVUeeUvAPI+UYAAA="
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-20.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAABwAgCdASoLABAAA4BaJQBOgMYO5hkl5xUkLQKAAP69p6sh18B6cbw+vI/viQNTEwcnRhE/t82y+S9fHoZVbmmIfO67M8sglMs8s59KBYZy12tA+SMMa2/AZtpc51ctR3rPd4bAPAA="
-        },
-        {
-          "src": "/media/eksperimentu-ballite/eksperimentu-ballite-21.webp",
-          "width": 1280,
-          "height": 1920,
-          "blur": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAABQAgCdASoLABAAA4BaJYgCdAYsFalshnaujAAA/mWKbV5f5lDTJMSxcb2ePJEjk/xnYjvJzmzaeRx2oVX4Fj1H9Sx8daaZPrkp0MQ92TvfJ8ivwg8b+8CNtUdnfWucmU5lis0NMJ0LgNkhe3H9BsAA"
         }
       ]
     },
@@ -2057,54 +1181,6 @@
           "width": 960,
           "height": 1440,
           "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAwAgCdASoLABAAA4BaJbACdAYvhZq4g8CV4AD+rPGxTbwTW7Lmqr2onYN9ezZO57096ohXbWi6WGRXQpyYrV2eqRDcMeNJyOPhcQQU0y6KruRoZApkrvtjLNJxcUn0kxNhspAA"
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-13.webp",
-          "width": 1920,
-          "height": 1280,
-          "blur": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAAAwAgCdASoQAAsAA4BaJbACdAEewVrVSPIBIADhh42vHSNSGXVb7Dg4wowqFLAwwjTpnrfU4YFFT5Vn2jHHQuzoTvC+/QmE2xYH3b8tONKSoqalgadgAA=="
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-14.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAADwAQCdASoQAAsAA4BaJagCdACptQ/3kJgA/vWcKYW/FT8A6eOi34H42dxAkWEpQ6RGKN7PFgkeVMjE+ijKi/RiIORukXMyzYRT8bZOb83/ztLdzoJN50TG7AYHFmY2gOFprhSbtExSwUwA"
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-15.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAQAgCdASoQAAsAA4BaJbACdAYuRCpow3EgAP6+YO/9QsUtcmWvLKZkJuv2F6KDwBAnGSvTFKgDxC4ra9YyXxph6o5iKryg5yWJ1biz108udHCfP/aYdPDeJqvL6IAA"
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-16.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAAAQAgCdASoQAAsAA4BaJagCdAEO0KgdD5gAAP5hZGtkYDFrCUxD01lcxb0s4BHjVR0KLUO+z3tr8SDPKv/vR9rgsySCaZAbgrz5BLCfLUgImvKAWDoxefVYAAA="
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-17.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAABQAgCdASoQAAsAA4BaJZgCdAYv/t37E2JN78AA/t2nqsN8bGJWT2+Ha+19d6JevRgutzAjyXOz2PI2QVC9E0Q7m0xPsfblBhT+odNhCFoZmPWYOvSM3SGjUTHVf354AAA="
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-18.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRlAAAABXRUJQVlA4IEQAAAAQAgCdASoQAAsAA4BaJagC7AD0mj1ypJwAAOJ9+blj/pYrES9mWIGUa6Rt6q9WnKZo8PGF7fzVl35m3RHHAc7Eo/gQAA=="
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-19.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAAAwAgCdASoQAAsAA4BaJZgCdAD8o0iffJS4AADvogHH0vEiy7NGmqja1HgxmW/7tErYJObOaSWUlHvtAmFddJgCYkQi0o94+CM0wvZ4vk1hlKcG6bE9/8GkAAA="
-        },
-        {
-          "src": "/media/nerf-ballite/nerf-ballite-20.webp",
-          "width": 700,
-          "height": 467,
-          "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAwAgCdASoQAAsAA4BaJbACdAYtpN9QcztsAAD+eNYh404loTUxQAqY6HFOrL8x3lodRgnnueukjbxMfjJ7SXD7TmjAVo+o0WrK5o3AxW1O9xgwYKBwn+O2JTIS7ltTo28xNl9gAAA="
         }
       ]
     },
@@ -2241,72 +1317,6 @@
           "width": 1206,
           "height": 1589,
           "blur": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAAAQAgCdASoMABAAA4BaJbACdADREPS05bWgAP137h/113z1eCLWhwNKqrJKzlpYmRkhWy/a5BBH0CN71R98zvgwJOXoC3FqacfTb+RyNEamAmXdG/v0oBseeE8+/yMNc/02561cmgM++FmtGoAAAA=="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-14.webp",
-          "width": 1206,
-          "height": 1452,
-          "blur": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAADwAQCdASoNABAAA4BaJbACdAEDZOs+lgAA3cpixhGRv5CVDpgqOBYBdKDEJW2aJfFB0U7jMsNu5oVsOUpKZECpnnMpicLdoBMg27KVWyzE567Gp3QYr7VA767kTwRkdTwBlUjmmSAAAA=="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-15.webp",
-          "width": 1206,
-          "height": 1596,
-          "blur": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAwAgCdASoMABAAA4BaJbACdADhY/nsBcvdAAD+9c/LJ9QYW7sPxxB455cAgi5gTBMno60UcJ6zbYCzrZ1cb0EXyfXO6vyahVXZgw9VwRL63DliTMLGxw+gY+1bw+KRyr1M+gAA"
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-16.webp",
-          "width": 1206,
-          "height": 1597,
-          "blur": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAACQAgCdASoMABAAA4BaJaACsAYxFt8qyq6P7TgkAAD8iP/5Fz8elAyysnIP2P2eyrw9GLbHzroD/XkMvzI3VtDbCiLG9Vv94VRuBHD1BX9DyiKj3zVVxqwgYZLw+AAA"
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-17.webp",
-          "width": 1206,
-          "height": 1590,
-          "blur": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAABwAgCdASoMABAAA4BaJagCdAYt9qyyedldnXQAAP6JxleF00MCuQbQ+0m406ydTLTyCitv1B5I1IkVLpTAfmQgYZr0v8oKK1ICgiDCLPoswv0uHh3QAA=="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-18.webp",
-          "width": 1206,
-          "height": 1548,
-          "blur": "data:image/webp;base64,UklGRrYDAABXRUJQVlA4WAoAAAAoAAAACwAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCB2AAAAMAIAnQEqDAAQAAIANCUAToDFVbUJ7e2kCgAA/gMFekz8kztHpCJ98laA4jzmSiLnH5XGNO6T/6o5q+XSUIXMYHRgqEZC6tnqfN29+0jWoJbd9gjlm+vc0mbWfDez0HLls9V30OsGO4nEe3qo7G75Wk98HfEAAEVYSUb6AAAATU0AKgAAAAgABwEOAAIAAAALAAAAYgESAAMAAAABAAAAAAEaAAUAAAABAAAAbgEbAAUAAAABAAAAdgEoAAMAAAABAAEAAAEyAAIAAAAUAAAAfodpAAQAAAABAAAAkgAAAABTY3JlZW5zaG90AAAAAAAAAAAAAQAAAAAAAAABMjAyNjoxMDowMSAwMDo0MzozMwAABZADAAIAAAAUAAAA1JKGAAcAAAASAAAA6KABAAMAAAAB//8AAKACAAQAAAABAAAEtqADAAQAAAABAAAGDAAAAAAyMDI2OjEwOjAxIDAwOjQzOjMzAEFTQ0lJAAAAU2NyZWVuc2hvdA=="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-19.webp",
-          "width": 1206,
-          "height": 1403,
-          "blur": "data:image/webp;base64,UklGRs4DAABXRUJQVlA4WAoAAAAoAAAADQAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCCOAAAAkAIAnQEqDgAQAAIANCWIAnQGLVXQyy2jZ/C8MhgA/u0FJFkL2nmE197Rj736IMDP67DyKo47Ir4EZ43xyrM/xTs+j9n/d1ql3llEwo32fMXaPHVaLEcAzotC5LQnkrRGdolrFn3kNiBGSN2nvsnh69g/WRWDbCer9dd9A/jPKgnWGoOh3Ki4sQdefHWAAEVYSUb6AAAATU0AKgAAAAgABwEOAAIAAAALAAAAYgESAAMAAAABAAAAAAEaAAUAAAABAAAAbgEbAAUAAAABAAAAdgEoAAMAAAABAAEAAAEyAAIAAAAUAAAAfodpAAQAAAABAAAAkgAAAABTY3JlZW5zaG90AAAAAAAAAAAAAQAAAAAAAAABMjAyNjoxMDowMSAwMDo0NDo1MwAABZADAAIAAAAUAAAA1JKGAAcAAAASAAAA6KABAAMAAAAB//8AAKACAAQAAAABAAAEtqADAAQAAAABAAAFewAAAAAyMDI2OjEwOjAxIDAwOjQ0OjUzAEFTQ0lJAAAAU2NyZWVuc2hvdA=="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-20.webp",
-          "width": 1206,
-          "height": 1329,
-          "blur": "data:image/webp;base64,UklGRuADAABXRUJQVlA4WAoAAAAoAAAADgAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCCgAAAAkAIAnQEqDwAQAAIANCWQAnQGn6ZyOqIYh7GdUwAA/gvT+osXL0Ir3zJ3e+v0YqPfE6aw6KZfhTqbD6tBnuRuKIPX5SbcJF8e8Bb2v4lCJevsJajkF56VgaQ+oc72Kviz+HiCQtJ3Q4j1fXIhC1KZvE9IwRfo2LPcWSY0rvLxkP6y59LYe+9dInv1WGtyOse2BK+lA+Kbc9WjBZcKD6RoAEVYSUb6AAAATU0AKgAAAAgABwEOAAIAAAALAAAAYgESAAMAAAABAAAAAAEaAAUAAAABAAAAbgEbAAUAAAABAAAAdgEoAAMAAAABAAEAAAEyAAIAAAAUAAAAfodpAAQAAAABAAAAkgAAAABTY3JlZW5zaG90AAAAAAAAAAAAAQAAAAAAAAABMjAyNjoxMDowMSAwMDo0NDoxNQAABZADAAIAAAAUAAAA1JKGAAcAAAASAAAA6KABAAMAAAAB//8AAKACAAQAAAABAAAEtqADAAQAAAABAAAFMQAAAAAyMDI2OjEwOjAxIDAwOjQ0OjE1AEFTQ0lJAAAAU2NyZWVuc2hvdA=="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-21.webp",
-          "width": 1206,
-          "height": 1478,
-          "blur": "data:image/webp;base64,UklGRsADAABXRUJQVlA4WAoAAAAoAAAADAAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCCAAAAAEAIAnQEqDQAQAAIANCWIAnQGLhzAh1I8kAD+6l6ejAHMq+NvLly3K9UBLiD35LawJAvqLu195r+bSFxbaHLs2eJlVTscjDoiNfv8b9yCb75dD8n30ZJbaLZp5kBKEMdZH8/7UzLNnj76AHFxXyfRvguAS/g1q4PLhhaS8mV1gABFWElG+gAAAE1NACoAAAAIAAcBDgACAAAACwAAAGIBEgADAAAAAQAAAAABGgAFAAAAAQAAAG4BGwAFAAAAAQAAAHYBKAADAAAAAQABAAABMgACAAAAFAAAAH6HaQAEAAAAAQAAAJIAAAAAU2NyZWVuc2hvdAAAAAAAAAAAAAEAAAAAAAAAATIwMjY6MTA6MDEgMDA6NDM6NTUAAAWQAwACAAAAFAAAANSShgAHAAAAEgAAAOigAQADAAAAAf//AACgAgAEAAAAAQAABLagAwAEAAAAAQAABcYAAAAAMjAyNjoxMDowMSAwMDo0Mzo1NQBBU0NJSQAAAFNjcmVlbnNob3Q="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-22.webp",
-          "width": 1206,
-          "height": 1565,
-          "blur": "data:image/webp;base64,UklGRroDAABXRUJQVlA4WAoAAAAoAAAACwAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCB6AAAAcAIAnQEqDAAQAAIANCWIAnQGLzc4EPpdjQDKgAD++WLBsZ4LwZfGpLjyHdTEjKtOwOn+9fxeT0nz7f4aoKBD/RzKLlb9ifUh/4oJVZMWlA/FXVby3tIOWvtLm7vKTr+jxK9eAI+cywEwGpvryKaAP1MTHZBuCGPAAABFWElG+gAAAE1NACoAAAAIAAcBDgACAAAACwAAAGIBEgADAAAAAQAAAAABGgAFAAAAAQAAAG4BGwAFAAAAAQAAAHYBKAADAAAAAQABAAABMgACAAAAFAAAAH6HaQAEAAAAAQAAAJIAAAAAU2NyZWVuc2hvdAAAAAAAAAAAAAEAAAAAAAAAATIwMjY6MTA6MDEgMDA6NDI6NTcAAAWQAwACAAAAFAAAANSShgAHAAAAEgAAAOigAQADAAAAAf//AACgAgAEAAAAAQAABLagAwAEAAAAAQAABh0AAAAAMjAyNjoxMDowMSAwMDo0Mjo1NwBBU0NJSQAAAFNjcmVlbnNob3Q="
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-23.webp",
-          "width": 1058,
-          "height": 1432,
-          "blur": "data:image/webp;base64,UklGRr4DAABXRUJQVlA4WAoAAAAoAAAACwAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCB+AAAAcAIAnQEqDAAQAAIANCWwAnQGLN202+qihqZdDAD+eEPbr33tWJCVBv5j3W/LXt96K+vZSRACHTPRKJwesTccoHjn1ElfaDZjXZqttl5GeEQchlFMKX439PYehq1JPguD2mDNcv/JGG5rHisqcy4/dvulryv09BNRCNt3IAAARVhJRvoAAABNTQAqAAAACAAHAQ4AAgAAAAsAAABiARIAAwAAAAEAAAAAARoABQAAAAEAAABuARsABQAAAAEAAAB2ASgAAwAAAAEAAQAAATIAAgAAABQAAAB+h2kABAAAAAEAAACSAAAAAFNjcmVlbnNob3QAAAAAAAAAAAABAAAAAAAAAAEyMDI2OjEwOjAxIDAwOjQ1OjM1AAAFkAMAAgAAABQAAADUkoYABwAAABIAAADooAEAAwAAAAH//wAAoAIABAAAAAEAAAQioAMABAAAAAEAAAWYAAAAADIwMjY6MTA6MDEgMDA6NDU6MzUAQVNDSUkAAABTY3JlZW5zaG90"
-        },
-        {
-          "src": "/media/sejas-apgleznosana/sejas-apgleznosana-24.webp",
-          "width": 1206,
-          "height": 1564,
-          "blur": "data:image/webp;base64,UklGRqgDAABXRUJQVlA4WAoAAAAoAAAACwAADwAASUNDUBgCAAAAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAblZQOCBoAAAAUAIAnQEqDAAQAAIANCWQAnQGL17jlKpzCGNMAP77cSVcRKpAGTHkuz5mA3UVjTAaWt9DkpMjnmpVhTliff4aD383Kh078hs2oFILL2IHfcMlLL0pyu4/VG1N9b+yuA6OTzrMoSNPwABFWElG+gAAAE1NACoAAAAIAAcBDgACAAAACwAAAGIBEgADAAAAAQAAAAABGgAFAAAAAQAAAG4BGwAFAAAAAQAAAHYBKAADAAAAAQABAAABMgACAAAAFAAAAH6HaQAEAAAAAQAAAJIAAAAAU2NyZWVuc2hvdAAAAAAAAAAAAAEAAAAAAAAAATIwMjY6MTA6MDEgMDA6NDI6NDAAAAWQAwACAAAAFAAAANSShgAHAAAAEgAAAOigAQADAAAAAf//AACgAgAEAAAAAQAABLagAwAEAAAAAQAABhwAAAAAMjAyNjoxMDowMSAwMDo0Mjo0MABBU0NJSQAAAFNjcmVlbnNob3Q="
         }
       ]
     },

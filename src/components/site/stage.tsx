@@ -8,8 +8,8 @@ import Photo from "./Photo";
 import { Container } from "./ui";
 
 /*
- * "Skatuves" dizaina pamatelementi: dzeltenā galvene, logo smaida grafika,
- * "pielīmētās" fotokartītes un slīdošā josla.
+ * "Skatuves" dizaina pamatelementi: logo smaida grafika, lapas galvene ar fotogrāfiju
+ * un sekcijas virsraksts.
  */
 
 /** Logo smaids (divas acis + trīsstūris) kā liela dekoratīva grafika. */
@@ -24,76 +24,6 @@ export function Smile({ className, style }: { className?: string; style?: React.
 }
 
 export type StackPhoto = { src: string; caption?: string };
-
-/** 1–3 nedaudz pagrieztas fotokartītes ar parakstu (kā pielīmētas pie sienas). */
-export function PhotoStack({ photos, priority = false }: { photos: StackPhoto[]; priority?: boolean }) {
-  const layouts = [
-    "left-0 top-[6%] w-[58%] -rotate-6",
-    "right-0 top-0 z-10 w-[58%] rotate-[5deg]",
-    "left-[22%] -bottom-[4%] z-20 w-[52%] -rotate-1",
-  ];
-  const single = photos.length === 1;
-
-  return (
-    // data-scroll: ritinot kartītes pārvietojas dažādos ātrumos (dziļuma sajūta, sk. RevealObserver)
-    <div data-scroll className={cn("relative", single ? "mx-auto w-full max-w-md" : "min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]")}>
-      {photos.slice(0, 3).map((p, i) => (
-        <figure
-          key={p.src}
-          className={cn(
-            "tilt-card m-0 rounded-[22px] bg-white p-2.5 pb-3.5 shadow-[0_30px_50px_-28px_rgba(31,41,55,0.6)]",
-            single ? "relative rotate-3" : `absolute ${layouts[i]}`,
-          )}
-          style={{ translate: `0 calc((var(--p, 0.35) - 0.35) * ${-50 - i * 70}px)` }}
-        >
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-surface">
-            <Photo
-              src={p.src}
-              alt={p.caption ?? ""}
-              fill
-              preload={priority && i === 0}
-              sizes="(min-width: 1024px) 26vw, 55vw"
-              className="object-cover"
-            />
-          </div>
-          {p.caption && (
-            <figcaption className="mx-1 mt-2.5 text-xs font-extrabold tracking-[0.06em] text-ink uppercase">{p.caption}</figcaption>
-          )}
-        </figure>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Viena liela galvenes fotogrāfija "pielīmētas kartītes" stilā.
- * Ritinot kartīte griežas 3D telpā (--p no RevealObserver), ar peli — sagāžas pēc kursora.
- */
-export function HeroPhoto({ photo, className }: { photo?: StackPhoto; className?: string }) {
-  if (!photo) return null;
-  return (
-    <div data-scroll className={cn("relative mx-auto w-full max-w-[520px] [perspective:1400px]", className)}>
-      <figure
-        className="m-0"
-        style={{
-          rotate: "calc(3deg - (var(--p, 0.35) - 0.35) * 10deg)",
-          transform:
-            "rotateY(calc((var(--p, 0.35) - 0.35) * -28deg)) rotateX(calc((var(--p, 0.35) - 0.35) * 14deg)) translateY(calc((var(--p, 0.35) - 0.35) * -90px))",
-        }}
-      >
-        <div data-tilt className="relative rounded-[26px] bg-white p-3 pb-4 shadow-[0_50px_80px_-40px_rgba(31,41,55,0.7)]">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-surface">
-            <Photo src={photo.src} alt={photo.caption ?? ""} fill preload sizes="(min-width: 1024px) 520px, 90vw" className="object-cover" />
-          </div>
-          {photo.caption && (
-            <figcaption className="mx-1.5 mt-3 text-xs font-extrabold tracking-[0.08em] text-ink uppercase">{photo.caption}</figcaption>
-          )}
-          <span aria-hidden className="tilt-glare pointer-events-none absolute inset-0 rounded-[26px]" />
-        </div>
-      </figure>
-    </div>
-  );
-}
 
 type Crumb = { name: string; path: string };
 
@@ -249,45 +179,24 @@ export function StageHero({
   );
 }
 
-/** Tumša slīdošā josla ar pakalpojumu nosaukumiem. */
-export function Ticker({ items, accent = false }: { items: string[]; accent?: boolean }) {
-  if (items.length === 0) return null;
-  const loop = [...items, ...items];
-  return (
-    <div className={cn("overflow-hidden py-4", accent ? "bg-brand text-ink" : "bg-ink text-white")} aria-hidden>
-      <div className="animate-marquee flex w-max items-center">
-        {loop.map((item, i) => (
-          <span key={i} className="flex items-center font-display text-lg font-bold whitespace-nowrap uppercase md:text-2xl">
-            <span className="px-7">{item}</span>
-            <span className={accent ? "text-ink" : "text-brand"}>✦</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** Sekcijas virsraksts skatuves stilā. */
 export function StageHeading({
   eyebrow,
   title,
   highlight,
   text,
-  light = false,
   className,
 }: {
   eyebrow?: string;
   title: string;
   highlight?: string;
   text?: string;
-  /** Uz tumša fona */
-  light?: boolean;
   className?: string;
 }) {
   return (
     <div data-reveal className={cn("max-w-3xl", className)}>
       {eyebrow && (
-        <p className={cn("mb-4 text-sm font-extrabold tracking-[0.14em] uppercase", light ? "text-brand" : "text-ink-soft")}>
+        <p className="mb-4 text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase">
           {eyebrow}
         </p>
       )}
@@ -296,50 +205,12 @@ export function StageHeading({
         {highlight && (
           <>
             {" "}
-            <span className={light ? "sticker-light" : "sticker"}>{highlight}</span>
+            <span className="sticker">{highlight}</span>
           </>
         )}
       </h2>
-      {text && <p className={cn("mt-5 text-lg leading-8", light ? "text-white/75" : "text-ink-soft")}>{text}</p>}
+      {text && <p className="mt-5 text-lg leading-8 text-ink-soft">{text}</p>}
     </div>
   );
 }
 
-/** Trīs "durvis" uz galvenajām sadaļām — lielas fotogrāfijas ar dzeltenu birku. */
-export function SectionDoors({
-  doors,
-}: {
-  doors: { href: string; tag: string; title: string; text: string; image: string }[];
-}) {
-  return (
-    <div className={cn("grid grid-cols-1", doors.length === 4 ? "sm:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3")}>
-      {doors.map((d) => (
-        <Link
-          key={d.href}
-          href={d.href}
-          className="group relative isolate flex min-h-[340px] flex-col justify-end overflow-hidden p-7 text-white md:min-h-[440px] md:p-9"
-        >
-          <Photo
-            src={d.image}
-            alt=""
-            fill
-            sizes="(min-width: 768px) 33vw, 100vw"
-            className="-z-20 object-cover transition-transform duration-700 ease-out-soft group-hover:scale-105"
-          />
-          <div className="absolute inset-0 -z-10 bg-linear-to-t from-ink/95 via-ink/35 to-ink/5" aria-hidden />
-          <span className="absolute top-6 left-6 rounded-full bg-brand px-3.5 py-1.5 text-xs font-extrabold tracking-[0.08em] text-ink uppercase md:top-8 md:left-8">
-            {d.tag}
-          </span>
-          <h3 className="display text-2xl md:text-[1.75rem]">{d.title}</h3>
-          <p className="mt-2 max-w-xs leading-7 text-white/85">{d.text}</p>
-          <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold tracking-wide uppercase">
-            Uzzināt vairāk
-            <span className="grid size-8 place-items-center rounded-full bg-brand text-ink transition-transform group-hover:translate-x-1">
-              →
-            </span>
-          </span>
-        </Link>
-      ))}
-    </div>
-  );
-}

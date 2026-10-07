@@ -13,14 +13,6 @@ export async function generateMetadata() {
   });
 }
 
-/**
- * Izkārtojums (sk. VenueView):
- *  "kartite" — apraksts + tumša cenu kartīte blakus;
- *  "bento"   — foto režģis + cenu josla;
- *  "cilnes"  — viss cilnēs (Telpas · Cenas · Noteikumi · Foto).
- */
-const LAYOUT = "bento" as const;
-
 export default async function VenuePage() {
-  return <VenueView variant={LAYOUT} />;
+  return <VenueView />;
 }

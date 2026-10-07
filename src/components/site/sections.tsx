@@ -131,41 +131,6 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Klienti / pasākumi — logo vai nosaukumi slīdošā joslā               */
-/* ------------------------------------------------------------------ */
-export function ClientsStrip({ items, title = "Mums uzticas" }: { items: Client[]; title?: string }) {
-  if (items.length === 0) return null;
-  // Saraksts tiek dublēts, lai animācija būtu nepārtraukta
-  const loop = [...items, ...items];
-  return (
-    <section id="klienti" aria-label={title} className="border-y border-line bg-white py-10">
-      <Container className="flex flex-col items-center gap-6 md:flex-row md:gap-10">
-        <p className="shrink-0 text-xs font-bold tracking-[0.18em] text-ink-soft uppercase">{title}</p>
-        <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
-          <ul className="animate-marquee flex w-max items-center gap-12 pr-12">
-            {loop.map((c, i) => (
-              <li key={`${c.name}-${i}`} aria-hidden={i >= items.length} className="shrink-0">
-                {c.logo ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- logo var būt SVG
-                  <img
-                    src={c.logo}
-                    alt={c.name}
-                    loading="lazy"
-                    className="h-10 w-auto max-w-36 object-contain opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0"
-                  />
-                ) : (
-                  <span className="font-display text-base font-bold whitespace-nowrap text-ink/45 uppercase md:text-lg">{c.name}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Klienti un partneri — logo režģis ar pateicības citātu              */
 /* ------------------------------------------------------------------ */
 export function Partners({

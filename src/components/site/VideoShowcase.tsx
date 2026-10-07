@@ -14,111 +14,38 @@ function parse(src: string): { kind: "youtube" | "vimeo" | "file"; id?: string }
   return { kind: "file" };
 }
 
-export type ShowcaseVariant = "kino" | "kartites" | "atskanotajs";
-
 type Props = {
   videos: Video[];
   /** Rezervācijas saite katrai izrādei */
   bookHref?: string[];
-  /** Izkārtojums (sk. zemāk) */
-  variant?: ShowcaseVariant;
 };
-
-/**
- * Izrāžu bloks. Trīs izkārtojumi:
- *  - "kino"         — tumšs fons, katrai izrādei liels video un zem tā nosaukums + apraksts divās kolonnās;
- *  - "kartites"     — trīs vienāda augstuma kartītes blakus (video, nosaukums, apraksts, poga);
- *  - "atskanotajs"  — viens liels atskaņotājs + izrāžu saraksts blakus; izvēlētās izrādes apraksts zem video.
- * YouTube/Vimeo atskaņotājs tiek ielādēts tikai pēc klikšķa (līdz tam — vāciņa attēls).
- */
-export default function VideoShowcase({ videos, bookHref = [], variant = "kino" }: Props) {
-  if (variant === "kartites") return <Cards videos={videos} bookHref={bookHref} />;
-  if (variant === "atskanotajs") return <Player videos={videos} bookHref={bookHref} />;
-  return <Cinema videos={videos} bookHref={bookHref} />;
-}
 
 const href = (bookHref: string[], i: number) => bookHref[i] ?? "/kontakti#pieprasijums";
 
 /** Ilgums kā maza birka */
-function Duration({ value, light = false }: { value?: string; light?: boolean }) {
+function Duration({ value }: { value?: string }) {
   if (!value) return null;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold tracking-[0.08em] uppercase ${
-        light ? "bg-white/10 text-white" : "bg-surface text-ink"
-      }`}
-    >
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs font-extrabold tracking-[0.08em] text-ink uppercase">
       <Clock className="size-3.5" aria-hidden />
       {value}
     </span>
   );
 }
 
-function BookButton({ to, light = false }: { to: string; light?: boolean }) {
+function BookButton({ to }: { to: string }) {
   return (
-    <a
-      href={to}
-      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-extrabold transition-transform hover:-translate-y-0.5 ${
-        light ? "bg-brand text-ink" : "bg-ink text-white"
-      }`}
-    >
+    <a href={to} className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-extrabold text-white transition-transform hover:-translate-y-0.5">
       Rezervēt izrādi <span aria-hidden>→</span>
     </a>
   );
 }
 
-/* ── A: "Kino" ─────────────────────────────────────────────────────────── */
-function Cinema({ videos, bookHref }: { videos: Video[]; bookHref: string[] }) {
-  return (
-    <ol className="space-y-24 md:space-y-32">
-      {videos.map((v, i) => (
-        <li key={`${v.src}-${i}`} data-reveal>
-          <VideoCard video={v} />
-          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-14">
-            <div>
-              <p className="text-sm font-extrabold tracking-[0.14em] text-brand uppercase">Izrāde {String(i + 1).padStart(2, "0")}</p>
-              <h3 className="display mt-3 text-3xl md:text-4xl">{v.title}</h3>
-              <div className="mt-6 flex flex-wrap items-center gap-4">
-                <Duration value={v.duration} light />
-                <BookButton to={href(bookHref, i)} light />
-              </div>
-            </div>
-            {v.description && <RichText text={v.description} className="prose-sd prose-light" />}
-          </div>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/* ── B: "Kartītes" ─────────────────────────────────────────────────────── */
-function Cards({ videos, bookHref }: { videos: Video[]; bookHref: string[] }) {
-  return (
-    <ol className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {videos.map((v, i) => (
-        <li
-          key={`${v.src}-${i}`}
-          data-reveal
-          style={{ "--reveal-delay": `${i * 90}ms` } as React.CSSProperties}
-          className="flex flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_30px_60px_-40px_rgba(26,24,22,0.55)] ring-1 ring-line"
-        >
-          <VideoCard video={v} flat />
-          <div className="flex flex-1 flex-col p-7">
-            <h3 className="display text-xl md:text-2xl">{v.title}</h3>
-            {v.description && <RichText text={v.description} className="prose-sd prose-compact mt-4 flex-1" />}
-            <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-              <Duration value={v.duration} />
-              <BookButton to={href(bookHref, i)} />
-            </div>
-          </div>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/* ── C: "Atskaņotājs ar sarakstu" ──────────────────────────────────────── */
-function Player({ videos, bookHref }: { videos: Video[]; bookHref: string[] }) {
+/**
+ * Izrāžu bloks: viens liels atskaņotājs + izrāžu saraksts blakus; izvēlētās izrādes apraksts zem video.
+ * YouTube/Vimeo atskaņotājs tiek ielādēts tikai pēc klikšķa (līdz tam — vāciņa attēls).
+ */
+export default function VideoShowcase({ videos, bookHref = [] }: Props) {
   const [active, setActive] = useState(0);
   const v = videos[active];
   if (!v) return null;
@@ -181,7 +108,7 @@ function Thumb({ video }: { video: Video }) {
   return <img src={src} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />;
 }
 
-function VideoCard({ video, flat = false }: { video: Video; /** Kartītē: bez ēnas un apakšējiem stūriem */ flat?: boolean }) {
+function VideoCard({ video }: { video: Video }) {
   const [playing, setPlaying] = useState(false);
   const { kind, id } = parse(video.src);
   // YouTube vāciņš: vispirms 1280×720 (maxres); ja tāda nav, krītam uz 640×480 (sd) un 480×360 (hq)
@@ -189,9 +116,7 @@ function VideoCard({ video, flat = false }: { video: Video; /** Kartītē: bez �
   const [ytSize, setYtSize] = useState(0);
   const poster = video.poster || (kind === "youtube" ? `https://i.ytimg.com/vi/${id}/${ytSizes[ytSize]}.jpg` : "");
 
-  const frame = flat
-    ? "relative aspect-video overflow-hidden bg-ink"
-    : "relative aspect-video overflow-hidden rounded-[22px] bg-ink shadow-[0_30px_50px_-28px_rgba(31,41,55,0.6)]";
+  const frame = "relative aspect-video overflow-hidden rounded-[22px] bg-ink shadow-[0_30px_50px_-28px_rgba(31,41,55,0.6)]";
 
   if (kind === "file") {
     return (

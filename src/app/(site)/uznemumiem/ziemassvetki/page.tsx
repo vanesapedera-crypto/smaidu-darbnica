@@ -69,7 +69,7 @@ export default async function XmasBusinessPage() {
               text={showsText}
               className="mb-14 md:mb-20"
             />
-            <VideoShowcase variant="atskanotajs" videos={videos} bookHref={videos.map((v) => bookHref(v.title))} />
+            <VideoShowcase videos={videos} bookHref={videos.map((v) => bookHref(v.title))} />
           </Container>
         </section>
       )}
