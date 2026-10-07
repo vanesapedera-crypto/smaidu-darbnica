@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: [string, number][] = [
     ["/", 1],
     ["/uznemumiem", 0.9],
+    ["/uznemumiem/ziemassvetki", 0.9],
     ["/kontakti", 0.8],
     ["/par-mums", 0.7],
     ["/izklaides-programmas", 0.7],

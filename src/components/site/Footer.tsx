@@ -107,9 +107,18 @@ export default function Footer({ contact, services }: { contact: ContactSettings
 
       <div className="border-t border-white/10">
         <Container className="flex flex-col gap-3 py-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {year} {contact.company} · Smaidu Darbnīca
-          </p>
+          <div>
+            <p>
+              © {year} {contact.company} · Smaidu Darbnīca
+            </p>
+            {/* Izstrādātāja paraksts — nav saistīts ar kontaktiem iestatījumos */}
+            <p className="mt-1 text-xs text-white/50">
+              Mājaslapu izstrādāja: Vanesa Pabērza ·{" "}
+              <a href="tel:+37128193386" className="whitespace-nowrap hover:text-brand">
+                +371 28 193 386
+              </a>
+            </p>
+          </div>
           <Link href="/privatuma-politika" className="hover:text-brand">
             Privātuma politika
           </Link>

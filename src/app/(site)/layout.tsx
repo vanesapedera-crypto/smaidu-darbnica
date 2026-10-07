@@ -11,7 +11,11 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <>
       <Navbar
-        services={services.map(({ slug, title, icon }) => ({ slug, title, icon }))}
+        services={[
+          // Sezonā (kamēr ieslēgta Ziemassvētku reklāma) izvēlnē pirmā ir lapa "Ziemassvētki uzņēmumiem"
+          ...(settings.home.xmasEnabled ? [{ slug: "ziemassvetki", title: "Ziemassvētki uzņēmumiem", icon: "TreePine" }] : []),
+          ...services.map(({ slug, title, icon }) => ({ slug, title, icon })),
+        ]}
         phone={settings.contact.phoneBusiness}
       />
       <main id="saturs">{children}</main>
