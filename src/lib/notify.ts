@@ -270,7 +270,7 @@ ${costs}
 ${points ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 14px">${points}</table>` : ""}
 ${
   info.notice
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 22px"><tr><td style="background:${BRAND};border-radius:14px;padding:16px 18px"><b>Svarīgi!</b> ${escape(info.notice)}</td></tr></table>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 22px"><tr><td style="background:${BRAND};border-radius:14px;padding:16px 18px"><b>Svarīgi!</b><br>${escape(info.notice).replace(/\n{2,}/g, "<br><br>")}</td></tr></table>`
     : ""
 }
 ${

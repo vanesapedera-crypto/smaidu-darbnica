@@ -137,15 +137,17 @@ export default async function KindergartenXmasPage() {
             />
           )}
           {notice && (
-            <p className="mb-6 flex items-start gap-4 rounded-3xl bg-brand p-5 leading-7 font-semibold sm:p-6">
+            <div className="mb-6 flex items-start gap-4 rounded-3xl bg-brand p-5 leading-7 font-semibold sm:p-6">
               <span className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-brand">
                 <Clock className="size-5" aria-hidden />
               </span>
-              <span>
-                <span className="block font-display font-extrabold uppercase">Svarīgi</span>
-                {notice}
-              </span>
-            </p>
+              <div className="space-y-2">
+                <p className="font-display font-extrabold uppercase">Svarīgi!</p>
+                {notice.split(/\n{2,}/).map((para) => (
+                  <p key={para}>{para}</p>
+                ))}
+              </div>
+            </div>
           )}
           <BookingForm
             defaultProgram={SLUG}

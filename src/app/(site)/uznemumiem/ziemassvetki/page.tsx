@@ -22,7 +22,7 @@ export async function generateMetadata() {
 /**
  * Atsevišķa lapa "Ziemassvētki uzņēmumiem" — lai meklētājos to var atrast pēc šiem vārdiem.
  * Jaunu tekstu šeit nav: viss saturs nāk no paneļa —
- *  galvene: Uzņēmumiem → ziemas teksts; piedāvājumi: Sākumlapa → Ziemassvētku bloks un kartītes;
+ *  galvene: Uzņēmumiem → ziemas teksts; piedāvājumi: Sākumlapa → Ziemassvētku bloka kartītes;
  *  izrādes: Izrādes → video (tikai Ziemassvētku izrādes); bildes: albums "Ziemassvētki".
  * Lapa ir pieejama visu gadu — arī tad, kad sezonas reklāma sākumlapā ir izslēgta.
  */
@@ -32,8 +32,6 @@ export default async function XmasBusinessPage() {
 
   const xmas = /ziemassvētk/i;
   const videos = shows.videos.filter((v) => xmas.test(v.title) || xmas.test(v.description ?? ""));
-  // Rindkopa par Ziemassvētku izrādēm no lapas "Izrādes" teksta
-  const showsText = shows.body.split(/\n{2,}/).find((p) => xmas.test(p));
   const bookHref = (show: string) => `/kontakti?${new URLSearchParams({ pakalpojums: "izrades", izrade: show })}#pieprasijums`;
 
   return (
@@ -66,7 +64,6 @@ export default async function XmasBusinessPage() {
               eyebrow={`${videos.length} izrādes`}
               title="Ziemassvētku"
               highlight="izrādes"
-              text={showsText}
               className="mb-14 md:mb-20"
             />
             <VideoShowcase videos={videos} bookHref={videos.map((v) => bookHref(v.title))} />

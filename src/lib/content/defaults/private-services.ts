@@ -72,7 +72,9 @@ const kindergartenXmas: Service = {
   intro: "Uzdāviniet bērniem īstu Ziemassvētku piedzīvojumu!",
   body:
     "Decembra rezervācijas jau ir sākušās!\n\nRezervējiet sev ērtāko datumu savlaicīgi – populārākie laiki piepildās visātrāk.\n\n" +
-    "## Svarīgi\n\nJa pasākuma sākums kavējas, programma netiek pagarināta, bet saīsināta, lai iekļautos jums atvēlētajā laikā, jo pēc jums mums ir citas programmas.",
+    "## Svarīgi\n\n" +
+    "Par programmas sākuma laiku tiek uzskatīts rezervētais laiks, kad programmai ir jāsākas. Līdz tam brīdim iepriekšējām aktivitātēm jābūt noslēgušās un viesiem jābūt gataviem programmas sākumam.\n\n" +
+    "Ja programmas sākums kavējas klienta dēļ, programma netiek pagarināta, bet tiek saīsināta, lai iekļautos rezervētajā laikā. Mēs nevaram aizkavēt nākamās programmas, kas rezervētas citiem klientiem.",
   highlights: ["30 minūtes aktīvas Ziemassvētku programmas", "Dāvaniņu dalīšana", "Kopējais ciemošanās laiks – līdz 1 stundai"],
   suitableFor: [],
   activities: [

@@ -164,23 +164,19 @@ export function XmasFeature({ home, services }: FeatureProps) {
 }
 
 /**
- * Piedāvājumu bloks lapai "Ziemassvētki uzņēmumiem": virsraksts, teksts un tās pašas kartītes.
- * Bez pogas un fotogrāfijas — tās jau ir lapas galvenē. Rāda arī tad, ja sezonas reklāma ir izslēgta.
+ * Piedāvājumu bloks lapai "Ziemassvētki uzņēmumiem": tikai kartītes.
+ * Bez virsraksta, teksta, pogas un fotogrāfijas — tas viss jau ir lapas galvenē tieši virs šī bloka
+ * (virsraksts paliek tikai ekrāna lasītājiem). Rāda arī tad, ja sezonas reklāma ir izslēgta.
  */
 export function XmasOffers({ home, services }: FeatureProps) {
   return (
     <section id="piedavajumi" aria-labelledby="piedavajumi-virsraksts" className="xmas-red relative isolate scroll-mt-20 overflow-hidden bg-ink py-16 text-white md:py-24">
       <div aria-hidden className="absolute inset-0 -z-10 opacity-60" style={stars} />
       <Container>
-        <div data-reveal className="max-w-3xl">
-          <h2 id="piedavajumi-virsraksts" className="display text-3xl sm:text-4xl md:text-5xl">
-            Ziemassvētku <span className="sticker-light">piedāvājumi</span>
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-white/80">{home.xmasText}</p>
-        </div>
-        <div className="mt-12 md:mt-14">
-          <Cards home={home} services={services} />
-        </div>
+        <h2 id="piedavajumi-virsraksts" className="sr-only">
+          Ziemassvētku piedāvājumi
+        </h2>
+        <Cards home={home} services={services} />
       </Container>
     </section>
   );
