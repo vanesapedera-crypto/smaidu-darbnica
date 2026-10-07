@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Car, CircleCheck, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
+import { Car, CircleCheck, Clock, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
 import { needsHeadcount } from "@/lib/bookings";
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,7 @@ export default function BookingForm({
   prices,
   defaultProgram = "",
   institution,
+  notice,
 }: {
   programs: Program[];
   /** Telpu nomas un izbraukuma cenas no paneļa */
@@ -74,6 +75,8 @@ export default function BookingForm({
   defaultProgram?: string;
   /** Iestādes forma: lauku nosaukumi (piem. "Bērnudārza nosaukums", "Bērnudārza adrese") */
   institution?: { nameLabel: string; addressLabel: string };
+  /** Svarīgs brīdinājums zem datuma un laika (piem. par kavēšanos); rindkopas atdala tukša rinda */
+  notice?: string;
 }) {
   // Sākuma stāvoklis: iestādes formā programma un izbraukums ir noteikti jau iepriekš
   const start = { ...initial, program: defaultProgram, ...(institution ? { location: LOCATIONS.travel as string } : {}) };
@@ -562,6 +565,21 @@ export default function BookingForm({
               <Field id="eventTime" label="Vēlamais laiks" required error={errors.eventTime}>
                 <input {...fieldProps("eventTime")} type="time" step={300} />
               </Field>
+            )}
+
+            {/* Brīdinājums par sākuma laiku — uzreiz zem datuma un laika */}
+            {notice && (
+              <div className="flex items-start gap-3.5 rounded-2xl bg-brand p-4 text-sm leading-6 font-semibold sm:col-span-2 sm:p-5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-ink text-brand">
+                  <Clock className="size-4" aria-hidden />
+                </span>
+                <div className="space-y-2">
+                  <p className="font-display font-extrabold uppercase">Svarīgi!</p>
+                  {notice.split(/\n{2,}/).map((para) => (
+                    <p key={para}>{para}</p>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Telpu nomas laiki — trīs pogas; aizņemtos laikus izvēlēties nevar */}

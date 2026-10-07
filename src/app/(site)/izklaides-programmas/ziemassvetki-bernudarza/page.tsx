@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Check, Clock } from "lucide-react";
+import { Check } from "lucide-react";
 import BookingForm from "@/components/site/BookingForm";
 import Photo from "@/components/site/Photo";
 import { StageHeading, StageHero } from "@/components/site/stage";
@@ -34,7 +34,7 @@ export async function generateMetadata() {
  *  - `activities` — abi varianti (nosaukums + apraksts), cena no `pricing` grupas ar to pašu nosaukumu;
  *  - `highlights` — kas iekļauts (pie pirmā varianta), `pricingNote` — piezīme pie cenas ("+ PVN + ceļa izdevumi");
  *  - `body` — aicinājums virs rezervācijas formas (pirmā rindkopa ir virsraksts) un sadaļa "## Svarīgi" —
- *    brīdinājums par kavēšanos (rāda virs formas un apstiprinājuma e-pastā).
+ *    brīdinājums par kavēšanos (rāda formā zem datuma un laika un apstiprinājuma e-pastā).
  * Rezervācija: forma iestādēm (sk. BookingForm `institution`) — tikai izbraukums, cena bez PVN, bez izbraukuma piemaksas.
  */
 export default async function KindergartenXmasPage() {
@@ -136,22 +136,10 @@ export default async function KindergartenXmasPage() {
               className="mb-10 md:mb-12"
             />
           )}
-          {notice && (
-            <div className="mb-6 flex items-start gap-4 rounded-3xl bg-brand p-5 leading-7 font-semibold sm:p-6">
-              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-brand">
-                <Clock className="size-5" aria-hidden />
-              </span>
-              <div className="space-y-2">
-                <p className="font-display font-extrabold uppercase">Svarīgi!</p>
-                {notice.split(/\n{2,}/).map((para) => (
-                  <p key={para}>{para}</p>
-                ))}
-              </div>
-            </div>
-          )}
           <BookingForm
             defaultProgram={SLUG}
             institution={{ nameLabel: "Bērnudārza nosaukums", addressLabel: "Bērnudārza adrese" }}
+            notice={notice}
             prices={bookingPrices(settings)}
             programs={[{ slug: program.slug, title: program.title, image: program.heroImage, pricing: program.pricing }]}
           />
