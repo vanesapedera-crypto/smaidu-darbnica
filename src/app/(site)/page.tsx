@@ -25,8 +25,9 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 1. Galvene: viena liela fotogrāfija pa visu platumu, teksts virs tās */}
-      <section data-scroll className={`home-hero relative isolate flex min-h-[600px] items-end overflow-hidden bg-ink text-white h-[calc(100svh-5rem)] max-h-[900px] ${heroLayoutClass}`}>
+      {/* 1. Galvene: viena liela fotogrāfija pa visu platumu, teksts virs tās.
+          Augstums — pēc ekrāna (600–900 px), bet zemā logā galvene izstiepjas līdz ar tekstu (nekas netiek nogriezts). */}
+      <section data-scroll className={`home-hero relative isolate flex min-h-[max(600px,min(calc(100svh-5rem),900px))] items-end overflow-hidden bg-ink text-white ${heroLayoutClass}`}>
         {photo && (
           // Parallakse: bilde ritinot kustas lēnāk par lapu; viegla "ietālināšanās" ielādē
           // Bilde iet tikai 30 px pāri malām — jo mazāk to palielina, jo asāka tā ir
@@ -37,7 +38,7 @@ export default async function HomePage() {
         <div aria-hidden className="hero-shade absolute inset-0 -z-10 bg-linear-to-r from-ink/90 via-ink/55 to-ink/10" />
         <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-linear-to-t from-ink/80 to-transparent" />
 
-        <Container className="pb-16 md:pb-24">
+        <Container className="pt-12 pb-16 md:pb-24">
           <div className="max-w-3xl">
             <p className="fade-up mb-5 text-sm font-extrabold tracking-[0.14em] text-brand uppercase [--d:50ms]">
               {home.xmasEnabled ? `${home.xmasEyebrow} · rezervācijas atvērtas` : home.heroEyebrow}

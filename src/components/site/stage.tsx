@@ -146,8 +146,9 @@ export function StageHero({
   const mobileSrc = HERO_MOBILE[photoSrc];
 
   return (
-    // Galvene ar vienu lielu fotogrāfiju pa visu platumu (bez rāmja), teksts virs tās
-    <section data-scroll className={cn("relative isolate flex min-h-[520px] items-end overflow-hidden bg-ink text-white md:min-h-[600px] lg:h-[calc(85svh-5rem)] lg:max-h-[780px]", !video && heroLayoutClass)}>
+    // Galvene ar vienu lielu fotogrāfiju pa visu platumu (bez rāmja), teksts virs tās.
+    // Augstums ir minimālais: ja teksts neietilpst (zems logs), galvene izstiepjas, nevis nogriež virsrakstu.
+    <section data-scroll className={cn("relative isolate flex min-h-[520px] items-end overflow-hidden bg-ink text-white md:min-h-[600px] lg:min-h-[max(600px,min(calc(85svh-5rem),780px))]", !video && heroLayoutClass)}>
       {photo && (
         // Bilde iet tikai 30 px pāri malām (parallaksei) — jo mazāk to palielina, jo asāka tā ir
         <div className="hero-photo parallax absolute inset-x-0 -z-20" style={{ top: -30, bottom: -30, ...({ "--speed": "60px" } as React.CSSProperties) }}>

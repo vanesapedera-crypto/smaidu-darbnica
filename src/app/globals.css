@@ -123,8 +123,9 @@
 
 @layer components {
   /* Rindu maska virsrakstiem: katra rinda ir <span class="line-mask"><span>…</span></span> */
+  /* Augšā vairāk vietas (ar negatīvu atstarpi, lai izkārtojums nemainās) — lai maska nenogriež garumzīmes lielajiem burtiem (Ū, Ā, Ī) */
   .line-mask {
-    @apply block overflow-hidden pt-[0.06em] pb-[0.1em];
+    @apply -mt-[0.14em] block overflow-hidden pt-[0.2em] pb-[0.1em];
   }
   .line-mask > span {
     @apply block;
