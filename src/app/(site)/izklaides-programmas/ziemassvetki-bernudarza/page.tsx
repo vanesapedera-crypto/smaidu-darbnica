@@ -7,7 +7,6 @@ import { ButtonLink, Container, Section } from "@/components/site/ui";
 import { getAlbumImages, getService, getSettings } from "@/lib/content/queries";
 import { bookingPrices, eur, parseNotice } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/seo";
-import { cn } from "@/lib/utils";
 
 export const revalidate = 3600;
 
@@ -32,7 +31,7 @@ export async function generateMetadata() {
  * Saturs nāk no programmas ieraksta (panelī "Pakalpojumi" vai defaults/private-services.ts):
  *  - `excerpt` — lielais virsraksts, `intro` — teksts zem tā;
  *  - `activities` — abi varianti (nosaukums + apraksts), cena no `pricing` grupas ar to pašu nosaukumu;
- *  - `highlights` — kas iekļauts (pie pirmā varianta), `pricingNote` — piezīme pie cenas ("+ PVN + ceļa izdevumi");
+ *  - `highlights` — kas iekļauts (abos variantos), `suitableFor` — piezīme zem tā (dāvaniņas nenodrošinām), `pricingNote` — piezīme pie cenas ("+ PVN + ceļa izdevumi");
  *  - `body` — aicinājums virs rezervācijas formas (pirmā rindkopa ir virsraksts) un sadaļa "## Svarīgi" —
  *    brīdinājums par kavēšanos (rāda formā zem datuma un laika un apstiprinājuma e-pastā).
  * Rezervācija: forma iestādēm (sk. BookingForm `institution`) — tikai izbraukums, cena bez PVN, bez izbraukuma piemaksas.
@@ -40,7 +39,7 @@ export async function generateMetadata() {
 export default async function KindergartenXmasPage() {
   const [program, settings, photos] = await Promise.all([getService("private", SLUG), getSettings(), getAlbumImages([SLUG], 6)]);
   if (!program) notFound();
-  // Bildes zem apraksta — bez tās, kas jau ir lapas galvenē
+  // Variantu kartīšu fona bildes — albuma bildes bez tās, kas jau ir lapas galvenē
   const gallery = photos.filter((p) => p.src !== HERO_IMAGE);
 
   // Virsraksts: pēdējais vārds ("bērnudārzā!") — dzeltenajā uzlīmē
@@ -74,23 +73,30 @@ export default async function KindergartenXmasPage() {
         </ButtonLink>
       </StageHero>
 
-      {/* Abi varianti: apraksts, kas iekļauts, cena */}
+      {/* Abi varianti: apraksts, kas iekļauts, cena. Fonā — bilde no albuma (pa vienai katram variantam):
+          kartītes augšā tā ir redzama, uz leju pāriet tumšā pārklājumā, uz kura ir teksts */}
       <Section id="programma" className="scroll-mt-20">
         <Container>
           <div className="grid gap-5 lg:grid-cols-2">
             {program.activities.map((a, i) => {
               const price = program.pricing.find((g) => g.title === a.title)?.options[0]?.price ?? null;
-              const main = i === 0;
+              const photo = gallery[i];
               return (
                 <article
                   key={a.title}
                   data-reveal
                   style={{ "--reveal-delay": `${i * 90}ms` } as React.CSSProperties}
-                  className={cn("flex flex-col rounded-[1.75rem] p-7 sm:p-9", main ? "bg-ink text-white" : "bg-white ring-1 ring-line")}
+                  className="relative isolate flex flex-col overflow-hidden rounded-[1.75rem] bg-ink p-7 pt-60 text-white sm:p-9 sm:pt-72"
                 >
+                  {photo && (
+                    <div className="absolute inset-x-0 top-0 -z-20 h-72 sm:h-[22rem]">
+                      <Photo src={photo.src} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover object-[50%_42%]" />
+                      <div aria-hidden className="absolute inset-0 bg-linear-to-t from-ink via-ink/45 via-40% to-ink/5" />
+                    </div>
+                  )}
                   <h2 className="display text-2xl sm:text-3xl">{a.title}</h2>
-                  <p className={cn("mt-4 text-lg leading-8", main ? "text-white/80" : "text-ink-soft")}>{a.description}</p>
-                  {main && program.highlights.length > 0 && (
+                  <p className="mt-4 text-lg leading-8 text-white/85">{a.description}</p>
+                  {program.highlights.length > 0 && (
                     <ul className="mt-6 space-y-3">
                       {program.highlights.map((h) => (
                         <li key={h} className="flex items-start gap-3 font-semibold">
@@ -102,9 +108,14 @@ export default async function KindergartenXmasPage() {
                       ))}
                     </ul>
                   )}
+                  {program.suitableFor.map((note) => (
+                    <p key={note} className="mt-4 text-sm text-white/70">
+                      {note}
+                    </p>
+                  ))}
                   {price !== null && (
-                    <p className={cn("mt-auto pt-8", main ? "text-white/70" : "text-ink-soft")}>
-                      <span className={cn("mr-2 font-display text-4xl font-extrabold", main ? "text-brand" : "text-ink")}>{eur(price)}</span>
+                    <p className="mt-auto pt-8 text-white/80">
+                      <span className="mr-2 font-display text-4xl font-extrabold text-brand">{eur(price)}</span>
                       {program.pricingNote}
                     </p>
                   )}
@@ -112,16 +123,6 @@ export default async function KindergartenXmasPage() {
               );
             })}
           </div>
-
-          {gallery.length > 0 && (
-            <ul className={cn("mt-5 grid gap-5 sm:grid-cols-2", gallery.length > 2 && "lg:grid-cols-3")}>
-              {gallery.map((p) => (
-                <li key={p.src} data-reveal className="relative aspect-[5/4] overflow-hidden rounded-[1.75rem] bg-surface">
-                  <Photo src={p.src} alt={program.title} fill sizes="(min-width: 640px) 50vw, 100vw" className="object-cover" />
-                </li>
-              ))}
-            </ul>
-          )}
         </Container>
       </Section>
 

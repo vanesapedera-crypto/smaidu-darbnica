@@ -60,7 +60,7 @@ const partyPrograms: Service[] = ordered.map((p, i) => {
  * "Ziemassvētki bērnudārzā" — izbraukuma programma iestādēm ar savu lapu un rezervācijas formu
  * (src/app/(site)/izklaides-programmas/ziemassvetki-bernudarza). Teksts — Smaidu Darbnīcas piedāvājums vārds vārdā.
  *  - `activities` — abi varianti ar aprakstu; nosaukumiem jāsakrīt ar cenu grupām `pricing` (pēc tiem forma rēķina cenu);
- *  - `highlights` — kas iekļauts; `body` — aicinājums rezervēt un sadaļa "## Svarīgi" (brīdinājums par kavēšanos —
+ *  - `highlights` — kas iekļauts (abos variantos), `suitableFor` — piezīmes zem šī saraksta; `body` — aicinājums rezervēt un sadaļa "## Svarīgi" (brīdinājums par kavēšanos —
  *    redzams lapā pie rezervācijas formas un apstiprinājuma e-pastā);
  *  - cenas ir bez PVN, un izbraukuma piemaksu nepiemēro (sk. INSTITUTION_PROGRAMS failā lib/bookings.ts).
  */
@@ -76,7 +76,8 @@ const kindergartenXmas: Service = {
     "Par programmas sākuma laiku tiek uzskatīts rezervētais laiks, kad programmai ir jāsākas. Līdz tam brīdim iepriekšējām aktivitātēm jābūt noslēgušās un viesiem jābūt gataviem programmas sākumam.\n\n" +
     "Ja programmas sākums kavējas klienta dēļ, programma netiek pagarināta, bet tiek saīsināta, lai iekļautos rezervētajā laikā. Mēs nevaram aizkavēt nākamās programmas, kas rezervētas citiem klientiem.",
   highlights: ["30 minūtes aktīvas Ziemassvētku programmas", "Dāvaniņu dalīšana", "Kopējais ciemošanās laiks – līdz 1 stundai"],
-  suitableFor: [],
+  // Piezīmes zem saraksta "kas iekļauts" (abiem variantiem)
+  suitableFor: ["Dāvaniņas mēs nenodrošinām."],
   activities: [
     {
       title: "Rūķis un Ziemassvētku vecītis",
