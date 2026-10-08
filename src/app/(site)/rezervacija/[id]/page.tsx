@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Smile } from "@/components/site/stage";
 import { ButtonLink, Container, buttonClass } from "@/components/site/ui";
-import { isInstitutionProgram, needsHeadcount } from "@/lib/bookings";
+import { atStudio, fixedVenueAddress, isGroupProgram, needsHeadcount } from "@/lib/bookings";
 import { clientBooking } from "@/lib/client-booking";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { dateWords, timeLabel } from "@/lib/dates";
@@ -37,7 +37,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
   const open = valid && !confirmed && !cancelled;
 
   const program = programs.find((p) => p.slug === b?.program);
-  const inVenue = b?.location !== "Izbraukums";
+  const inVenue = atStudio(b?.location);
   // Programmas variants (piem. sejas apgleznošana ar tetovējumiem) un papildu iespējas — no ziņojuma rindām, ko pieraksta forma
   const picked = b?.message?.match(/Izvēle:\s*(.+)/)?.[1]?.trim();
   const variant = program ? priceVariants(program.pricing).find((g) => g.title === picked)?.title : undefined;
@@ -63,11 +63,11 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
     ? [
         ["Datums", dateWords(b!.event_date)],
         ["Laiks", timeLabel(b!.event_time, b!.location)],
-        ["Vieta", inVenue ? `Smaidu Darbnīca, ${contact.address}, ${contact.city}` : (b!.address ?? "")],
+        ["Vieta", inVenue ? `Smaidu Darbnīca, ${contact.address}, ${contact.city}` : (fixedVenueAddress(b!.location) ?? b!.address ?? "")],
         ["Izklaides programma", variant ?? program?.title ?? ""],
         ["Papildu iespējas", extras],
-        ["Bērnu skaits", (needsHeadcount(b!.program) || isInstitutionProgram(b!.program)) && b!.children_count ? String(b!.children_count) : ""],
-        ["Gaviļnieka vecums", needsHeadcount(b!.program) ? (b!.child_age ?? "") : ""],
+        ["Bērnu skaits", (needsHeadcount(b!.program) || isGroupProgram(b!.program)) && b!.children_count ? String(b!.children_count) : ""],
+        ["Gaviļnieka vecums", needsHeadcount(b!.program) && !isGroupProgram(b!.program) ? (b!.child_age ?? "") : ""],
       ]
     : [];
 

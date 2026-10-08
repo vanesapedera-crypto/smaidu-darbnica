@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import ServiceDetail from "@/components/site/ServiceDetail";
-import { isInstitutionProgram } from "@/lib/bookings";
+import { isGroupProgram } from "@/lib/bookings";
 import { getAlbumImages, getService, getServices, getSettings } from "@/lib/content/queries";
 import { pageMetadata } from "@/lib/seo";
 
@@ -11,7 +11,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateStaticParams() {
   const programs = await getServices("private");
   // Programmām iestādēm ir sava lapa (piem. izklaides-programmas/ziemassvetki-bernudarza)
-  return programs.filter((p) => !isInstitutionProgram(p.slug)).map((p) => ({ slug: p.slug }));
+  return programs.filter((p) => !isGroupProgram(p.slug)).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props) {

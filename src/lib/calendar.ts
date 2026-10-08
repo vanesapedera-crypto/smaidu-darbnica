@@ -1,4 +1,4 @@
-import type { Booking } from "./bookings";
+import { atStudio, fixedVenueAddress, type Booking } from "./bookings";
 import { whenLabel } from "./dates";
 import { costLinesText, type BookingCosts } from "./pricing";
 
@@ -41,7 +41,7 @@ export type CalendarEvent = { text: string; dates: string; details: string; loca
 export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | null): CalendarEvent | null {
   if (!b.event_date) return null;
   const isBusiness = b.inquiry_type === "business";
-  const inVenue = !isBusiness && b.location !== "Izbraukums";
+  const inVenue = !isBusiness && atStudio(b.location);
   const date = new Date(`${b.event_date}T00:00:00Z`);
 
   // Ar laiku: telpu nomas posms — 3 stundas, izbraukuma ballīte — 1 stunda; bez laika — visas dienas notikums
@@ -90,7 +90,7 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
     text,
     dates,
     details,
-    location: inVenue ? VENUE_ADDRESS : [b.address, b.event_city].filter(Boolean).join(", "),
+    location: inVenue ? VENUE_ADDRESS : (fixedVenueAddress(b.location) ?? [b.address, b.event_city].filter(Boolean).join(", ")),
     guests: [...CALENDAR_ALWAYS, ...(inVenue ? CALENDAR_VENUE : [])],
   };
 }

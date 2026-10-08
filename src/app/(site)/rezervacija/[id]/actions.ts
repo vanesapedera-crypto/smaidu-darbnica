@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { clientBooking, type ClientBooking } from "@/lib/client-booking";
 import { getServices } from "@/lib/content/queries";
+import { fixedVenueAddress } from "@/lib/bookings";
 import { whenLabel } from "@/lib/dates";
 import { notifyClientAccepted, notifyClientCancelled } from "@/lib/notify";
 
@@ -13,7 +14,7 @@ async function summary(b: ClientBooking) {
     name: b.name ?? "",
     when: whenLabel(b.event_date, b.event_time, b.location),
     title: programs.find((p) => p.slug === b.program)?.title ?? (b.program || "Telpu noma"),
-    place: b.location === "Izbraukums" ? (b.address ?? "") : "Smaidu Darbnīca, Pasta iela 25, Tukums",
+    place: b.location === "Izbraukums" ? (b.address ?? "") : (fixedVenueAddress(b.location) ?? "Smaidu Darbnīca, Pasta iela 25, Tukums"),
   };
 }
 

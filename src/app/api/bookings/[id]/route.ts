@@ -1,7 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdmin } from "@/lib/auth";
-import { BOOKING_STATUSES, confirmPath, type Booking } from "@/lib/bookings";
+import { BOOKING_STATUSES, atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientConfirmed, sendCalendarInvite } from "@/lib/notify";
@@ -22,7 +22,7 @@ async function onConfirmed(b: Booking, host: string | null) {
   const slug = b.service_slug || b.program || "";
   const service = services.find((s) => s.slug === slug);
   const title = service?.title ?? slug;
-  const inVenue = !isBusiness && b.location !== "Izbraukums";
+  const inVenue = !isBusiness && atStudio(b.location);
 
   // Klientu gaidām 15 minūtes pirms sākuma (tikai mūsu telpās)
   const start = b.event_time?.slice(0, 5) ?? "";
@@ -39,7 +39,7 @@ async function onConfirmed(b: Booking, host: string | null) {
         // Datums ar vārdiem un laiks: "6. oktobris plkst. 14:00–17:00" (izbraukumam — sākuma laiks)
         when: whenLabel(b.event_date, b.event_time, isBusiness ? null : b.location),
         arrival,
-        place: inVenue ? undefined : (isBusiness ? b.event_city : b.address) || undefined,
+        place: inVenue ? undefined : (isBusiness ? b.event_city : (fixedVenueAddress(b.location) ?? b.address)) || undefined,
         // SMS numurs bez valsts koda un atstarpēm: "+371 28 193 386" → "28193386"
         smsPhone: phone.replace(/^\+371/, "").replace(/\s/g, ""),
         // Klienta atbildes uz apstiprinājumu vienmēr nāk uz rezervāciju e-pastu

@@ -56,6 +56,44 @@ export const INSTITUTION_PROGRAMS = ["ziemassvetki-bernudarza"];
 export const isInstitutionProgram = (program: string | null | undefined) => INSTITUTION_PROGRAMS.includes(program ?? "");
 
 /**
+ * Programmas, kas notiek noteiktā vietā (ne mūsu telpās, ne klienta adresē) — piem. "Ziemassvētki “Pilsētas mājā” Dobelē".
+ * `name` — norises vieta (glabājas pieteikuma laukā `location`), `address` — kalendāram un apstiprinājumam.
+ * Šīm programmām nav ne telpu nomas, ne ceļa izdevumu, un laiks ir brīvi izvēlams.
+ */
+export const FIXED_VENUES: Record<string, { name: string; address: string }> = {
+  "ziemassvetki-dobele": { name: "“Pilsētas māja” Dobelē", address: "“Pilsētas māja”, Dobele" },
+};
+export const fixedVenue = (program: string | null | undefined) => FIXED_VENUES[program ?? ""];
+/** Norises vietas adrese, ja pieteikums ir kādā no FIXED_VENUES vietām; citādi undefined */
+export const fixedVenueAddress = (location: string | null | undefined) =>
+  Object.values(FIXED_VENUES).find((v) => v.name === location)?.address;
+/** Vai pieteikums ir mūsu telpās (Pasta iela 25) — nevis izbraukumā un nevis kādā no FIXED_VENUES vietām */
+export const atStudio = (location: string | null | undefined) => location !== "Izbraukums" && !fixedVenueAddress(location);
+
+/**
+ * Programmas bērnu grupām (bērnudārziem, skolām) — ar savu lapu un rezervācijas formu: jānorāda iestādes vai grupas
+ * nosaukums un bērnu skaits, gaviļnieka vecumu neprasa; kopējā ballīšu rezervācijas formā tās neparādās.
+ */
+export const GROUP_PROGRAMS = [...INSTITUTION_PROGRAMS, "ziemassvetki-dobele"];
+export const isGroupProgram = (program: string | null | undefined) => GROUP_PROGRAMS.includes(program ?? "");
+
+/**
+ * Nedēļas dienas, kurās programmu var rezervēt (0 — svētdiena, 1 — pirmdiena … 6 — sestdiena).
+ * Programmām, kuru šeit nav, der jebkura diena.
+ */
+export const ALLOWED_WEEKDAYS: Record<string, number[]> = {
+  "ziemassvetki-dobele": [1, 2, 3, 4],
+};
+export const WEEKDAY_TEXT = "Programma notiek no pirmdienas līdz ceturtdienai — lūdzu, izvēlieties citu datumu.";
+export const WEEKDAY_HINT = "Rezervēt var pirmdienas–ceturtdienas.";
+export const allowedWeekdays = (program: string | null | undefined) => ALLOWED_WEEKDAYS[program ?? ""];
+export function isWeekdayBlocked(program: string | null | undefined, date: string | null | undefined): boolean {
+  const days = allowedWeekdays(program);
+  if (!days || !date) return false;
+  return !days.includes(new Date(`${date.slice(0, 10)}T12:00:00Z`).getUTCDay());
+}
+
+/**
  * Pilnībā aizņemtie datumi pa programmām (YYYY-MM-DD): šajos datumos programmu rezervēt nevar —
  * forma to neļauj, un serveris pieteikumu noraida. Pārējās programmas un telpu nomu tas neietekmē.
  * Jaunu datumu pievieno šeit.

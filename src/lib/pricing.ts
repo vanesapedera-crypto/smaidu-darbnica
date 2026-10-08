@@ -1,4 +1,4 @@
-import { isInstitutionProgram } from "@/lib/bookings";
+import { atStudio, isInstitutionProgram } from "@/lib/bookings";
 import type { PriceGroup, SiteSettings } from "@/lib/content/types";
 
 /**
@@ -289,10 +289,10 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
     }
   }
 
-  if (!travelling) {
+  if (atStudio(b.location)) {
     const room = b.event_date ? venuePrice(b.event_date, prices) : null;
     if (room !== null) lines.push({ kind: "room", label: "Telpu noma", amount: room });
-  } else {
+  } else if (travelling) {
     // Izbraukuma piemaksa un ceļa izdevumi — adresēm tālāk par freeTravelKm (vienā virzienā), tāpat kā formā.
     // Ja attālums nav zināms (adresi neizdevās aprēķināt), ceļa izdevumi ir "pēc vienošanās".
     if (b.travel_km == null) lines.push({ kind: "travel", label: "Ceļa izdevumi", amount: null });

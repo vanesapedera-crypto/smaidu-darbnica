@@ -13,6 +13,7 @@ supabase/migrations/20260928120000_admin_security_and_content.sql
 supabase/migrations/20260929090000_service_seasons.sql
 supabase/migrations/20261001090000_booking_travel.sql
 supabase/migrations/20261003090000_booked_venue_slots.sql
+supabase/migrations/20261008090000_booked_venue_slots_fixed_venues.sql
 ```
 
 Tas:

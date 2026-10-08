@@ -1,3 +1,4 @@
+import { atStudio } from "./bookings";
 import { VENUE_SLOTS } from "./pricing";
 
 /**
@@ -20,13 +21,13 @@ export function dateWords(iso: unknown, now: Date = new Date()): string {
 }
 
 /**
- * Laiks: rezervācijām mūsu telpās — 3 stundu posms ("14:00–17:00"), izbraukuma ballītēm — sākuma laiks ("15:00").
+ * Laiks: rezervācijām mūsu telpās — 3 stundu posms ("14:00–17:00"), izbraukuma ballītēm un programmām citās vietās — sākuma laiks ("15:00").
  * `location` — pieteikuma norises vieta ("Izbraukums" vai mūsu telpas).
  */
 export function timeLabel(time: string | null | undefined, location: string | null | undefined): string {
   const start = (time ?? "").slice(0, 5);
   if (!start) return "";
-  return location === "Izbraukums" ? start : (VENUE_SLOTS.find((t) => t.value === start)?.label ?? start);
+  return !atStudio(location) ? start : (VENUE_SLOTS.find((t) => t.value === start)?.label ?? start);
 }
 
 /** Datums un laiks vienā rindā: "6. oktobris plkst. 14:00–17:00" */

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Car, CircleCheck, Clock, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
-import { FULLY_BOOKED_TEXT, fullyBookedDates, isFullyBooked, needsHeadcount } from "@/lib/bookings";
+import { FULLY_BOOKED_TEXT, WEEKDAY_HINT, WEEKDAY_TEXT, allowedWeekdays, fullyBookedDates, isFullyBooked, isWeekdayBlocked, needsHeadcount } from "@/lib/bookings";
 import { dateWords } from "@/lib/dates";
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
@@ -62,6 +62,9 @@ const initial = {
  * `institution` — forma vienai noteiktai izbraukuma programmai iestādei (piem. "Ziemassvētki bērnudārzā"):
  * programma (`defaultProgram`) un norises vieta nav jāizvēlas, papildus jānorāda iestādes nosaukums,
  * cena ir bez PVN un izbraukuma piemaksu nepiemēro (tāpat rēķina serveris — sk. bookingCosts).
+ * `venue` — programma notiek noteiktā vietā (piem. “Pilsētas māja” Dobelē, sk. FIXED_VENUES): norises vietu neizvēlas,
+ * adrese un ceļa izdevumi nav vajadzīgi, telpu nomas nav, laiks — brīvi izvēlams.
+ * `choice` — obligāta izvēle no vairākām iespējām (piem. virtuļi vai vafeles); pieteikumā tā ir ziņojuma rindā "<label>: <izvēle>".
  */
 export default function BookingForm({
   programs,
@@ -69,18 +72,28 @@ export default function BookingForm({
   defaultProgram = "",
   institution,
   notice,
+  venue,
+  choice,
 }: {
   programs: Program[];
   /** Telpu nomas un izbraukuma cenas no paneļa */
   prices: BookingPrices;
   defaultProgram?: string;
   /** Iestādes forma: lauku nosaukumi (piem. "Bērnudārza nosaukums", "Bērnudārza adrese") */
-  institution?: { nameLabel: string; addressLabel: string };
+  institution?: { nameLabel: string; addressLabel: string; plusVat?: boolean };
   /** Svarīgs brīdinājums zem datuma un laika (piem. par kavēšanos); rindkopas atdala tukša rinda */
   notice?: string;
+  /** Noteikta norises vieta (nosaukums tiek saglabāts kā pieteikuma norises vieta) */
+  venue?: { name: string; address: string };
+  /** Obligāta izvēle, piem. { label: "Gardā aktivitāte", options: ["Virtuļu pagatavošana", "Svētku vafeļu pagatavošana"] } */
+  choice?: { label: string; title?: string; options: string[] };
 }) {
   // Sākuma stāvoklis: iestādes formā programma un izbraukums ir noteikti jau iepriekš
-  const start = { ...initial, program: defaultProgram, ...(institution ? { location: LOCATIONS.travel as string } : {}) };
+  const start = {
+    ...initial,
+    program: defaultProgram,
+    ...(venue ? { location: venue.name } : institution ? { location: LOCATIONS.travel as string } : {}),
+  };
   const [form, setForm] = useState(start);
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
@@ -95,21 +108,34 @@ export default function BookingForm({
   const [extras, setExtras] = useState<string[]>([]);
   // Izvēlētais programmas variants (cenu grupas nosaukums), ja programmai tādi ir — piem. sejas apgleznošana ar vai bez tetovējumiem
   const [variantChoice, setVariantChoice] = useState("");
+  // Obligātā izvēle (piem. virtuļi vai vafeles), ja formai tāda ir
+  const [picked, setPicked] = useState("");
 
   const inStudio = form.location === LOCATIONS.studio;
+  // Izbraukums — klienta adresē (ar ceļa izdevumiem); noteiktā vietā (venue) nav ne telpu nomas, ne ceļa izdevumu
+  const travelling = form.location === LOCATIONS.travel;
   const program = programs.find((p) => p.slug === form.program);
   // Bērnu skaits un vecums ir obligāti tikai programmām, kur tas ietekmē cenu (ne telpu nomai vien, ne pārsteiguma tēlam)
   const headcount = needsHeadcount(program?.slug);
   // Programmai pilnībā aizņemtie datumi (sk. FULLY_BOOKED_DATES): rezervēt nevar; zem datuma lauka rāda, kuri tie ir
   const dateBooked = isFullyBooked(program?.slug, form.eventDate);
   const bookedDates = fullyBookedDates(program?.slug).filter((d) => d >= today);
+  // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS), piem. tikai pirmdienas–ceturtdienas
+  const dayBlocked = isWeekdayBlocked(program?.slug, form.eventDate);
+  const dateError = dateBooked ? FULLY_BOOKED_TEXT : dayBlocked ? WEEKDAY_TEXT : undefined;
+  const dateHint = [
+    allowedWeekdays(program?.slug) && WEEKDAY_HINT,
+    bookedDates.length > 0 && `Aizņemts: ${bookedDates.map((d) => dateWords(d)).join(", ")}.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
   // Cena bez PVN — rāda kā "150 € + PVN" (iestādes formā)
-  const vat = institution ? " + PVN" : "";
+  const vat = institution && institution.plusVat !== false ? " + PVN" : "";
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant = variants.find((g) => g.title === variantChoice)?.title ?? variants[0]?.title;
   const programPrice = program
-    ? estimateProgramPrice(program.pricing, Number(form.childrenCount), !inStudio, variant)
+    ? estimateProgramPrice(program.pricing, Number(form.childrenCount), travelling, variant)
     : null;
   const roomPrice = inStudio ? venuePrice(form.eventDate, prices) : null;
 
@@ -136,11 +162,11 @@ export default function BookingForm({
   // izbraukuma piemaksa un ceļa izdevumi ir redzami kopsavilkumā formas apakšā.
   const isTravelGroup = (g: PriceGroup) => /izbrauk/i.test(g.title);
   const shownPricing = program?.pricing.some(isTravelGroup)
-    ? program.pricing.filter((g) => isTravelGroup(g) === !inStudio)
+    ? program.pricing.filter((g) => isTravelGroup(g) === travelling)
     : (program?.pricing ?? []);
   const shownNote = program?.note && !/izbrauk/i.test(program.note) ? program.note : "";
   // Ceļa izdevumi skaitās tikai tad, ja aprēķins atbilst pašreizējai adresei
-  const travelQuote = !inStudio && travel.status === "ok" && travel.address === form.address.trim() ? travel.quote : null;
+  const travelQuote = travelling && travel.status === "ok" && travel.address === form.address.trim() ? travel.quote : null;
   // Papildu iespējas: atzīmētās + to cena (dažām cena atkarīga no bērnu skaita)
   const chosenExtras = (program?.extras ?? [])
     .filter((x) => extras.includes(x.label))
@@ -200,13 +226,14 @@ export default function BookingForm({
       missing.program = inStudio
         ? "Izvēlieties izklaides programmu vai “Nebūs nepieciešama”."
         : "Izbraukuma ballītei izvēlieties izklaides programmu.";
+    if (choice && !picked) missing.choice = "Izvēlieties vienu no iespējām.";
     if (institution && !form.companyName.trim()) missing.companyName = "Norādiet nosaukumu.";
-    if (!inStudio && !form.address.trim()) missing.address = institution ? "Norādiet adresi." : "Norādiet ballītes adresi.";
+    if (travelling && !form.address.trim()) missing.address = institution ? "Norādiet adresi." : "Norādiet ballītes adresi.";
     if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
-    else if (dateBooked) missing.eventDate = FULLY_BOOKED_TEXT;
+    else if (dateError) missing.eventDate = dateError;
     if (!form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : institution ? "Norādiet sākuma laiku." : "Norādiet ballītes sākuma laiku.";
     if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
-    if (headcount && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
+    if (headcount && !institution && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
     if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
     if (!form.email.trim()) missing.email = "Norādiet e-pastu.";
@@ -236,6 +263,7 @@ export default function BookingForm({
             form.message.trim(),
             // Programmas variants — pēc tā serveris rēķina izmaksas e-pastam un panelim (sk. bookingCosts)
             variant && `Izvēle: ${variant}`,
+            choice && picked && `${choice.label}: ${picked}`,
             chosenExtras.length > 0 &&
               `Papildu iespējas: ${chosenExtras.map((x) => `${x.label}${x.price !== null ? ` (${eur(x.price)})` : ""}`).join(", ")}`,
           ]
@@ -254,6 +282,7 @@ export default function BookingForm({
         setTravel({ status: "idle" });
         setExtras([]);
         setVariantChoice("");
+        setPicked("");
         return;
       }
       setErrors(data.errors ?? {});
@@ -270,7 +299,7 @@ export default function BookingForm({
     ? new Date(`${form.eventDate}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })
     : "";
   const timeLabel = inStudio ? (VENUE_SLOTS.find((t) => t.value === form.eventTime)?.label ?? "") : form.eventTime;
-  const placeLabel = inStudio ? "Smaidu Darbnīca, Pasta iela 25, Tukums" : form.address.trim();
+  const placeLabel = venue ? venue.name : inStudio ? "Smaidu Darbnīca, Pasta iela 25, Tukums" : form.address.trim();
   const hasCosts = programPrice !== null || roomPrice !== null || chosenExtras.length > 0;
 
   if (state === "sent") {
@@ -407,6 +436,47 @@ export default function BookingForm({
               </div>
             )}
 
+            {/* Obligātā izvēle (piem. virtuļi vai vafeles) */}
+            {choice && (
+              <div className="space-y-2">
+                <p className="text-sm font-bold" id="choice">
+                  {choice.title ?? choice.label}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
+                <div role="radiogroup" aria-labelledby="choice" className="grid gap-3 sm:grid-cols-2">
+                  {choice.options.map((o) => {
+                    const active = picked === o;
+                    return (
+                      <label
+                        key={o}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-4 text-sm font-extrabold transition-colors",
+                          active ? "border-ink bg-brand" : "border-line hover:border-ink",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="choice"
+                          value={o}
+                          checked={active}
+                          onChange={() => {
+                            setPicked(o);
+                            setErrors((er) => ({ ...er, choice: "" }));
+                          }}
+                          className="size-5 shrink-0 accent-ink"
+                        />
+                        {o}
+                      </label>
+                    );
+                  })}
+                </div>
+                {errors.choice && (
+                  <p role="alert" className="text-sm font-semibold text-destructive">
+                    {errors.choice}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Papildu iespējas (ja programmai tādas ir) */}
             {program?.extras && program.extras.length > 0 && (
               <div className="space-y-2">
@@ -453,7 +523,15 @@ export default function BookingForm({
                 <input {...fieldProps("companyName")} autoComplete="organization" />
               </Field>
             )}
-            {!institution && (
+            {venue && (
+              <p className="flex items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-6 sm:col-span-2">
+                <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>
+                  <strong>Norises vieta:</strong> {venue.name}
+                </span>
+              </p>
+            )}
+            {!institution && !venue && (
             <div className="space-y-2 sm:col-span-2">
               <p className="text-sm font-bold" id="location-label">
                 Norises vieta<span className="ml-0.5 text-destructive" aria-hidden> *</span>
@@ -500,7 +578,7 @@ export default function BookingForm({
               <p className="rounded-2xl bg-surface p-4 text-sm leading-6 sm:col-span-2">
                 <strong>Telpu noma (3 h):</strong> pirmdiena–ceturtdiena {prices.venueWeekday} €, piektdiena–svētdiena {prices.venueWeekend} €.
               </p>
-            ) : (
+            ) : travelling ? (
               <>
                 <Field id="address" label={institution?.addressLabel ?? "Ballītes adrese"} required error={errors.address} className="sm:col-span-2">
                   <div className="flex gap-2">
@@ -560,17 +638,17 @@ export default function BookingForm({
                   </div>
                 )}
               </>
-            )}
+            ) : null}
 
             <Field
               id="eventDate"
               label="Vēlamais datums"
               required
-              error={dateBooked ? FULLY_BOOKED_TEXT : errors.eventDate}
-              hint={bookedDates.length > 0 ? `Aizņemts: ${bookedDates.map((d) => dateWords(d)).join(", ")}.` : undefined}
+              error={dateError ?? errors.eventDate}
+              hint={dateHint || undefined}
               className={inStudio ? "sm:col-span-2" : undefined}
             >
-              <input {...fieldProps("eventDate")} type="date" min={today} aria-invalid={dateBooked || errors.eventDate ? true : undefined} />
+              <input {...fieldProps("eventDate")} type="date" min={today} aria-invalid={dateError || errors.eventDate ? true : undefined} />
             </Field>
             {/* Izbraukuma ballītei — brīvi izvēlams sākuma laiks (telpām zemāk ir trīs laika posmi) */}
             {!inStudio && (
@@ -715,6 +793,7 @@ export default function BookingForm({
             {timeLabel && ticketRow("Laiks", timeLabel)}
             {institution && form.companyName.trim() && ticketRow(institution.nameLabel.split(" ")[0], form.companyName.trim())}
             {placeLabel && ticketRow("Vieta", placeLabel)}
+            {choice && picked && ticketRow(choice.label, picked)}
             {form.childrenCount && ticketRow("Bērnu skaits", form.childrenCount)}
           </dl>
 
@@ -728,7 +807,7 @@ export default function BookingForm({
             <p className="text-xs font-extrabold tracking-[0.14em] text-white/60 uppercase">Izmaksas</p>
             {hasCosts ? (
               <dl className="mt-3 space-y-2 text-sm">
-                {program && ticketRow(variant ?? program.title, programPrice === null ? "pēc vienošanās" : `${eur(programPrice)}${vat}`)}
+                {program && ticketRow(variant ?? program.title, programPrice === null ? (form.childrenCount ? "pēc vienošanās" : "norādiet bērnu skaitu") : `${eur(programPrice)}${vat}`)}
                 {chosenExtras.map((x) => (
                   <div key={x.label} className="flex justify-between gap-4">
                     <dt className="text-white/60">{x.label}</dt>
@@ -747,7 +826,7 @@ export default function BookingForm({
               <p className="mt-3 text-sm leading-6 text-white/60">Izvēlieties programmu un datumu — šeit parādīsies izmaksas.</p>
             )}
             {vat && hasCosts && <p className="mt-3 text-sm text-white/60">{VAT_NOTE}</p>}
-            {!inStudio && !travelQuote && hasCosts && (
+            {travelling && !travelQuote && hasCosts && (
               <p className="mt-3 text-sm text-white/60">Ievadiet {institution ? "adresi" : "ballītes adresi"}, lai aprēķinātu ceļa izdevumus.</p>
             )}
           </div>
@@ -797,7 +876,7 @@ export default function BookingForm({
 
           <button
             type="submit"
-            disabled={state === "sending" || timeTaken || dateBooked}
+            disabled={state === "sending" || timeTaken || Boolean(dateError)}
             className={cn(buttonClass("primary", "lg"), "mt-6 w-full disabled:opacity-60")}
           >
             {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}

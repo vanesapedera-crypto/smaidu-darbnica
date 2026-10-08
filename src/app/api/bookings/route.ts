@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { bookedSlots } from "@/lib/availability";
-import { FULLY_BOOKED_TEXT, isFullyBooked, needsHeadcount } from "@/lib/bookings";
+import { FULLY_BOOKED_TEXT, WEEKDAY_TEXT, atStudio, fixedVenue, isFullyBooked, isGroupProgram, isWeekdayBlocked, needsHeadcount } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
 import { timeLabel } from "@/lib/dates";
@@ -99,6 +99,10 @@ export async function POST(request: Request) {
     status: "Jauns",
   };
 
+  // Programma noteiktā vietā (sk. FIXED_VENUES) — norises vietu nosaka programma, nevis forma
+  const venue = !isBusiness ? fixedVenue(row.program) : undefined;
+  if (venue) Object.assign(row, { location: venue.name, address: null });
+
   if (!row.consent) v.errors.consent = "Nepieciešama piekrišana datu apstrādei";
 
   // Rezervācijas formā visi lauki ir obligāti (forma to jau pārbauda; šī ir pārbaude serverī).
@@ -112,15 +116,19 @@ export async function POST(request: Request) {
     need("eventTime", row.event_time, travelling ? "Norādiet ballītes sākuma laiku." : "Izvēlieties laiku.");
     need("address", !travelling || row.address, "Norādiet ballītes adresi.");
     need("program", !travelling || row.program, "Izbraukuma ballītei izvēlieties izklaides programmu.");
-    need("childrenCount", !needsHeadcount(row.program) || row.children_count, "Norādiet bērnu skaitu.");
-    need("childAge", !needsHeadcount(row.program) || row.child_age, "Norādiet gaviļnieka vecumu.");
+    const group = isGroupProgram(row.program);
+    need("childrenCount", !(needsHeadcount(row.program) || group) || row.children_count, "Norādiet bērnu skaitu.");
+    need("childAge", !needsHeadcount(row.program) || group || row.child_age, "Norādiet gaviļnieka vecumu.");
+    need("companyName", !group || row.company_name, "Norādiet nosaukumu.");
   }
 
   // Programmai pilnībā aizņemts datums (sk. FULLY_BOOKED_DATES) — forma to jau neļauj, šī ir pārbaude serverī
   if (!isBusiness && isFullyBooked(row.program, row.event_date)) v.errors.eventDate = FULLY_BOOKED_TEXT;
+  // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS)
+  if (!isBusiness && isWeekdayBlocked(row.program, row.event_date)) v.errors.eventDate = WEEKDAY_TEXT;
 
   // Telpu noma: laiku, kas šajā datumā jau aizņemts, rezervēt nevar (forma to jau nerāda, šī ir pārbaude serverī)
-  if (!isBusiness && row.location !== "Izbraukums" && row.event_date && row.event_time) {
+  if (!isBusiness && atStudio(row.location) && row.event_date && row.event_time) {
     const taken = await bookedSlots(row.event_date);
     if (taken.includes(row.event_time.slice(0, 5))) {
       v.errors.eventTime = "Šis laiks tikko tika aizņemts. Lūdzu, izvēlieties citu laiku vai datumu.";

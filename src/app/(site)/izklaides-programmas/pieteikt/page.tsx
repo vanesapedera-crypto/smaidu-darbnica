@@ -1,7 +1,7 @@
 import BookingForm from "@/components/site/BookingForm";
 import { Smile } from "@/components/site/stage";
 import { Container, Section } from "@/components/site/ui";
-import { isInstitutionProgram } from "@/lib/bookings";
+import { isGroupProgram } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingPrices, parseExtras, smallGroupMax } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/seo";
@@ -17,7 +17,7 @@ export function generateMetadata() {
 export default async function BookingPage({ searchParams }: { searchParams: Promise<{ program?: string }> }) {
   const [{ program }, all, settings] = await Promise.all([searchParams, getServices("private"), getSettings()]);
   // Programmām iestādēm (piem. "Ziemassvētki bērnudārzā") ir sava lapa ar savu formu — šeit tās neparādās
-  const programs = all.filter((p) => !isInstitutionProgram(p.slug));
+  const programs = all.filter((p) => !isGroupProgram(p.slug));
   const selected = programs.some((p) => p.slug === program) ? program : "";
 
   return (

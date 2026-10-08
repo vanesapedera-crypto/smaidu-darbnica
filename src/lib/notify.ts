@@ -11,7 +11,7 @@
  * Kļūda e-pasta sūtīšanā nekad neaptur pieteikumu — tas jau ir saglabāts datubāzē un redzams panelī.
  */
 
-import { needsHeadcount } from "./bookings";
+import { fixedVenueAddress, needsHeadcount } from "./bookings";
 import { calendarIcs, type CalendarEvent } from "./calendar";
 import { dateWords } from "./dates";
 import { VAT_NOTE, amountText, eur, type BookingCosts } from "./pricing";
@@ -87,7 +87,8 @@ export async function notifyNewBooking(row: Row, info: { title?: string; time?: 
   const date = dateWords(row.event_date);
   const subject = `${isBusiness ? "Pieprasījums" : "Rezervācija"}: ${who}${date ? ` · ${date}` : ""}${info.time ? ` ${info.time}` : ""}`;
   const travelling = row.location === "Izbraukums";
-  const place = isBusiness ? text("event_city") : travelling ? text("address") : "Smaidu Darbnīca, Pasta iela 25, Tukums";
+  const venue = fixedVenueAddress(row.location as string | null);
+  const place = isBusiness ? text("event_city") : travelling ? text("address") : venue ? escape(venue) : "Smaidu Darbnīca, Pasta iela 25, Tukums";
   const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.smaidudarbnica.lv").replace(/\/$/, "");
   const phone = String(row.phone ?? "");
   const email = String(row.email ?? "");
@@ -103,7 +104,7 @@ ${place ? `<p style="margin:6px 0 0;color:${SOFT}">${place}</p>` : ""}
 ${eyebrow("Pieteikums")}
 ${facts([
   [isBusiness ? "Pakalpojums" : "Izklaides programma", info.title ? escape(info.title) : isBusiness ? "" : "Nebūs nepieciešama (tikai telpu noma)"],
-  ["Norises vieta", isBusiness ? "" : travelling ? "Izbraukums" : "Smaidu Darbnīcā"],
+  ["Norises vieta", isBusiness ? "" : travelling ? "Izbraukums" : venue ? text("location") : "Smaidu Darbnīcā"],
   ["Adrese", travelling ? text("address") : ""],
   ["Pasākuma veids", text("event_type")],
   ["Pilsēta / vieta", text("event_city")],
