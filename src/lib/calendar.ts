@@ -79,8 +79,15 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
     .filter(Boolean)
     .join("\n");
 
+  // Nosaukums kalendārā: ballītēm — vispirms telpu noma (ja ir), tad izklaides programma, bez klienta vārda
+  // ("Telpu noma + Glitteru ballīte"); uzņēmumu pieprasījumiem — pakalpojums un uzņēmums
+  const program = ["", "—", "Telpu noma", "Pieteikums"].includes(title.trim()) ? "" : title.trim();
+  const text = isBusiness
+    ? [title, who].filter(Boolean).join(" — ")
+    : [inVenue && "Telpu noma", program].filter(Boolean).join(" + ") || "Pieteikums";
+
   return {
-    text: [title, who].filter(Boolean).join(" — "),
+    text,
     dates,
     details,
     location: inVenue ? VENUE_ADDRESS : [b.address, b.event_city].filter(Boolean).join(", "),

@@ -90,7 +90,7 @@ const kindergartenXmas: Service = {
     },
   ],
   pricing: [
-    { title: "Rūķis un Ziemassvētku vecītis", options: [{ label: "Cena", price: 190 }] },
+    { title: "Rūķis un Ziemassvētku vecītis", options: [{ label: "Cena", price: 195 }] },
     { title: "Tikai Rūķis", options: [{ label: "Cena", price: 150 }] },
   ],
   pricingNote: "+ PVN + ceļa izdevumi",
