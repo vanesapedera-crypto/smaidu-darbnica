@@ -76,7 +76,8 @@ export const atStudio = (location: string | null | undefined) => location !== "I
  * Programmas bērnu grupām (bērnudārziem, skolām) — ar savu lapu un rezervācijas formu: jānorāda iestādes vai grupas
  * nosaukums un bērnu skaits, gaviļnieka vecumu neprasa; kopējā ballīšu rezervācijas formā tās neparādās.
  */
-export const GROUP_PROGRAMS = [...INSTITUTION_PROGRAMS, "ziemassvetki-dobele"];
+/** "minioni-atklaj-manu-pasauli" — izrāde bērnudārziem: lapā ir pieprasījuma forma (nevis rezervācija) */
+export const GROUP_PROGRAMS = [...INSTITUTION_PROGRAMS, "ziemassvetki-dobele", "minioni-atklaj-manu-pasauli"];
 export const isGroupProgram = (program: string | null | undefined) => GROUP_PROGRAMS.includes(program ?? "");
 
 /**

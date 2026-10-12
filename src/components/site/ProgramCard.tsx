@@ -11,9 +11,11 @@ import Photo from "./Photo";
  */
 export default function ProgramCard({ program, index = 0 }: { program: Service; index?: number }) {
   const price = fromPrice(program.pricing);
+  // Cena par katru bērnu (piem. izrāde bērnudārziem) — "4 € / bērnam", nevis "no 4 €"
+  const perChild = program.pricing.length === 1 && program.pricing[0].options.length === 1 && /par katru bērnu/i.test(program.pricing[0].options[0].label);
   const facts = [
     // Programmām iestādēm cena ir bez PVN
-    { icon: Euro, label: "Cena", value: price !== null ? `no ${price} €${isInstitutionProgram(program.slug) ? " + PVN" : ""}` : "pēc vienošanās" },
+    { icon: Euro, label: "Cena", value: price !== null && perChild ? `${price} € / bērnam` : price !== null ? `no ${price} €${isInstitutionProgram(program.slug) ? " + PVN" : ""}` : "pēc vienošanās" },
     { icon: Clock, label: "Ilgums", value: program.duration.replace(/\s*\(.*\)/, "") }, // bez piezīmes iekavās
     { icon: Baby, label: "Vecums", value: program.age },
   ].filter((f) => f.value);

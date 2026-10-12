@@ -161,8 +161,51 @@ const dobeleXmas: Service = {
     "Maģisks Ziemassvētku piedzīvojums bērnu grupām “Pilsētas mājā” Dobelē: spīdīgo nūjiņu deja, video projekcija, Ziemassvētku rotājuma pagatavošana, ēdamā svētku čiekura pagatavošana un silts dzēriens. Programma 1 stunda, to vada 2 rūķi.",
 };
 
-// Secība sarakstos: sejas apgleznošana, tad Ziemassvētku sezonas piedāvājumi, tad pārējās programmas
-export const privateServices: Service[] = [partyPrograms[0], kindergartenXmas, dobeleXmas, ...partyPrograms.slice(1)].map((s, i) => ({
+/**
+ * "Minioni atklāj maņu pasauli!" — interaktīva izrāde pirmsskolas izglītības iestādēm ar savu lapu
+ * (src/app/(site)/izklaides-programmas/minioni-atklaj-manu-pasauli) un pieprasījuma formu. Teksts — Smaidu Darbnīcas piedāvājums.
+ *  - `intro` — jautājums zem virsraksta, `body` — ievada teksts;
+ *  - `highlights` — ko bērni iepazīs ("Maņa — apraksts"), `suitableFor` — teikumi lapas noslēgumā;
+ *  - `pricing` — cena par katru bērnu (kartītē rāda "4 € / bērnam").
+ */
+const minionsShow: Service = {
+  slug: "minioni-atklaj-manu-pasauli",
+  audience: "private",
+  title: "Minioni atklāj maņu pasauli!",
+  excerpt: "Interaktīva izrāde pirmsskolas izglītības iestādēm",
+  intro: "Vai esi gatavs doties aizraujošā piedzīvojumā kopā ar jautrajiem Minioniem?",
+  body:
+    "Šoreiz Minioni dodas īpašā misijā – atklāt cilvēka maņu pasauli! Kopā ar viņiem bērni aizraujošā un bērniem saprotamā veidā uzzinās, kā darbojas redze, dzirde, oža un garša, kā arī pārliecināsies, cik interesanta var būt apkārtējās pasaules izzināšana.",
+  highlights: [
+    "Redze — uzzinās, kā acis palīdz saskatīt krāsas un formas.",
+    "Dzirde — klausīsies dažādas skaņas un atklās, kā darbojas mūsu dzirde.",
+    "Oža — iepazīs smaržu pasauli un uzzinās, kā deguns palīdz atpazīt dažādas smaržas.",
+    "Garša — uzzinās, kā mūsu mēle palīdz atšķirt saldu, skābu, sāļu un rūgtu.",
+  ],
+  suitableFor: [
+    "Tā nebūs tikai izrāde – tas būs aizraujošs piedzīvojums, kurā ikviens bērns kļūs par mazo pētnieku!",
+    "Mācāmies, spēlējamies un atklājam maņu pasauli kopā ar Minioniem!",
+  ],
+  activities: [],
+  pricing: [{ title: "Cena", options: [{ label: "Par katru bērnu", price: 4 }] }],
+  pricingNote: "",
+  faq: [],
+  age: "",
+  duration: "40 minūtes",
+  participants: "",
+  icon: "Drama",
+  heroImage: "/media/minioni/minioni-02.webp",
+  albums: [],
+  seasons: [],
+  sort: 0,
+  published: true,
+  seoTitle: "Minioni atklāj maņu pasauli! — interaktīva izrāde bērnudārziem",
+  seoDescription:
+    "Interaktīva izrāde pirmsskolas izglītības iestādēm: kopā ar Minioniem bērni atklāj redzi, dzirdi, ožu un garšu. Ilgums 40 minūtes, 4 € no bērna.",
+};
+
+// Secība sarakstos: sejas apgleznošana, tad Ziemassvētku sezonas piedāvājumi un izrāde bērnudārziem, tad pārējās programmas
+export const privateServices: Service[] = [partyPrograms[0], kindergartenXmas, dobeleXmas, minionsShow, ...partyPrograms.slice(1)].map((s, i) => ({
   ...s,
   sort: (i + 1) * 10,
 }));

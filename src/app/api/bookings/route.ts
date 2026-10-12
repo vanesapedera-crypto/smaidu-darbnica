@@ -183,9 +183,10 @@ export async function POST(request: Request) {
   // E-pasta paziņojums tiek sūtīts pēc atbildes nosūtīšanas — lietotājam nav jāgaida
   // E-pastā ir pilns pieteikums: programmas nosaukums, laika posms un izmaksas (tās pašas, ko klients redz formā)
   after(async () => {
-    const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
+    const [settings, services, others] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private"), getServices(isBusiness ? "private" : "business")]);
     const slug = row.service_slug || row.program || "";
-    const service = services.find((s) => s.slug === slug);
+    // Pieprasījums var būt arī par izklaides programmu ar pieprasījuma formu (piem. izrāde bērnudārziem) — meklē abos sarakstos
+    const service = services.find((s) => s.slug === slug) ?? others.find((s) => s.slug === slug);
     await notifyNewBooking(record, {
       title: service?.title ?? EXTRA_TITLES[slug] ?? slug,
       time: timeLabel(row.event_time, row.location),

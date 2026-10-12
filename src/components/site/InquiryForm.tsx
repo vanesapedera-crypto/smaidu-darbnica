@@ -29,13 +29,17 @@ const initial = {
 /**
  * Pieprasījuma forma uzņēmumiem un iestādēm.
  * Dati tiek saglabāti `bookings` tabulā ar inquiry_type = "business".
+ * `kindergarten` — forma vienai programmai bērnudārziem (piem. Minionu izrādei): pakalpojums jau izvēlēts,
+ * lauki "Bērnudārzs", "Bērnudārza adrese", "Bērnu skaits", bez budžeta.
  */
 export default function InquiryForm({
   services,
   defaultService = "",
+  kindergarten = false,
 }: {
   services: ServiceOption[];
   defaultService?: string;
+  kindergarten?: boolean;
 }) {
   const [form, setForm] = useState({ ...initial, serviceSlug: defaultService });
   const [website, setWebsite] = useState("");
@@ -123,7 +127,7 @@ export default function InquiryForm({
 
       <fieldset className="grid gap-5 sm:grid-cols-2">
         <legend className="mb-5 text-lg font-extrabold">Kontaktinformācija</legend>
-        <Field id="companyName" label="Uzņēmums vai iestāde" required error={errors.companyName}>
+        <Field id="companyName" label={kindergarten ? "Bērnudārzs" : "Uzņēmums vai iestāde"} required error={errors.companyName}>
           <input {...fieldProps("companyName")} autoComplete="organization" required />
         </Field>
         <Field id="parentName" label="Kontaktpersona" required error={errors.parentName}>
@@ -138,7 +142,8 @@ export default function InquiryForm({
       </fieldset>
 
       <fieldset className="mt-10 grid gap-5 sm:grid-cols-2">
-        <legend className="mb-5 text-lg font-extrabold">Par pasākumu</legend>
+        <legend className="mb-5 text-lg font-extrabold">{kindergarten ? "Par izrādi" : "Par pasākumu"}</legend>
+        {!kindergarten && (
         <Field id="serviceSlug" label="Pakalpojums" error={errors.serviceSlug} className="sm:col-span-2">
           <select {...fieldProps("serviceSlug")}>
             <option value="">Vēl nezinu / vairāki pakalpojumi</option>
@@ -149,15 +154,17 @@ export default function InquiryForm({
             ))}
           </select>
         </Field>
+        )}
         <Field id="eventDate" label="Plānotais datums" error={errors.eventDate}>
           <input {...fieldProps("eventDate")} type="date" min={today} />
         </Field>
-        <Field id="eventCity" label="Norises vieta" error={errors.eventCity}>
-          <input {...fieldProps("eventCity")} placeholder="Pilsēta vai adrese" />
+        <Field id="eventCity" label={kindergarten ? "Bērnudārza adrese" : "Norises vieta"} error={errors.eventCity}>
+          <input {...fieldProps("eventCity")} placeholder={kindergarten ? "Iela, pilsēta" : "Pilsēta vai adrese"} />
         </Field>
-        <Field id="participants" label="Dalībnieku skaits" error={errors.participants}>
-          <input {...fieldProps("participants")} type="number" inputMode="numeric" min={1} placeholder="piem., 80" />
+        <Field id="participants" label={kindergarten ? "Bērnu skaits" : "Dalībnieku skaits"} error={errors.participants}>
+          <input {...fieldProps("participants")} type="number" inputMode="numeric" min={1} placeholder={kindergarten ? "piem., 25" : "piem., 80"} />
         </Field>
+        {!kindergarten && (
         <Field id="budgetRange" label="Aptuvenais budžets" error={errors.budgetRange}>
           <select {...fieldProps("budgetRange")}>
             <option value="">Izvēlieties</option>
@@ -166,8 +173,9 @@ export default function InquiryForm({
             ))}
           </select>
         </Field>
-        <Field id="message" label="Pastāstiet vairāk" error={errors.message} className="sm:col-span-2">
-          <textarea {...fieldProps("message")} rows={5} placeholder="Pasākuma mērķis, auditorija, vēlmes…" />
+        )}
+        <Field id="message" label={kindergarten ? "Papildu informācija" : "Pastāstiet vairāk"} error={errors.message} className="sm:col-span-2">
+          <textarea {...fieldProps("message")} rows={5} placeholder={kindergarten ? "Vēlamais laiks, grupas, bērnu vecums, jautājumi…" : "Pasākuma mērķis, auditorija, vēlmes…"} />
         </Field>
       </fieldset>
 
