@@ -126,7 +126,14 @@ const dobeleXmas: Service = {
   intro:
     "Kad gaismas pieklust un iedegas spīdīgās nūjiņas, sākas Ziemassvētku burvība. Bērni dejo, smejas un paši savām rokām pagatavo Ziemassvētku rotājumu. Noslēgumā – ēdamais svētku čiekurs un silts dzēriens.",
   body: "",
-  highlights: ["Spīdīgo nūjiņu deja", "Video projekcija", "Ziemassvētku rotājuma pagatavošana", "Ēdamais svētku čiekurs", "Silts dzēriens"],
+  highlights: [
+    "Satikšanās ar rūķiem – Ziemassvētku aktivitātes",
+    "Spīdīgo nūjiņu deja",
+    "Video projekcija",
+    "Ziemassvētku rotājuma pagatavošana",
+    "Ēdamais svētku čiekurs",
+    "Silts dzēriens",
+  ],
   suitableFor: ["Programmu vada 2 rūķi"],
   activities: [],
   pricing: [
