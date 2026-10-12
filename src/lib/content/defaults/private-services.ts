@@ -114,7 +114,7 @@ const kindergartenXmas: Service = {
  * (src/app/(site)/izklaides-programmas/ziemassvetki-dobele). Teksts — no Smaidu Darbnīcas piedāvājuma.
  *  - `excerpt` — lielais virsraksts (pēdējais vārds — dzeltenā krāsā), `intro` — teksts zem tā;
  *  - `highlights` — programmā iekļauts, `suitableFor` — piezīmes pie programmas (piem. kas to vada);
- *  - `activities` — gardās aktivitātes, no kurām jāizvēlas viena (rezervācijas formā obligāta izvēle);
+ *  - `activities` — ja aizpildītas: iespējas, no kurām jāizvēlas viena (rezervācijas formā obligāta izvēle); šobrīd nav;
  *  - `pricing` — cena līdz 15 bērniem un piemaksa par katru nākamo bērnu (pēc tām forma rēķina cenu).
  * Norises vieta un dienas (tikai pirmdiena–ceturtdiena) — FIXED_VENUES un ALLOWED_WEEKDAYS failā lib/bookings.ts.
  */
@@ -124,14 +124,11 @@ const dobeleXmas: Service = {
   title: "Ziemassvētki “Pilsētas mājā” Dobelē",
   excerpt: "Maģisks Ziemassvētku piedzīvojums bērniem",
   intro:
-    "Kad gaismas pieklust un iedegas spīdīgās nūjiņas, sākas Ziemassvētku burvība. Bērni dejo, smejas, satiek lielo svētku tēlu un paši savām rokām rada aromātisku sveci. Noslēgumā – gardumi, ko viņi pagatavo paši, un silts dzēriens.",
+    "Kad gaismas pieklust un iedegas spīdīgās nūjiņas, sākas Ziemassvētku burvība. Bērni dejo, smejas un paši savām rokām pagatavo Ziemassvētku rotājumu. Noslēgumā – ēdamais svētku čiekurs un silts dzēriens.",
   body: "",
-  highlights: ["Spīdīgo nūjiņu deja", "Video projekcija", "Deja ar lielo tēlu", "Aromātiskās sveces meistarklase", "Silts dzēriens"],
+  highlights: ["Spīdīgo nūjiņu deja", "Video projekcija", "Ziemassvētku rotājuma pagatavošana", "Ēdamais svētku čiekurs", "Silts dzēriens"],
   suitableFor: ["Programmu vada 2 rūķi"],
-  activities: [
-    { title: "Virtuļu pagatavošana", description: "" },
-    { title: "Svētku vafeļu pagatavošana", description: "" },
-  ],
+  activities: [],
   pricing: [
     {
       title: "Cena",
@@ -154,7 +151,7 @@ const dobeleXmas: Service = {
   published: true,
   seoTitle: "Ziemassvētki bērniem “Pilsētas mājā” Dobelē",
   seoDescription:
-    "Maģisks Ziemassvētku piedzīvojums bērnu grupām “Pilsētas mājā” Dobelē: dejas, video projekcija, sveces meistarklase, virtuļu vai vafeļu pagatavošana. Programma 1 stunda, to vada 2 rūķi.",
+    "Maģisks Ziemassvētku piedzīvojums bērnu grupām “Pilsētas mājā” Dobelē: spīdīgo nūjiņu deja, video projekcija, Ziemassvētku rotājuma pagatavošana, ēdamais svētku čiekurs un silts dzēriens. Programma 1 stunda, to vada 2 rūķi.",
 };
 
 // Secība sarakstos: sejas apgleznošana, tad Ziemassvētku sezonas piedāvājumi, tad pārējās programmas

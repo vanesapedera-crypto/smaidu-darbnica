@@ -437,3 +437,62 @@ export function notifyUnconfirmed(dates: string[]) {
 <p style="margin:0">Panelī pie katras ir pogas <b>WhatsApp</b> un <b>SMS</b> — tās atver ziņu ar jau uzrakstītu tekstu un apstiprināšanas saiti.</p>`,
   );
 }
+
+/**
+ * Atsauksmes pieprasījums klientam (panelī poga "Pieprasīt atsauksmi"): e-pasts ar pogu uz Google atsauksmēm.
+ * Teksti — lib/review.ts (telpu nomai un izklaides programmai atšķirīgi). Atgriež true, ja e-pasts nosūtīts.
+ */
+export async function notifyReviewRequest(info: {
+  to: string;
+  name: string;
+  subject: string;
+  paragraphs: string[];
+  url: string;
+  replyTo: string;
+  logoUrl?: string;
+  footer: { address: string; phone: string; email: string; site: string };
+}): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key || !info.to.trim()) return false;
+  const first = info.name.trim().split(/\s+/)[0];
+  const p = (html: string, style = "") => `<p style="margin:0 0 16px;${style}">${html}</p>`;
+
+  const html = `<div style="margin:0;padding:24px 12px;background:${SURFACE};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${INK}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;border-collapse:separate">
+<tr><td style="background:${INK};border-radius:20px 20px 0 0;padding:28px 32px 30px">
+${info.logoUrl ? `<img src="${info.logoUrl}" alt="Smaidu Darbnīca" width="110" style="display:block;width:110px;height:auto;border:0;margin:0 0 22px">` : ""}
+<p style="margin:0;font-size:28px;line-height:1.25;font-weight:bold;text-transform:uppercase;color:#ffffff">Paldies, ka<br><span style="display:inline-block;margin-top:4px;padding:2px 12px;border-radius:8px;background:${BRAND};color:${INK}">svinējāt ar mums</span></p>
+</td></tr>
+<tr><td style="background:#ffffff;padding:30px 32px 26px">
+${p(`Sveiki${first ? `, ${escape(first)}` : ""}!`, "font-size:17px;font-weight:bold")}
+${info.paragraphs.map((t) => p(escape(t))).join("\n")}
+<p style="margin:8px 0 26px"><a href="${escape(info.url)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">★ Atstāt atsauksmi</a></p>
+<p style="margin:0;font-size:17px;font-weight:bold">Paldies!</p>
+<p style="margin:4px 0 0">Smaidīgu dienu,<br><b>SMAIDU DARBNĪCA</b></p>
+</td></tr>
+<tr><td style="background:${INK};border-radius:0 0 20px 20px;padding:22px 32px;font-size:13px;line-height:1.7;color:#bdb6ab">
+<span style="color:#ffffff;font-weight:bold">Smaidu Darbnīca</span><br>
+${escape(info.footer.address)}<br>
+<a href="tel:${escape(info.footer.phone.replace(/\s/g, ""))}" style="color:#bdb6ab;text-decoration:none">${escape(info.footer.phone)}</a> · <a href="mailto:${escape(info.footer.email)}" style="color:#bdb6ab;text-decoration:none">${escape(info.footer.email)}</a><br>
+<a href="${info.footer.site}" style="color:${BRAND};text-decoration:none">${escape(info.footer.site.replace(/^https?:\/\//, ""))}</a>
+</td></tr>
+</table>
+</div>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: sender(), to: [info.to.trim()], reply_to: info.replyTo, subject: info.subject, html }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      console.error("[notify] Resend (atsauksme)", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[notify] review request failed", e);
+    return false;
+  }
+}

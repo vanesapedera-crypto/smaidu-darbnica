@@ -205,6 +205,7 @@ export const settingsSchemas: Record<SettingsKey, { title: string; description: 
       { name: "facebook", label: "Facebook saite", type: "text", wide: true },
       { name: "instagram", label: "Instagram saite", type: "text", wide: true },
       { name: "tiktok", label: "TikTok saite", type: "text", wide: true },
+      { name: "googleReviewUrl", label: "Google atsauksmju saite (pogai “Pieprasīt atsauksmi” pieteikumos)", type: "text", wide: true },
       { name: "heroImage", label: "Lapas “Kontakti” galvenes fotogrāfija", type: "image", wide: true },
 
       { name: "h-legal", label: "Rekvizīti", type: "heading" },

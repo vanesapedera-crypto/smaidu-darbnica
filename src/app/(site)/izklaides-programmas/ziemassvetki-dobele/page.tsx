@@ -146,7 +146,7 @@ export default async function DobeleXmasPage() {
             defaultProgram={SLUG}
             institution={{ nameLabel: "Grupa (bērnudārzs, skola u. c.)", addressLabel: "", plusVat: false }}
             venue={VENUE}
-            choice={{ label: CHOICE_LABEL, title: "Izvēlieties vienu gardo aktivitāti", options: choices }}
+            choice={choices.length > 0 ? { label: CHOICE_LABEL, title: "Izvēlieties vienu gardo aktivitāti", options: choices } : undefined}
             prices={bookingPrices(settings)}
             programs={[{ slug: program.slug, title: program.title, image: program.heroImage, pricing: program.pricing }]}
           />

@@ -124,6 +124,8 @@ export type ContactSettings = {
   facebook: string;
   instagram: string;
   tiktok: string;
+  /** Saite Google atsauksmes rakstīšanai (panelī poga "Pieprasīt atsauksmi"); tukša — Google kartes meklēšana */
+  googleReviewUrl: string;
   /** Rekvizīti (rāda kontaktu lapā, ja aizpildīti) */
   legalName: string;
   legalAddress: string;

@@ -7,6 +7,11 @@ import { createUserClient, isSupabaseConfigured, supabase } from "@/lib/supabase
 import { getEntity } from "@/lib/admin/entities";
 import { parse, slugify, setPath } from "@/lib/admin/fields";
 import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
+import type { Booking } from "@/lib/bookings";
+import { getServices, getSettings } from "@/lib/content/queries";
+import { notifyReviewRequest } from "@/lib/notify";
+import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
+import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
 /**
  * Administrēšanas paneļa servera darbības.
@@ -61,6 +66,38 @@ export async function markClientConfirmed(id: string) {
   const { db } = await requireAdmin();
   await db.from("bookings").update({ client_confirmed_at: new Date().toISOString() }).eq("id", id);
   revalidatePath("/admin");
+}
+
+/**
+ * Poga "Pieprasīt atsauksmi" — nosūta klientam e-pastu ar aicinājumu atstāt atsauksmi Google
+ * (teksts pēc tā, vai bija telpu noma vai izklaides programma — sk. lib/review.ts) un atzīmē, kad tas nosūtīts.
+ */
+export async function sendReviewRequest(id: string): Promise<ActionState> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b?.email) return { error: "Pieteikumā nav e-pasta." };
+
+  const [settings, programs] = await Promise.all([getSettings(), getServices("private")]);
+  const { contact } = settings;
+  const kind = reviewKind(b);
+  const program = programs.find((p) => p.slug === b.program)?.title;
+  const text = reviewEmailText(kind, program);
+  const sent = await notifyReviewRequest({
+    to: b.email,
+    name: b.parent_name ?? "",
+    ...text,
+    url: reviewUrl(contact),
+    replyTo: contact.emailPrivate,
+    logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
+    footer: { address: `${contact.address}, ${contact.city}`, phone: contact.phonePrivate, email: contact.emailPrivate, site: SITE_URL },
+  });
+  if (!sent) return { error: "E-pastu neizdevās nosūtīt. Mēģiniet vēlreiz vai izmantojiet WhatsApp." };
+
+  // Ja datubāzē vēl nav kolonnas review_requested_at (migrācija nav palaista), e-pasts tik un tā ir nosūtīts
+  await db.from("bookings").update({ review_requested_at: new Date().toISOString() }).eq("id", id);
+  revalidatePath("/admin");
+  return undefined;
 }
 
 /* ------------------------------ Satura ieraksti ------------------------------ */

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Building2, Search, User } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
-import { BOOKING_STATUSES, type Booking } from "@/lib/bookings";
+import { BOOKING_STATUSES, phoneDigits, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
+import ReviewRequest from "@/components/admin/ReviewRequest";
+import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { saveBookingNotes } from "../actions";
@@ -188,6 +190,18 @@ export default async function BookingsPage({ searchParams }: Props) {
                   </dl>
                   <div className="space-y-4">
                     <ClientConfirmation booking={b} />
+                    {/* Pēc ballītes: aicinājums atstāt atsauksmi Google (tikai apstiprinātām privātajām rezervācijām) */}
+                    {b.inquiry_type !== "business" && b.status === "Apstiprināta" && (
+                      <ReviewRequest
+                        id={b.id}
+                        hasEmail={Boolean(b.email)}
+                        phoneDigits={phoneDigits(b.phone)}
+                        message={reviewMessageText(reviewKind(b), reviewUrl(settings.contact))}
+                        about={reviewKind(b) === "venue" ? "par telpām" : "par animatoriem un programmu"}
+                        requestedAt={b.review_requested_at ?? null}
+                        fallbackUrl={!settings.contact.googleReviewUrl?.trim()}
+                      />
+                    )}
                     {b.message && (
                       <div>
                         <p className="text-sm text-ink-soft">Ziņojums</p>

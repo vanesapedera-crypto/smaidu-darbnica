@@ -37,6 +37,8 @@ export type Booking = {
   client_reminded_at?: string | null;
   /** Klients pats atcēla rezervāciju no savas saites (statuss tad ir "Atcelta") */
   client_cancelled_at?: string | null;
+  /** Kad klientam nosūtīts atsauksmes pieprasījums (sk. migrāciju 20261012090000) */
+  review_requested_at?: string | null;
 };
 
 /**
