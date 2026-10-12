@@ -124,14 +124,14 @@ const dobeleXmas: Service = {
   title: "Ziemassvētki “Pilsētas mājā” Dobelē",
   excerpt: "Maģisks Ziemassvētku piedzīvojums bērniem",
   intro:
-    "Kad gaismas pieklust un iedegas spīdīgās nūjiņas, sākas Ziemassvētku burvība. Bērni dejo, smejas un paši savām rokām pagatavo Ziemassvētku rotājumu. Noslēgumā – ēdamais svētku čiekurs un silts dzēriens.",
+    "Kad gaismas pieklust un iedegas spīdīgās nūjiņas, sākas Ziemassvētku burvība. Bērni dejo, smejas un paši savām rokām pagatavo Ziemassvētku rotājumu. Noslēgumā – ēdamā svētku čiekura pagatavošana un silts dzēriens.",
   body: "",
   highlights: [
     "Satikšanās ar rūķiem – Ziemassvētku aktivitātes",
     "Spīdīgo nūjiņu deja",
     "Video projekcija",
-    "Ziemassvētku rotājuma pagatavošana",
-    "Ēdamais svētku čiekurs",
+    "Radošā darbnīca – Ziemassvētku rotājuma pagatavošana",
+    "Radošā darbnīca – ēdamā svētku čiekura pagatavošana",
     "Silts dzēriens",
   ],
   suitableFor: ["Programmu vada 2 rūķi"],
@@ -158,7 +158,7 @@ const dobeleXmas: Service = {
   published: true,
   seoTitle: "Ziemassvētki bērniem “Pilsētas mājā” Dobelē",
   seoDescription:
-    "Maģisks Ziemassvētku piedzīvojums bērnu grupām “Pilsētas mājā” Dobelē: spīdīgo nūjiņu deja, video projekcija, Ziemassvētku rotājuma pagatavošana, ēdamais svētku čiekurs un silts dzēriens. Programma 1 stunda, to vada 2 rūķi.",
+    "Maģisks Ziemassvētku piedzīvojums bērnu grupām “Pilsētas mājā” Dobelē: spīdīgo nūjiņu deja, video projekcija, Ziemassvētku rotājuma pagatavošana, ēdamā svētku čiekura pagatavošana un silts dzēriens. Programma 1 stunda, to vada 2 rūķi.",
 };
 
 // Secība sarakstos: sejas apgleznošana, tad Ziemassvētku sezonas piedāvājumi, tad pārējās programmas
