@@ -15,6 +15,7 @@ supabase/migrations/20261001090000_booking_travel.sql
 supabase/migrations/20261003090000_booked_venue_slots.sql
 supabase/migrations/20261008090000_booked_venue_slots_fixed_venues.sql
 supabase/migrations/20261012090000_review_requested.sql
+supabase/migrations/20261014090000_booked_program_slots.sql
 ```
 
 Tas:

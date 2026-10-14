@@ -3,7 +3,7 @@ import { Check, Clock, MapPin, Sparkles } from "lucide-react";
 import BookingForm from "@/components/site/BookingForm";
 import { StageHeading, StageHero } from "@/components/site/stage";
 import { ButtonLink, Container, Section } from "@/components/site/ui";
-import { FIXED_VENUES, WEEKDAY_HINT } from "@/lib/bookings";
+import { FIXED_VENUES, PROGRAM_SLOTS } from "@/lib/bookings";
 import { getService, getSettings } from "@/lib/content/queries";
 import { bookingPrices, eur } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/seo";
@@ -41,6 +41,16 @@ export default async function DobeleXmasPage() {
   if (!program) notFound();
 
   const words = program.excerpt.trim().split(/\s+/);
+  // Pieejamās dienas virs formas, piem. "Pieejamie laiki: 14., 15. un 16. decembris, plkst. 9.00–10.00, 11.00–12.00 un 13.00–14.00."
+  const slots = PROGRAM_SLOTS[SLUG] ?? [];
+  const days = slots.map((d) => new Date(`${d.date}T12:00:00`));
+  const month = days[0]?.toLocaleDateString("lv-LV", { month: "long" }) ?? "";
+  const join = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} un ${xs.at(-1)}` : (xs[0] ?? ""));
+  const sameTimes = slots.every((d) => d.times.join() === slots[0]?.times.join());
+  const range = (t: string) => `${Number(t.slice(0, 2))}.${t.slice(3)}–${Number(t.slice(0, 2)) + VENUE.hours}.${t.slice(3)}`;
+  const slotsText = slots.length
+    ? `Pieejamie laiki: ${join(days.map((d) => `${d.getDate()}.`))} ${month}${sameTimes ? `, plkst. ${join(slots[0].times.map(range))}` : ""}.`
+    : undefined;
   const options = program.pricing[0]?.options ?? [];
   const base = options.find((o) => !/nākam/i.test(o.label));
   const extra = options.find((o) => /nākam/i.test(o.label));
@@ -141,7 +151,7 @@ export default async function DobeleXmasPage() {
 
       <Section id="rezervacija" className="scroll-mt-20 pt-0 md:pt-0">
         <Container>
-          <StageHeading title="Rezervēt" highlight="datumu" text={WEEKDAY_HINT} className="mb-10 md:mb-12" />
+          <StageHeading title="Rezervēt" highlight="laiku" text={slotsText} className="mb-10 md:mb-12" />
           <BookingForm
             defaultProgram={SLUG}
             institution={{ nameLabel: "Grupa (bērnudārzs, skola u. c.)", addressLabel: "", plusVat: false }}

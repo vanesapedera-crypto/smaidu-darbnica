@@ -62,13 +62,16 @@ export const isInstitutionProgram = (program: string | null | undefined) => INST
  * `name` — norises vieta (glabājas pieteikuma laukā `location`), `address` — kalendāram un apstiprinājumam.
  * Šīm programmām nav ne telpu nomas, ne ceļa izdevumu, un laiks ir brīvi izvēlams.
  */
-export const FIXED_VENUES: Record<string, { name: string; address: string }> = {
-  "ziemassvetki-dobele": { name: "“Pilsētas māja” Dobelē", address: "“Pilsētas māja”, Dobele" },
+export const FIXED_VENUES: Record<string, { name: string; address: string; hours: number }> = {
+  "ziemassvetki-dobele": { name: "“Pilsētas māja” Dobelē", address: "“Pilsētas māja”, Dobele", hours: 1 },
 };
 export const fixedVenue = (program: string | null | undefined) => FIXED_VENUES[program ?? ""];
 /** Norises vietas adrese, ja pieteikums ir kādā no FIXED_VENUES vietām; citādi undefined */
 export const fixedVenueAddress = (location: string | null | undefined) =>
   Object.values(FIXED_VENUES).find((v) => v.name === location)?.address;
+/** Programmas ilgums stundās, ja pieteikums ir kādā no FIXED_VENUES vietām (laikam rāda "09:00–10:00") */
+export const fixedVenueHours = (location: string | null | undefined) =>
+  Object.values(FIXED_VENUES).find((v) => v.name === location)?.hours;
 /** Vai pieteikums ir mūsu telpās (Pasta iela 25) — nevis izbraukumā un nevis kādā no FIXED_VENUES vietām */
 export const atStudio = (location: string | null | undefined) => location !== "Izbraukums" && !fixedVenueAddress(location);
 
@@ -84,9 +87,28 @@ export const isGroupProgram = (program: string | null | undefined) => GROUP_PROG
  * Nedēļas dienas, kurās programmu var rezervēt (0 — svētdiena, 1 — pirmdiena … 6 — sestdiena).
  * Programmām, kuru šeit nav, der jebkura diena.
  */
-export const ALLOWED_WEEKDAYS: Record<string, number[]> = {
-  "ziemassvetki-dobele": [1, 2, 3, 4],
+export const ALLOWED_WEEKDAYS: Record<string, number[]> = {};
+
+/**
+ * Konkrēti pieejamie laiki programmai (datums YYYY-MM-DD → sākuma laiki). Ja programmai tie ir norādīti,
+ * formā datumu un laiku neievada, bet izvēlas no šiem laikiem; jau rezervētie laiki nav izvēlami
+ * (sk. booked_program_slots datubāzē), un serveris citus laikus nepieņem. Jaunu laiku pievieno šeit.
+ */
+export const PROGRAM_SLOTS: Record<string, { date: string; times: string[] }[]> = {
+  "ziemassvetki-dobele": [
+    { date: "2026-12-14", times: ["09:30", "11:30", "13:30"] },
+    { date: "2026-12-15", times: ["09:30", "11:30", "13:30"] },
+    { date: "2026-12-16", times: ["09:30", "11:30", "13:30"] },
+  ],
 };
+export const programSlots = (program: string | null | undefined) => PROGRAM_SLOTS[program ?? ""];
+export const SLOT_TAKEN_TEXT = "Šis laiks jau ir aizņemts — lūdzu, izvēlieties citu laiku.";
+/** Vai datums un laiks ir starp programmas pieejamajiem laikiem (ja programmai tādi ir norādīti) */
+export function isProgramSlot(program: string | null | undefined, date: string | null | undefined, time: string | null | undefined): boolean {
+  const slots = programSlots(program);
+  if (!slots) return true;
+  return slots.some((s) => s.date === (date ?? "").slice(0, 10) && s.times.includes((time ?? "").slice(0, 5)));
+}
 export const WEEKDAY_TEXT = "Programma notiek no pirmdienas līdz ceturtdienai — lūdzu, izvēlieties citu datumu.";
 export const WEEKDAY_HINT = "Rezervēt var pirmdienas–ceturtdienas.";
 export const allowedWeekdays = (program: string | null | undefined) => ALLOWED_WEEKDAYS[program ?? ""];

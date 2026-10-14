@@ -1,6 +1,18 @@
 import { after, NextResponse } from "next/server";
-import { bookedSlots } from "@/lib/availability";
-import { FULLY_BOOKED_TEXT, WEEKDAY_TEXT, atStudio, fixedVenue, isFullyBooked, isGroupProgram, isWeekdayBlocked, needsHeadcount } from "@/lib/bookings";
+import { bookedProgramSlots, bookedSlots } from "@/lib/availability";
+import {
+  FULLY_BOOKED_TEXT,
+  SLOT_TAKEN_TEXT,
+  WEEKDAY_TEXT,
+  atStudio,
+  fixedVenue,
+  isFullyBooked,
+  isGroupProgram,
+  isProgramSlot,
+  isWeekdayBlocked,
+  needsHeadcount,
+  programSlots,
+} from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
 import { timeLabel } from "@/lib/dates";
@@ -126,6 +138,13 @@ export async function POST(request: Request) {
   if (!isBusiness && isFullyBooked(row.program, row.event_date)) v.errors.eventDate = FULLY_BOOKED_TEXT;
   // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS)
   if (!isBusiness && isWeekdayBlocked(row.program, row.event_date)) v.errors.eventDate = WEEKDAY_TEXT;
+  // Programmai ar konkrētiem laikiem (sk. PROGRAM_SLOTS): laikam jābūt starp pieejamajiem un vēl brīvam
+  if (!isBusiness && row.program && programSlots(row.program) && row.event_date && row.event_time) {
+    if (!isProgramSlot(row.program, row.event_date, row.event_time)) v.errors.eventDate = "Lūdzu, izvēlieties kādu no pieejamajiem laikiem.";
+    else if ((await bookedProgramSlots(row.program)).includes(`${row.event_date.slice(0, 10)} ${row.event_time.slice(0, 5)}`)) {
+      v.errors.eventTime = SLOT_TAKEN_TEXT;
+    }
+  }
 
   // Telpu noma: laiku, kas šajā datumā jau aizņemts, rezervēt nevar (forma to jau nerāda, šī ir pārbaude serverī)
   if (!isBusiness && atStudio(row.location) && row.event_date && row.event_time) {

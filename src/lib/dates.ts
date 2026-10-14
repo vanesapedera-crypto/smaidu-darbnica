@@ -1,4 +1,4 @@
-import { atStudio } from "./bookings";
+import { atStudio, fixedVenueHours } from "./bookings";
 import { VENUE_SLOTS } from "./pricing";
 
 /**
@@ -27,6 +27,12 @@ export function dateWords(iso: unknown, now: Date = new Date()): string {
 export function timeLabel(time: string | null | undefined, location: string | null | undefined): string {
   const start = (time ?? "").slice(0, 5);
   if (!start) return "";
+  // Programma noteiktā vietā ar zināmu ilgumu — laika posms ("09:00–10:00")
+  const hours = fixedVenueHours(location);
+  if (hours && /^\d{2}:\d{2}$/.test(start)) {
+    const end = Number(start.slice(0, 2)) + hours;
+    return `${start}–${String(end).padStart(2, "0")}${start.slice(2)}`;
+  }
   return !atStudio(location) ? start : (VENUE_SLOTS.find((t) => t.value === start)?.label ?? start);
 }
 

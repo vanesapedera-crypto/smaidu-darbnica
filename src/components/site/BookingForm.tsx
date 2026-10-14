@@ -4,7 +4,18 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Car, CircleCheck, Clock, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
-import { FULLY_BOOKED_TEXT, WEEKDAY_HINT, WEEKDAY_TEXT, allowedWeekdays, fullyBookedDates, isFullyBooked, isWeekdayBlocked, needsHeadcount } from "@/lib/bookings";
+import {
+  FULLY_BOOKED_TEXT,
+  SLOT_TAKEN_TEXT,
+  WEEKDAY_HINT,
+  WEEKDAY_TEXT,
+  allowedWeekdays,
+  fullyBookedDates,
+  isFullyBooked,
+  isWeekdayBlocked,
+  needsHeadcount,
+  programSlots,
+} from "@/lib/bookings";
 import { dateWords } from "@/lib/dates";
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
@@ -84,7 +95,7 @@ export default function BookingForm({
   /** Svarīgs brīdinājums zem datuma un laika (piem. par kavēšanos); rindkopas atdala tukša rinda */
   notice?: string;
   /** Noteikta norises vieta (nosaukums tiek saglabāts kā pieteikuma norises vieta) */
-  venue?: { name: string; address: string };
+  venue?: { name: string; address: string; hours?: number };
   /** Obligāta izvēle, piem. { label: "Gardā aktivitāte", options: ["Virtuļu pagatavošana", "Svētku vafeļu pagatavošana"] } */
   choice?: { label: string; title?: string; options: string[] };
 }) {
@@ -120,6 +131,26 @@ export default function BookingForm({
   // Programmai pilnībā aizņemtie datumi (sk. FULLY_BOOKED_DATES): rezervēt nevar; zem datuma lauka rāda, kuri tie ir
   const dateBooked = isFullyBooked(program?.slug, form.eventDate);
   const bookedDates = fullyBookedDates(program?.slug).filter((d) => d >= today);
+  // Konkrēti pieejamie laiki (sk. PROGRAM_SLOTS): datumu un laiku izvēlas no saraksta; aizņemtie — no /api/availability
+  const slots = programSlots(program?.slug);
+  const [slotTaken, setSlotTaken] = useState<string[]>([]);
+  useEffect(() => {
+    if (!slots || !program) return;
+    let stale = false;
+    fetch(`/api/availability?program=${program.slug}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!stale) setSlotTaken(Array.isArray(d.taken) ? d.taken : []);
+      })
+      .catch(() => {});
+    return () => {
+      stale = true;
+    };
+  }, [slots, program]);
+  const slotKey = `${form.eventDate} ${form.eventTime}`;
+  const pickedTaken = Boolean(slots && form.eventDate && slotTaken.includes(slotKey));
+  // Laika posms "09:00–10:00" (programmas ilgums — venue.hours, citādi 1 stunda)
+  const slotLabel = (t: string) => `${t}–${String(Number(t.slice(0, 2)) + (venue?.hours ?? 1)).padStart(2, "0")}${t.slice(2)}`;
   // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS), piem. tikai pirmdienas–ceturtdienas
   const dayBlocked = isWeekdayBlocked(program?.slug, form.eventDate);
   const dateError = dateBooked ? FULLY_BOOKED_TEXT : dayBlocked ? WEEKDAY_TEXT : undefined;
@@ -229,9 +260,11 @@ export default function BookingForm({
     if (choice && !picked) missing.choice = "Izvēlieties vienu no iespējām.";
     if (institution && !form.companyName.trim()) missing.companyName = "Norādiet nosaukumu.";
     if (travelling && !form.address.trim()) missing.address = institution ? "Norādiet adresi." : "Norādiet ballītes adresi.";
-    if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
+    if (slots && (!form.eventDate || !form.eventTime)) missing.eventDate = "Izvēlieties laiku.";
+    else if (pickedTaken) missing.eventDate = SLOT_TAKEN_TEXT;
+    else if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
     else if (dateError) missing.eventDate = dateError;
-    if (!form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : institution ? "Norādiet sākuma laiku." : "Norādiet ballītes sākuma laiku.";
+    if (!slots && !form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : institution ? "Norādiet sākuma laiku." : "Norādiet ballītes sākuma laiku.";
     if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
     if (headcount && !institution && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
@@ -298,7 +331,11 @@ export default function BookingForm({
   const dateLabel = form.eventDate
     ? new Date(`${form.eventDate}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })
     : "";
-  const timeLabel = inStudio ? (VENUE_SLOTS.find((t) => t.value === form.eventTime)?.label ?? "") : form.eventTime;
+  const timeLabel = inStudio
+    ? (VENUE_SLOTS.find((t) => t.value === form.eventTime)?.label ?? "")
+    : slots && form.eventTime
+      ? slotLabel(form.eventTime)
+      : form.eventTime;
   const placeLabel = venue ? venue.name : inStudio ? "Smaidu Darbnīca, Pasta iela 25, Tukums" : form.address.trim();
   const hasCosts = programPrice !== null || roomPrice !== null || chosenExtras.length > 0;
 
@@ -640,6 +677,60 @@ export default function BookingForm({
               </>
             ) : null}
 
+            {/* Programmai ar konkrētiem laikiem — izvēle no pieejamajiem laikiem (aizņemtie nav izvēlami) */}
+            {slots ? (
+              <div className="space-y-3 sm:col-span-2" id="eventDate">
+                <p className="text-sm font-bold">
+                  Pieejamie laiki<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
+                {slots.map((d) => (
+                  <div key={d.date}>
+                    <p className="mb-2 text-sm font-extrabold first-letter:uppercase">
+                      {new Date(`${d.date}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })}
+                    </p>
+                    <div role="radiogroup" aria-label={d.date} className="grid grid-cols-3 gap-2 sm:gap-3">
+                      {d.times.map((t) => {
+                        const taken = slotTaken.includes(`${d.date} ${t}`);
+                        const active = form.eventDate === d.date && form.eventTime === t && !taken;
+                        return (
+                          <label
+                            key={t}
+                            className={cn(
+                              "flex flex-col items-center rounded-2xl border-2 px-2 py-3 text-center transition-colors",
+                              taken
+                                ? "cursor-not-allowed border-line bg-surface text-ink/35"
+                                : active
+                                  ? "cursor-pointer border-ink bg-brand"
+                                  : "cursor-pointer border-line hover:border-ink",
+                            )}
+                          >
+                            <input
+                              type="radio"
+                              name="slot"
+                              value={`${d.date} ${t}`}
+                              checked={active}
+                              disabled={taken}
+                              onChange={() => {
+                                setForm((f) => ({ ...f, eventDate: d.date, eventTime: t }));
+                                setErrors((er) => ({ ...er, eventDate: "" }));
+                              }}
+                              className="sr-only"
+                            />
+                            <span className={cn("text-sm font-extrabold whitespace-nowrap sm:text-base", taken && "line-through")}>{slotLabel(t)}</span>
+                            {taken && <span className="mt-0.5 text-xs font-semibold">aizņemts</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {(errors.eventDate || pickedTaken) && (
+                  <p role="alert" className="text-sm font-semibold text-destructive">
+                    {pickedTaken ? SLOT_TAKEN_TEXT : errors.eventDate}
+                  </p>
+                )}
+              </div>
+            ) : (
             <Field
               id="eventDate"
               label="Vēlamais datums"
@@ -650,8 +741,9 @@ export default function BookingForm({
             >
               <input {...fieldProps("eventDate")} type="date" min={today} aria-invalid={dateError || errors.eventDate ? true : undefined} />
             </Field>
+            )}
             {/* Izbraukuma ballītei — brīvi izvēlams sākuma laiks (telpām zemāk ir trīs laika posmi) */}
-            {!inStudio && (
+            {!inStudio && !slots && (
               <Field id="eventTime" label="Vēlamais laiks" required error={errors.eventTime}>
                 <input {...fieldProps("eventTime")} type="time" step={300} />
               </Field>
@@ -876,7 +968,7 @@ export default function BookingForm({
 
           <button
             type="submit"
-            disabled={state === "sending" || timeTaken || Boolean(dateError)}
+            disabled={state === "sending" || timeTaken || Boolean(dateError) || pickedTaken}
             className={cn(buttonClass("primary", "lg"), "mt-6 w-full disabled:opacity-60")}
           >
             {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
