@@ -688,7 +688,7 @@ export default function BookingForm({
                     <p className="mb-2 text-sm font-extrabold first-letter:uppercase">
                       {new Date(`${d.date}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })}
                     </p>
-                    <div role="radiogroup" aria-label={d.date} className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div role="radiogroup" aria-label={d.date} className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(d.times.length, 3)}, minmax(0, 1fr))` }}>
                       {d.times.map((t) => {
                         const taken = slotTaken.includes(`${d.date} ${t}`);
                         const active = form.eventDate === d.date && form.eventTime === t && !taken;

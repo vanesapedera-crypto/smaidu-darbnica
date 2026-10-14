@@ -96,9 +96,9 @@ export const ALLOWED_WEEKDAYS: Record<string, number[]> = {};
  */
 export const PROGRAM_SLOTS: Record<string, { date: string; times: string[] }[]> = {
   "ziemassvetki-dobele": [
-    { date: "2026-12-14", times: ["09:30", "11:30", "13:30"] },
-    { date: "2026-12-15", times: ["09:30", "11:30", "13:30"] },
-    { date: "2026-12-16", times: ["09:30", "11:30", "13:30"] },
+    { date: "2026-12-14", times: ["09:30", "11:30"] },
+    { date: "2026-12-15", times: ["09:30", "11:30"] },
+    { date: "2026-12-16", times: ["09:30", "11:30"] },
   ],
 };
 export const programSlots = (program: string | null | undefined) => PROGRAM_SLOTS[program ?? ""];
