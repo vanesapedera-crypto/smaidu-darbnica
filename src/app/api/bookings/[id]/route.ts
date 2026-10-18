@@ -1,9 +1,10 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getAdmin } from "@/lib/auth";
+import { getAdmin, type AdminContext } from "@/lib/auth";
 import { BOOKING_STATUSES, atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
+import { cancelGoogleEvent, upsertGoogleEvent } from "@/lib/google-calendar";
 import { notifyClientConfirmed, sendCalendarInvite } from "@/lib/notify";
 import { whenLabel } from "@/lib/dates";
 import { bookingCosts, bookingPrices, parseNotice } from "@/lib/pricing";
@@ -12,10 +13,11 @@ import { SITE_URL, absoluteUrl } from "@/lib/seo";
 /**
  * Kas notiek, kad pieteikumu apstiprina:
  *  1) klientam aiziet apstiprinājuma e-pasts (datums, laiks, vieta, izmaksas; telpu nomai — saite uz noteikumiem);
- *  2) komandai aiziet kalendāra ielūgums, ko Google kalendārs ieliek kalendārā automātiski.
+ *  2) komandai — kalendāra notikums: ja panelī ir savienots Google kalendārs, notikums tiek ielikts tieši tajā
+ *     (to var labot Google kalendārā, viesi saņem ielūgumu no Google); citādi — .ics ielūgums, ko Google kalendārs ieliek automātiski.
  * Uzņēmumu pieprasījumiem atbildes adrese un telefons ir uzņēmumu kontaktam, ballītēm — privātpersonu kontaktam.
  */
-async function onConfirmed(b: Booking, host: string | null) {
+async function onConfirmed(b: Booking, host: string | null, db: AdminContext["db"]) {
   const isBusiness = b.inquiry_type === "business";
   const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
   const { contact } = settings;
@@ -61,7 +63,11 @@ async function onConfirmed(b: Booking, host: string | null) {
 
   // Kalendāra ielūgumā ir tā pati informācija, ko saņem klients (laiks, izmaksas), plus klienta kontakti
   const event = calendarEvent(b, title || (inVenue ? "Telpu noma" : "Pieteikums"), costs);
-  const calendar = event ? sendCalendarInvite(event, [...event.guests, ...(host ? [host] : [])], `rezervacija-${b.id}@smaidudarbnica.lv`) : null;
+  const guests = event ? [...event.guests, ...(host ? [host] : [])] : [];
+  // Vispirms — savienotajā Google kalendārā (labojams); ja savienojuma nav vai neizdodas — .ics ielūgums
+  const calendar = event
+    ? upsertGoogleEvent(db, b.id, event, guests).then((ok) => (ok ? undefined : sendCalendarInvite(event, guests, `rezervacija-${b.id}@smaidudarbnica.lv`)))
+    : null;
 
   await Promise.all([client, calendar]);
 }
@@ -99,7 +105,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const configured = Boolean(process.env.RESEND_API_KEY);
       clientEmail = !before.email ? "no-email" : configured ? "sent" : "not-configured";
       calendar = !before.event_date ? "no-date" : configured ? "sent" : "not-configured";
-      if (configured) after(() => onConfirmed(before, host));
+      if (configured) after(() => onConfirmed(before, host, admin.db));
       // No šī brīža skaita 3 dienas līdz atgādinājumam; iepriekšējo klienta apstiprinājumu (ja bija) notīra.
       // Atsevišķs pieprasījums — ja lauku datubāzē vēl nav (migrācija nav palaista), statusa maiņa tāpat ir notikusi.
       if (clientEmail === "sent") {
@@ -110,6 +116,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         await admin.db.from("bookings").update({ client_cancelled_at: null }).eq("id", id);
       }
     }
+
+    // Atceļot apstiprinātu rezervāciju — notikums savienotajā Google kalendārā tiek atcelts (viesi saņem paziņojumu)
+    if (status === "Atcelta" && before?.status === "Apstiprināta") after(() => cancelGoogleEvent(admin.db, id));
 
     revalidatePath("/admin");
     return NextResponse.json({ success: true, clientEmail, calendar });

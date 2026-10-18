@@ -139,7 +139,7 @@ export default async function KindergartenXmasPage() {
           )}
           <BookingForm
             defaultProgram={SLUG}
-            institution={{ nameLabel: "Bērnudārza nosaukums", addressLabel: "Bērnudārza adrese" }}
+            institution={{ nameLabel: "Bērnudārza nosaukums", ticketLabel: "Bērnudārzs", addressLabel: "Bērnudārza adrese" }}
             notice={notice}
             prices={bookingPrices(settings)}
             programs={[{ slug: program.slug, title: program.title, image: program.heroImage, pricing: program.pricing }]}

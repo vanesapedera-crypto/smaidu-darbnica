@@ -91,7 +91,7 @@ export default function BookingForm({
   prices: BookingPrices;
   defaultProgram?: string;
   /** Iestādes forma: lauku nosaukumi (piem. "Bērnudārza nosaukums", "Bērnudārza adrese") */
-  institution?: { nameLabel: string; addressLabel: string; plusVat?: boolean };
+  institution?: { nameLabel: string; addressLabel: string; plusVat?: boolean; ticketLabel?: string };
   /** Svarīgs brīdinājums zem datuma un laika (piem. par kavēšanos); rindkopas atdala tukša rinda */
   notice?: string;
   /** Noteikta norises vieta (nosaukums tiek saglabāts kā pieteikuma norises vieta) */
@@ -883,7 +883,7 @@ export default function BookingForm({
           <dl className="mt-5 space-y-2 text-sm">
             {dateLabel && ticketRow("Datums", dateLabel)}
             {timeLabel && ticketRow("Laiks", timeLabel)}
-            {institution && form.companyName.trim() && ticketRow(institution.nameLabel.split(" ")[0], form.companyName.trim())}
+            {institution && form.companyName.trim() && ticketRow(institution.ticketLabel ?? institution.nameLabel.split(" ")[0], form.companyName.trim())}
             {placeLabel && ticketRow("Vieta", placeLabel)}
             {choice && picked && ticketRow(choice.label, picked)}
             {form.childrenCount && ticketRow("Bērnu skaits", form.childrenCount)}

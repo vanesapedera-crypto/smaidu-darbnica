@@ -194,3 +194,12 @@ export async function createUploadUrl(fileName: string, folder: string, ext: "we
   const { data: pub } = db.storage.from("media").getPublicUrl(path);
   return { path, token: data.token, publicUrl: pub.publicUrl };
 }
+
+/* ------------------------------ Google kalendārs ------------------------------ */
+
+/** Atvieno Google kalendāru — turpmāk notikumi atkal aiziet kā .ics ielūgumi */
+export async function disconnectGoogle() {
+  const { db } = await requireAdmin();
+  await db.from("google_calendar").delete().eq("id", 1);
+  revalidatePath("/admin");
+}

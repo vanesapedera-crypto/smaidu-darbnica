@@ -8,6 +8,7 @@ import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur } from "@/lib/pr
 import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
+import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Pieteikumi" };
 
-type Props = { searchParams: Promise<{ tips?: string; statuss?: string; q?: string }> };
+type Props = { searchParams: Promise<{ tips?: string; statuss?: string; q?: string; google?: string }> };
 
 const TYPES = [
   { value: "", label: "Visi" },
@@ -30,7 +31,7 @@ const TYPES = [
  */
 export default async function BookingsPage({ searchParams }: Props) {
   const { db } = await requireAdmin();
-  const { tips = "", statuss = "", q = "" } = await searchParams;
+  const { tips = "", statuss = "", q = "", google } = await searchParams;
 
   let query = db.from("bookings").select("*").order("event_date", { ascending: true, nullsFirst: false });
   if (tips === "business") query = query.eq("inquiry_type", "business");
@@ -78,6 +79,8 @@ export default async function BookingsPage({ searchParams }: Props) {
           <p className="mt-1 text-sm text-ink-soft">Uzņēmumu pieprasījumi un bērnu ballīšu rezervācijas no mājaslapas formām.</p>
         </div>
       </header>
+
+      <GoogleCalendarCard db={db} message={google} />
 
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">

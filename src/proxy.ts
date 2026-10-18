@@ -73,5 +73,5 @@ async function refreshSession(refreshToken: string): Promise<RefreshedSession | 
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/bookings/:id+"],
+  matcher: ["/admin/:path*", "/api/bookings/:id+", "/api/google/:path*"],
 };
