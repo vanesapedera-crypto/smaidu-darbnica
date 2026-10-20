@@ -48,13 +48,13 @@ export default async function EntityEditPage({ params }: Props) {
 
   // Saite uz publisko lapu (pakalpojumiem)
   const publicUrl =
-    key === "pakalpojumi" && !isNew
+    (key === "pakalpojumi" || key === "programmas") && !isNew
       ? `/${row.audience === "private" ? "izklaides-programmas" : "uznemumiem"}/${row.slug}`
       : null;
 
   // Izklaides programmām — attēlu bloks (albums ar programmas adresi; ja datubāzē nav — projekta bildes, tikai apskatei)
   let programImages: { id?: string; src: string }[] | null = null;
-  if (key === "pakalpojumi" && !isNew && row.audience === "private" && row.slug) {
+  if ((key === "pakalpojumi" || key === "programmas") && !isNew && row.audience === "private" && row.slug) {
     const slug = String(row.slug);
     const { data: imgs } = await db.from("gallery_images").select("id, src").eq("album", slug).order("sort").order("created_at");
     programImages = imgs?.length ? imgs : manifestGallery().filter((g) => g.album === slug).map((g) => ({ src: g.src }));

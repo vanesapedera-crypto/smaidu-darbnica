@@ -16,7 +16,7 @@ import type { FieldDef } from "./fields";
  * var pievienot, neveidojot jaunas lapas.
  */
 
-export type EntityKey = "pakalpojumi" | "galerija" | "atsauksmes" | "klienti" | "komanda" | "seo";
+export type EntityKey = "pakalpojumi" | "programmas" | "galerija" | "atsauksmes" | "klienti" | "komanda" | "seo";
 
 export type EntityConfig = {
   key: EntityKey;
@@ -33,6 +33,8 @@ export type EntityConfig = {
   order: { column: string; ascending?: boolean }[];
   /** Lauks, no kura automātiski veidot slug, ja tas nav norādīts */
   slugFrom?: string;
+  /** Sarakstā rāda tikai ierakstus ar šo vērtību (piem. pakalpojumi — tikai uzņēmumiem, programmas — tikai ballītes) */
+  filter?: { column: string; value: string };
 };
 
 const categoryOptions = Object.entries(galleryCategories).map(([value, label]) => ({ value, label }));
@@ -45,10 +47,11 @@ export const entities: Record<EntityKey, EntityConfig> = {
   pakalpojumi: {
     key: "pakalpojumi",
     table: "services",
-    title: "Pakalpojumi un programmas",
+    title: "Pakalpojumi uzņēmumiem",
     singular: "pakalpojums",
-    description: "Uzņēmumu pakalpojumi un bērnu ballīšu programmas. Katram ir sava lapa mājaslapā.",
+    description: "Pakalpojumi lapā “Uzņēmumiem”. Katram ir sava lapa mājaslapā.",
     empty: emptyService,
+    filter: { column: "audience", value: "business" },
     listTitle: "title",
     listSubtitle: "audience",
     listImage: "hero_image",
@@ -117,6 +120,19 @@ export const entities: Record<EntityKey, EntityConfig> = {
       { name: "seo_title", label: "SEO virsraksts", type: "text", help: "Ja tukšs — tiek izmantots nosaukums" },
       { name: "seo_description", label: "SEO apraksts", type: "textarea", rows: 2, help: "Ja tukšs — tiek izmantots īsais apraksts" },
     ],
+  },
+
+  // Izklaides programmas (ballītes, Ziemassvētku programmas, izrādes bērnudārziem) — tā pati tabula, tikai sadaļa "private"
+  get programmas(): EntityConfig {
+    return {
+      ...this.pakalpojumi,
+      key: "programmas",
+      title: "Izklaides programmas",
+      singular: "programma",
+      description: "Bērnu ballītes un citas izklaides programmas. Katrai ir sava lapa mājaslapā.",
+      empty: { ...emptyService, audience: "private" },
+      filter: { column: "audience", value: "private" },
+    };
   },
 
   galerija: {

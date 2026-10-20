@@ -28,6 +28,7 @@ export default async function EntityListPage({ params, searchParams }: Props) {
 
   const { db } = await requireAdmin();
   let query = db.from(entity.table).select("*");
+  if (entity.filter) query = query.eq(entity.filter.column, entity.filter.value);
   for (const o of entity.order) query = query.order(o.column, { ascending: o.ascending ?? true });
   const { data, error } = await query;
   const rows = (data ?? []) as Record<string, unknown>[];
