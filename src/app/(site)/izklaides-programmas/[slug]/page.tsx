@@ -31,7 +31,8 @@ export default async function ProgramPage({ params }: Props) {
   const [program, settings] = await Promise.all([getService("private", slug), getSettings()]);
   if (!program) notFound();
 
-  const images = await getAlbumImages(program.albums, 16);
+  // Galerijas albumi + albums ar programmas adresi (attēli, kas pievienoti panelī pie programmas)
+  const images = await getAlbumImages([...new Set([...program.albums, slug])], 16);
 
   return (
     <ServiceDetail

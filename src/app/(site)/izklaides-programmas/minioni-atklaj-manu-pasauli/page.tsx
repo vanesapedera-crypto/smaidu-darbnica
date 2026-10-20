@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import InquiryForm from "@/components/site/InquiryForm";
 import Photo from "@/components/site/Photo";
+import ProgramPhotos from "@/components/site/ProgramPhotos";
 import { StageHeading } from "@/components/site/stage";
 import { ButtonLink, Container, Section } from "@/components/site/ui";
 import { getService } from "@/lib/content/queries";
@@ -137,6 +138,8 @@ export default async function MinionsShowPage() {
       </Section>
 
       {/* Pieprasījums */}
+      <ProgramPhotos slug={SLUG} className="bg-white" />
+
       <Section id="pieteikt" className="scroll-mt-20 bg-surface">
         <Container className="max-w-4xl">
           <StageHeading title="Pieteikt izrādi" highlight="bērnudārzā" text="Aicinām pieteikt izrādi savā bērnudārzā! Sazināsimies, lai vienotos par Jums ērtāko laiku." className="mb-10" />

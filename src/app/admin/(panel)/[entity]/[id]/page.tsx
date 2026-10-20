@@ -9,6 +9,8 @@ import { deleteEntity, saveEntity } from "../../../actions";
 import AdminForm from "@/components/admin/AdminForm";
 import DeleteButton from "@/components/admin/DeleteButton";
 import PageHeader from "@/components/admin/PageHeader";
+import ProgramImages from "@/components/admin/ProgramImages";
+import { manifestGallery } from "@/lib/content/media";
 import { adminSecondary } from "@/components/admin/styles";
 
 type Props = { params: Promise<{ entity: string; id: string }> };
@@ -50,6 +52,14 @@ export default async function EntityEditPage({ params }: Props) {
       ? `/${row.audience === "private" ? "izklaides-programmas" : "uznemumiem"}/${row.slug}`
       : null;
 
+  // Izklaides programmām — attēlu bloks (albums ar programmas adresi; ja datubāzē nav — projekta bildes, tikai apskatei)
+  let programImages: { id?: string; src: string }[] | null = null;
+  if (key === "pakalpojumi" && !isNew && row.audience === "private" && row.slug) {
+    const slug = String(row.slug);
+    const { data: imgs } = await db.from("gallery_images").select("id, src").eq("album", slug).order("sort").order("created_at");
+    programImages = imgs?.length ? imgs : manifestGallery().filter((g) => g.album === slug).map((g) => ({ src: g.src }));
+  }
+
   return (
     <>
       <Link href={`/admin/${key}`} className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
@@ -75,6 +85,11 @@ export default async function EntityEditPage({ params }: Props) {
           action={saveEntity.bind(null, key, isNew ? null : id)}
           folder={key}
         />
+        {programImages && (
+          <div className="mt-6">
+            <ProgramImages slug={String(row.slug)} title={String(row.title ?? "")} images={programImages} />
+          </div>
+        )}
       </div>
     </>
   );

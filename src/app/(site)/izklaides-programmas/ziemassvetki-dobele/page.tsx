@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Check, Clock, MapPin, Sparkles } from "lucide-react";
 import BookingForm from "@/components/site/BookingForm";
+import ProgramPhotos from "@/components/site/ProgramPhotos";
 import { StageHeading, StageHero } from "@/components/site/stage";
 import { ButtonLink, Container, Section } from "@/components/site/ui";
 import { FIXED_VENUES, PROGRAM_SLOTS } from "@/lib/bookings";
@@ -148,6 +149,8 @@ export default async function DobeleXmasPage() {
           </div>
         </Container>
       </Section>
+
+      <ProgramPhotos slug={SLUG} exclude={[program.heroImage]} className="mb-16 bg-surface md:mb-24" />
 
       <Section id="rezervacija" className="scroll-mt-20 pt-0 md:pt-0">
         <Container>

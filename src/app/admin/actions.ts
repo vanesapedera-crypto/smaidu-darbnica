@@ -16,6 +16,8 @@ import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
+import { manifestGallery } from "@/lib/content/media";
+import { toRow } from "@/lib/content/mappers";
 
 /**
  * Administrēšanas paneļa servera darbības.
@@ -182,6 +184,51 @@ export async function addGalleryImages(
   if (error) return { error: error.message };
   refreshSite();
   revalidatePath("/admin/galerija");
+  return {};
+}
+
+/* ------------------------------ Programmu attēli ------------------------------ */
+
+/** Galerijas kategorija programmas attēliem (lai tie parādās arī attiecīgajās fotolentēs) */
+const programCategory = (slug: string) => (slug.includes("ziemassvetki") ? "ziemassvetki" : "bernu-ballites");
+
+/**
+ * Programmas lapā "Pakalpojumi" pievienotie attēli — glabājas galerijā albumā ar programmas adresi (slug),
+ * un programmas lapa tos rāda sadaļā "Foto". Ja albumā līdz šim bija tikai projekta bildes (nav datubāzē),
+ * tās vispirms ieliek datubāzē — citādi pēc pirmās augšupielādes tās lapā vairs nerādītos.
+ */
+export async function addProgramImages(slug: string, images: { src: string; width: number; height: number }[], title: string) {
+  const { db } = await requireAdmin();
+  if (!slug) return { error: "Programmai nav adreses (slug)." };
+  const { count } = await db.from("gallery_images").select("id", { count: "exact", head: true }).eq("album", slug);
+  if (!count) {
+    const local = manifestGallery().filter((g) => g.album === slug);
+    if (local.length) await db.from("gallery_images").insert(local.map((g) => toRow(g as unknown as Record<string, unknown>)));
+  }
+  const { data: last } = await db.from("gallery_images").select("sort").eq("album", slug).order("sort", { ascending: false }).limit(1);
+  const start = ((last?.[0]?.sort as number | undefined) ?? 0) + 1;
+  const rows = images.map((img, i) => ({
+    ...img,
+    alt: `${title} — Smaidu Darbnīca`,
+    album: slug,
+    category: programCategory(slug),
+    sort: start + i,
+    published: true,
+  }));
+  const { error } = await db.from("gallery_images").insert(rows);
+  if (error) return { error: error.message };
+  refreshSite();
+  revalidatePath("/admin", "layout");
+  return {};
+}
+
+/** Noņem attēlu no programmas (galerijas ieraksts tiek dzēsts; pats fails krātuvē paliek) */
+export async function removeProgramImage(id: string) {
+  const { db } = await requireAdmin();
+  const { error } = await db.from("gallery_images").delete().eq("id", id);
+  if (error) return { error: error.message };
+  refreshSite();
+  revalidatePath("/admin", "layout");
   return {};
 }
 
