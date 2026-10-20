@@ -5,10 +5,12 @@ import { requireAdmin } from "@/lib/auth";
 import { getEntity } from "@/lib/admin/entities";
 import PageHeader from "@/components/admin/PageHeader";
 import { adminPrimary } from "@/components/admin/styles";
+import { importMissingServices } from "@/app/admin/actions";
+import { missingServices } from "@/lib/admin/missing-services";
 
 type Props = {
   params: Promise<{ entity: string }>;
-  searchParams: Promise<{ saglabats?: string; dzests?: string }>;
+  searchParams: Promise<{ saglabats?: string; dzests?: string; pievienoti?: string; kluda?: string }>;
 };
 
 export async function generateMetadata({ params }: Props) {
@@ -29,19 +31,43 @@ export default async function EntityListPage({ params, searchParams }: Props) {
   for (const o of entity.order) query = query.order(o.column, { ascending: o.ascending ?? true });
   const { data, error } = await query;
   const rows = (data ?? []) as Record<string, unknown>[];
+  // Pakalpojumiem — programmas, kas ir projektā, bet vēl nav datubāzē (tās panelī nevar labot, kamēr nav pievienotas)
+  const missing = key === "pakalpojumi" && !error ? await missingServices(db) : [];
 
   return (
     <>
       <PageHeader
         title={entity.title}
         description={entity.description}
-        notice={flags.saglabats ? "Izmaiņas saglabātas un mājaslapa atjaunota." : flags.dzests ? "Ieraksts izdzēsts." : undefined}
+        notice={
+          flags.saglabats
+            ? "Izmaiņas saglabātas un mājaslapa atjaunota."
+            : flags.dzests
+              ? "Ieraksts izdzēsts."
+              : flags.pievienoti
+                ? "Trūkstošās programmas pievienotas — tagad tās var labot."
+                : undefined
+        }
         actions={
           <Link href={`/admin/${key}/jauns`} className={adminPrimary}>
             <Plus className="size-4" aria-hidden /> Pievienot
           </Link>
         }
       />
+
+      {flags.kluda && <p className="mt-6 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive">Neizdevās pievienot: {flags.kluda}</p>}
+
+      {missing.length > 0 && (
+        <form action={importMissingServices} className="mt-6 rounded-2xl bg-brand/25 p-5 ring-1 ring-brand sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div className="text-sm">
+            <p className="font-extrabold">Šīs programmas ir mājaslapā, bet vēl nav šajā sarakstā:</p>
+            <p className="mt-1">{missing.map((s) => s.title).join(", ")}</p>
+          </div>
+          <button type="submit" className={`${adminPrimary} mt-3 shrink-0 sm:mt-0`}>
+            <Plus className="size-4" aria-hidden /> Pievienot sarakstam
+          </button>
+        </form>
+      )}
 
       {error && (
         <p className="mt-6 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive">
