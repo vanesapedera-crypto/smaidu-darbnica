@@ -17,7 +17,7 @@ import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 import { manifestGallery } from "@/lib/content/media";
-import { missingServices } from "@/lib/admin/missing-services";
+import { missingContent } from "@/lib/admin/missing-content";
 import { toRow } from "@/lib/content/mappers";
 
 /**
@@ -190,16 +190,16 @@ export async function addGalleryImages(
 
 /* ------------------------------ Trūkstošie pakalpojumi ------------------------------ */
 
-/** Poga "Pievienot trūkstošās" — ieliek datubāzē projekta programmas, kuru tur vēl nav (esošās nemaina) */
-export async function importMissingServices() {
+/** Poga "Pievienot sarakstam" — ieliek datubāzē projekta saturu, kura tur vēl nav (esošos ierakstus nemaina) */
+export async function importMissing(key: string) {
   const { db } = await requireAdmin();
-  const missing = await missingServices(db);
-  if (missing.length) {
-    const { error } = await db.from("services").insert(missing.map((s) => toRow(s as unknown as Record<string, unknown>)));
-    if (error) redirect(`/admin/pakalpojumi?kluda=${encodeURIComponent(error.message)}`);
+  const missing = await missingContent(key, db);
+  if (missing?.rows.length) {
+    const { error } = await db.from(missing.table).insert(missing.rows);
+    if (error) redirect(`/admin/${key}?kluda=${encodeURIComponent(error.message)}`);
   }
   refreshSite();
-  redirect("/admin/pakalpojumi?pievienoti=1");
+  redirect(`/admin/${key}?pievienoti=1`);
 }
 
 /* ------------------------------ Programmu attēli ------------------------------ */

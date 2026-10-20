@@ -18,6 +18,73 @@ const FIRST = ["sejas-apgleznosana"];
 const rank = (slug: string) => (FIRST.includes(slug) ? FIRST.indexOf(slug) : FIRST.length);
 const ordered = [...programs].sort((a, b) => rank(a.slug) - rank(b.slug));
 
+/**
+ * Meklētājiem: virsraksts (bez "| Smaidu Darbnīca" — to pieliek automātiski) un apraksts (~150 rakstzīmes).
+ * Panelī tos var labot pie katras programmas (sadaļa "Meklētājiem (SEO)").
+ */
+const SEO: Record<string, [string, string]> = {
+  "sejas-apgleznosana": [
+    "Sejas apgleznošana bērniem Tukumā",
+    "Krāsaini sejas zīmējumi un mirdzoši glittera tetovējumi bērnu ballītēm un svētkiem. Piemērots visiem vecumiem. Rezervējiet tiešsaistē.",
+  ],
+  "glitteru-ballite": [
+    "Glitteru ballīte bērniem Tukumā",
+    "Glitteru sejas apgleznošana, tetovējumi, krāsainās matu šķipsnas, spēles un radošā darbnīca. Bērniem no 4 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "fejas-ballite": [
+    "Fejas ballīte bērniem Tukumā",
+    "Burvju nūjiņas, glitteri, burbuļi un maģiski piedzīvojumi mazajām fejām un burvjiem. Bērniem no 3 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "petnieku-ballite": [
+    "Dinozauru pētnieku ballīte bērniem",
+    "Dinozauru pētnieku piedzīvojums ar spēlēm, fosilijām, uzdevumiem un tematiskām aktivitātēm. Bērniem no 3 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "gabbys-dollhouse-ballite": [
+    "Gabby's Dollhouse ballīte bērniem",
+    "Ceļojums pa Gabijas māju ar spēlēm, radošām aktivitātēm un pārsteigumiem. Bērniem no 3 gadiem. Rezervējiet ballīti tiešsaistē.",
+  ],
+  "spa-ballite": [
+    "SPA ballīte bērniem Tukumā",
+    "SPA piedzīvojums ar sejas kopšanu, relaksāciju, kakao pauzi un radošo darbnīcu. Bērniem no 6 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "make-up-ballite": [
+    "Make-up ballīte meitenēm Tukumā",
+    "Kosmētikas pamati, make-up nodarbība, praktiski padomi un kopā pavadīts laiks. Dalībniecēm no 10 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "wednesday-ballite": [
+    "Wednesday ballīte bērniem Tukumā",
+    "Noslēpumaini uzdevumi, eksperimenti, drosmes pārbaudījumi un tematiskas spēles kopā ar Wednesday. Bērniem no 5 gadiem.",
+  ],
+  "frozen-ballite": [
+    "Frozen ballīte ar Elzu bērniem",
+    "Ledus spēles, radošās darbnīcas un tikšanās ar Elzu Arendellas noskaņās. Bērniem no 3 gadiem. Rezervējiet Frozen ballīti tiešsaistē.",
+  ],
+  "slaima-meistarklase": [
+    "Slaima meistarklase bērniem Tukumā",
+    "Katrs dalībnieks izgatavo savu slaimu, izvēlas krāsas, spīdumus un dekorācijas. Bērniem no 7 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "eksperimentu-ballite": [
+    "Eksperimentu ballīte bērniem Tukumā",
+    "Aizraujoši eksperimenti, pārsteidzošas reakcijas un bērnu līdzdalība katrā uzdevumā. Bērniem no 4 gadiem. Rezervējiet tiešsaistē.",
+  ],
+  "putu-ballite": [
+    "Putu ballīte bērniem ar putu lielgabalu",
+    "Putu lielgabals rada putu kalnus, kuros bērni skrien, lēkā un rotaļājas. Piemērots visiem vecumiem. Rezervējiet putu ballīti tiešsaistē.",
+  ],
+  "nerf-ballite": [
+    "Nerf ballīte bērniem Tukumā",
+    "Nerf komandu spēles, izaicinājumi un kustību aktivitātes. Bērniem no 7 gadiem. Rezervējiet Nerf ballīti tiešsaistē.",
+  ],
+  "parsteiguma-tels": [
+    "Pārsteiguma tēls bērnu svinībām",
+    "Lielformāta tēls ierodas svinībās, izdancina gaviļnieku un fotografējas ar viesiem. Piemērots visiem vecumiem. Rezervējiet tiešsaistē.",
+  ],
+  "piratu-ballite": [
+    "Pirātu ballīte bērniem Tukumā",
+    "Dārgumu meklēšana, pirātu pārbaudījumi un komandu piedzīvojumi drosmīgākajiem jūrasbraucējiem. Bērniem no 4 gadiem.",
+  ],
+};
+
 const partyPrograms: Service[] = ordered.map((p, i) => {
   // Vecās smaidudarbnica.lv lapas saturs (aktuālākais) pārraksta vecā koda vērtības
   const o = programOverrides[p.slug] ?? {};
@@ -51,8 +118,8 @@ const partyPrograms: Service[] = ordered.map((p, i) => {
   seasons: [],
   sort: (i + 1) * 10,
   published: true,
-  seoTitle: "",
-  seoDescription: "",
+  seoTitle: SEO[p.slug]?.[0] ?? "",
+  seoDescription: SEO[p.slug]?.[1] ?? "",
   };
 });
 
@@ -158,7 +225,7 @@ const dobeleXmas: Service = {
   published: true,
   seoTitle: "Ziemassvētki bērniem “Pilsētas mājā” Dobelē",
   seoDescription:
-    "Maģisks Ziemassvētku piedzīvojums bērnu grupām “Pilsētas mājā” Dobelē: spīdīgo nūjiņu deja, video projekcija, Ziemassvētku rotājuma pagatavošana, ēdamā svētku čiekura pagatavošana un silts dzēriens. Programma 1 stunda, to vada 2 rūķi.",
+    "Maģisks Ziemassvētku piedzīvojums bērniem “Pilsētas mājā” Dobelē: satikšanās ar rūķiem, spīdīgo nūjiņu deja, Ziemassvētku rotājuma pagatavošana. 1 stunda.",
 };
 
 /**
