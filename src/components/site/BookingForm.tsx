@@ -411,6 +411,14 @@ export default function BookingForm({
             </Field>
             )}
 
+            {/* Telpu noma bez programmas — citu animatoru programmas mūsu telpās nav paredzētas */}
+            {!institution && form.program === NO_PROGRAM && (
+              <p className="rounded-2xl bg-brand/25 p-4 text-sm leading-6">
+                <strong>Lūdzu, ņemiet vērā:</strong> mūsu telpās nav paredzēts vadīt izklaides programmas citiem animatoriem. Izklaides
+                programmas piedāvājam mēs paši — tās varat izvēlēties šeit augstāk. Par šī noteikuma neievērošanu — sods 50 €.
+              </p>
+            )}
+
             {/* Izvēlētās programmas cenrādis (ja ir atsevišķas izbraukuma cenas — tikai izvēlētajai norises vietai) */}
             {/* Programmai ar variantiem (piem. sejas apgleznošana ar vai bez tetovējumiem) cenrādis ir izvēle: */}
             {/* katrs variants ir kartīte ar savām cenām, un izmaksas rēķina pēc izvēlētā */}
@@ -617,6 +625,13 @@ export default function BookingForm({
               </p>
             ) : travelling ? (
               <>
+                {/* Izbraukumā — programmas citās ballīšu telpās Tukumā nevadām (izņemot sejas apgleznošanu) */}
+                {!institution && form.program !== "sejas-apgleznosana" && (
+                  <p className="rounded-2xl bg-brand/25 p-4 text-sm leading-6 sm:col-span-2">
+                    <strong>Lūdzu, ņemiet vērā:</strong> izklaides programmas nevadām citās ballīšu telpās, kas atrodas Tukumā. Izņēmums — sejas
+                    apgleznošana.
+                  </p>
+                )}
                 <Field id="address" label={institution?.addressLabel ?? "Ballītes adrese"} required error={errors.address} className="sm:col-span-2">
                   <div className="flex gap-2">
                     <input
