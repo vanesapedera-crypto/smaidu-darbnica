@@ -77,4 +77,5 @@ Supabase atveriet **SQL Editor** un palaidiet failu
 - **Apstiprinot** rezervāciju panelī, notikums parādās jūsu kalendārā. Kristīne, vadītāja un telpu kopēja (ja rezervācija ir mūsu telpās) saņem ielūgumu no jūsu konta.
 - **Labojot** notikumu Google kalendārā (Edit → Save), Google pajautā, vai paziņot viesiem. Izvēlieties **Send**.
 - **Atceļot** apstiprinātu rezervāciju panelī (statuss "Atcelta"), notikums no kalendāra tiek noņemts automātiski, un viesi saņem paziņojumu. Ja rezervāciju atceļ pats klients, notikums kalendārā jāizdzēš ar roku, un par to atnāk e-pasts.
+- **Agrāk apstiprinātas rezervācijas** (pirms savienošanas) var ielikt kalendārā ar pogu **"Ielikt Google kalendārā"** atvērtā pieteikumā. Klientam nekas netiek sūtīts. Veco ielūgumu pēc tam izdzēsiet.
 - **Atvienot** var panelī ar pogu "Atvienot". Pēc tam notikumi atkal aiziet kā ielūgumi.

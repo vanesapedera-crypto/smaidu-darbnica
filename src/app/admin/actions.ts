@@ -10,6 +10,10 @@ import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyReviewRequest } from "@/lib/notify";
+import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
+import { atStudio } from "@/lib/bookings";
+import { upsertGoogleEvent } from "@/lib/google-calendar";
+import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
@@ -58,6 +62,28 @@ export async function saveBookingNotes(id: string, form: FormData) {
   const { db } = await requireAdmin();
   const notes = String(form.get("admin_notes") ?? "").slice(0, 5000);
   await db.from("bookings").update({ admin_notes: notes }).eq("id", id);
+  revalidatePath("/admin");
+}
+
+/**
+ * Pirms apstiprināšanas panelī var izlabot datumu, laiku un bērnu skaitu (piem. pēc sarunas ar klientu).
+ * Pārbaudes par pieejamajiem laikiem šeit nav — administrators zina, ko dara. Apstiprinātu rezervāciju šeit nemaina.
+ */
+export async function saveBookingDetails(id: string, form: FormData) {
+  const { db } = await requireAdmin();
+  const { data: b } = await db.from("bookings").select("status").eq("id", id).single();
+  if (!b || b.status === "Apstiprināta") return;
+
+  const date = String(form.get("event_date") ?? "").trim();
+  const time = String(form.get("event_time") ?? "").trim();
+  const count = String(form.get("children_count") ?? "").trim();
+  const row: Record<string, unknown> = {};
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) row.event_date = date;
+  row.event_time = /^\d{1,2}:\d{2}$/.test(time) ? time.padStart(5, "0") : null;
+  const n = Number(count);
+  row.children_count = count && Number.isInteger(n) && n > 0 && n <= 1000 ? n : null;
+
+  await db.from("bookings").update(row).eq("id", id);
   revalidatePath("/admin");
 }
 
@@ -202,4 +228,30 @@ export async function disconnectGoogle() {
   const { db } = await requireAdmin();
   await db.from("google_calendar").delete().eq("id", 1);
   revalidatePath("/admin");
+}
+
+/**
+ * Poga "Ielikt Google kalendārā" — jau apstiprinātu rezervāciju (piem. apstiprinātu pirms Google kalendāra savienošanas)
+ * ieliek savienotajā Google kalendārā kā labojamu notikumu. Klientam nekas netiek sūtīts; viesi (komanda) saņem ielūgumu no Google.
+ * Atkārtoti spiežot, tiek atjaunots tas pats notikums (nevis izveidots jauns).
+ */
+export async function addToGoogleCalendar(id: string, host: string): Promise<{ error?: string; ok?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  if (b.status !== "Apstiprināta") return { error: "Kalendārā var ielikt tikai apstiprinātas rezervācijas." };
+
+  const isBusiness = b.inquiry_type === "business";
+  const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
+  const slug = b.service_slug || b.program || "";
+  const service = services.find((s) => s.slug === slug);
+  const inVenue = !isBusiness && atStudio(b.location);
+  const costs = isBusiness ? null : bookingCosts(b, service, bookingPrices(settings));
+  const event = calendarEvent(b, service?.title ?? (slug || (inVenue ? "Telpu noma" : "Pieteikums")), costs);
+  if (!event) return { error: "Pieteikumam nav datuma." };
+
+  const hostEmail = CALENDAR_HOSTS.find((h) => h.email === host)?.email;
+  const ok = await upsertGoogleEvent(db, b.id, event, [...event.guests, ...(hostEmail ? [hostEmail] : [])]);
+  return ok ? { ok: true } : { error: "Neizdevās ielikt Google kalendārā. Pārbaudiet, vai Google kalendārs ir savienots, un mēģiniet vēlreiz." };
 }

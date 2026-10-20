@@ -9,10 +9,11 @@ import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
+import { googleConnection } from "@/lib/google-calendar";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
-import { saveBookingNotes } from "../actions";
+import { saveBookingDetails, saveBookingNotes } from "../actions";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Pieteikumi" };
@@ -45,13 +46,15 @@ export default async function BookingsPage({ searchParams }: Props) {
     );
   }
 
-  const [{ data, error }, { data: serviceRows }, business, programs, settings] = await Promise.all([
+  const [{ data, error }, { data: serviceRows }, business, programs, settings, google_] = await Promise.all([
     query,
     db.from("services").select("slug, title"),
     getServices("business"),
     getServices("private"),
     getSettings(),
+    googleConnection(db),
   ]);
+  const googleConnected = Boolean(google_);
   const prices = bookingPrices(settings);
   // Izmaksas ballītēm un telpu nomai — tas pats aprēķins, ko klients redz formā un saņem apstiprinājuma e-pastā
   const costsOf = (b: Booking) =>
@@ -242,8 +245,39 @@ export default async function BookingsPage({ searchParams }: Props) {
                     {/* Google kalendārs: aizpildīts notikums ar viesiem (tikai pieteikumiem ar datumu) */}
                     {(() => {
                       const event = calendarEvent(b, label(b.service_slug || b.program), costsOf(b));
-                      return event && <CalendarLink event={event} withHost={b.inquiry_type !== "business"} />;
+                      return (
+                        event && (
+                          <CalendarLink
+                            event={event}
+                            withHost={b.inquiry_type !== "business"}
+                            googleBookingId={googleConnected && b.status === "Apstiprināta" ? b.id : undefined}
+                          />
+                        )
+                      );
                     })()}
+                    {/* Pirms apstiprināšanas — var izlabot datumu, laiku un bērnu skaitu */}
+                    {b.status !== "Apstiprināta" && (
+                      <form action={saveBookingDetails.bind(null, b.id)} className="space-y-2 rounded-2xl bg-surface p-4">
+                        <p className="text-sm font-extrabold">Labot pirms apstiprināšanas</p>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <label className="text-sm text-ink-soft">
+                            Datums
+                            <input type="date" name="event_date" required defaultValue={b.event_date?.slice(0, 10) ?? ""} className={adminInput} />
+                          </label>
+                          <label className="text-sm text-ink-soft">
+                            Laiks
+                            <input type="time" name="event_time" defaultValue={b.event_time?.slice(0, 5) ?? ""} className={adminInput} />
+                          </label>
+                          <label className="text-sm text-ink-soft">
+                            Bērnu skaits
+                            <input type="number" name="children_count" min={1} max={1000} defaultValue={b.children_count ?? ""} className={adminInput} />
+                          </label>
+                        </div>
+                        <button type="submit" className={adminSecondary}>
+                          Saglabāt izmaiņas
+                        </button>
+                      </form>
+                    )}
                     <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2">
                       <label htmlFor={`notes-${b.id}`} className="text-sm text-ink-soft">
                         Iekšējās piezīmes
