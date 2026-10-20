@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { BOOKING_STATUSES } from "@/lib/bookings";
-import { CALENDAR_HOSTS } from "@/lib/calendar";
-import { adminInput, adminSecondary } from "./styles";
+import HostPicker from "./HostPicker";
+import { adminSecondary } from "./styles";
 
 type Props = {
   id: string;
@@ -26,7 +26,7 @@ const styles: Record<string, string> = {
 
 /**
  * Pieteikuma statusa maiņa. Izvēloties "Apstiprināta", vispirms atveras neliels logs:
- * tajā redzams, kas notiks (e-pasts klientam, ielūgums kalendārā), un ballītēm izvēlas programmas vadītāju.
+ * tajā redzams, kas notiks (e-pasts klientam, ielūgums kalendārā), un ballītēm izvēlas programmas vadītājas (var vairākas).
  */
 export default function StatusSelect({ id, status, withHost = false, guests = null, clientEmail = null }: Props) {
   const router = useRouter();
@@ -37,9 +37,9 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
   const [note, setNote] = useState("");
   // Apstiprināšanas logs (lai nejaušs klikšķis neko nenosūta)
   const [confirming, setConfirming] = useState(false);
-  const [host, setHost] = useState("");
+  const [hosts, setHosts] = useState<string[]>([]);
 
-  async function save(next: string, withHostEmail = "") {
+  async function save(next: string, hostEmails: string[] = []) {
     const previous = value;
     setValue(next);
     setFailed(false);
@@ -48,7 +48,7 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
     const res = await fetch(`/api/bookings/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: next, host: withHostEmail }),
+      body: JSON.stringify({ status: next, hosts: hostEmails }),
     });
     if (!res.ok) {
       setValue(previous);
@@ -78,7 +78,7 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
     else save(next);
   }
 
-  const recipients = guests ? [...guests, ...(host ? [host] : [])] : [];
+  const recipients = guests ? [...new Set([...guests, ...hosts])] : [];
 
   return (
     <div className="relative flex items-center gap-2">
@@ -119,23 +119,16 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
             <li>{guests ? "Notikums tiks ielikts Google kalendārā." : "Pieteikumam nav datuma — kalendārā netiks ielikts."}</li>
           </ul>
           {guests && withHost && (
-            <label className="block space-y-1">
-              <span className="font-semibold">Programmu vada</span>
-              <select value={host} onChange={(e) => setHost(e.target.value)} className={adminInput}>
-                <option value="">Vēl nav zināms</option>
-                {CALENDAR_HOSTS.map((h) => (
-                  <option key={h.email} value={h.email}>
-                    {h.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="space-y-1.5">
+              <span className="block font-semibold">Programmu vada (var atzīmēt vairākas)</span>
+              <HostPicker value={hosts} onChange={setHosts} />
+            </div>
           )}
           {guests && <p className="text-xs break-words text-ink-soft">Ielūgumu saņems: {recipients.join(", ")}</p>}
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => save("Apstiprināta", host)}
+              onClick={() => save("Apstiprināta", hosts)}
               className="rounded-full bg-brand px-4 py-2 text-sm font-extrabold hover:bg-brand/80"
             >
               Apstiprināt

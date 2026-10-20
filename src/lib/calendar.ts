@@ -16,11 +16,19 @@ import { costLinesText, type BookingCosts } from "./pricing";
 export const CALENDAR_ALWAYS = ["smaidu.darbniica@gmail.com", "smaidu.darbnica@gmail.com"];
 /** Saņem notikumus, kas notiek mūsu telpās (telpu noma) — telpu uzkopšanai */
 export const CALENDAR_VENUE = ["keitaplavina3@gmail.com"];
-/** Izklaides programmu vadītājas — panelī pie pieteikuma izvēlas, kura vadīs */
+/** Izklaides programmu vadītājas (animatores) — panelī pie pieteikuma izvēlas, kuras vadīs (var vairākas) */
 export const CALENDAR_HOSTS = [
-  { name: "Madara", email: "racemadara@gmail.com" },
+  { name: "Madara R", email: "racemadara@gmail.com" },
   { name: "Agija", email: "balode.agija@gmail.com" },
+  { name: "Gunta", email: "guntammg@gmail.com" },
+  { name: "Madara K", email: "madarakuksa3@gmail.com" },
+  { name: "Keita", email: "keitaplavina3@gmail.com" },
 ];
+/** No paneļa atsūtītās vadītāju adreses — pieņem tikai adreses no saraksta (bez atkārtojumiem) */
+export function pickHosts(input: unknown): string[] {
+  const list = Array.isArray(input) ? input : typeof input === "string" && input ? [input] : [];
+  return CALENDAR_HOSTS.filter((h) => list.includes(h.email)).map((h) => h.email);
+}
 
 /** Telpu nomas laika posma garums stundās (10:00–13:00 utt.) */
 const SLOT_HOURS = 3;

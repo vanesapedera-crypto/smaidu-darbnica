@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { CalendarCheck, CalendarPlus, LoaderCircle } from "lucide-react";
 import { addToGoogleCalendar } from "@/app/admin/actions";
-import { CALENDAR_HOSTS, calendarUrl, type CalendarEvent } from "@/lib/calendar";
-import { adminInput, adminSecondary } from "./styles";
+import { calendarUrl, type CalendarEvent } from "@/lib/calendar";
+import HostPicker from "./HostPicker";
+import { adminSecondary } from "./styles";
 
 /**
  * Rezerves variants: poga atver Google kalendāru ar aizpildītu notikumu.
@@ -21,36 +22,32 @@ export default function CalendarLink({
   /** Ja Google kalendārs ir savienots un rezervācija apstiprināta — poga "Ielikt Google kalendārā" (labojams notikums) */
   googleBookingId?: string;
 }) {
-  const [host, setHost] = useState("");
+  const [hosts, setHosts] = useState<string[]>([]);
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ error?: string; ok?: boolean }>();
 
   return (
     <div className="space-y-2">
       <p className="text-sm text-ink-soft">Google kalendārs — ar roku</p>
+      {withHost && (
+        <div className="space-y-1.5">
+          <p className="text-sm font-semibold">Programmu vada (var atzīmēt vairākas)</p>
+          <HostPicker value={hosts} onChange={setHosts} />
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
-        {withHost && (
-          <select value={host} onChange={(e) => setHost(e.target.value)} aria-label="Programmu vada" className={adminInput} style={{ width: "auto" }}>
-            <option value="">Programmu vada…</option>
-            {CALENDAR_HOSTS.map((h) => (
-              <option key={h.email} value={h.email}>
-                {h.name}
-              </option>
-            ))}
-          </select>
-        )}
         {googleBookingId ? (
           <button
             type="button"
             disabled={pending}
-            onClick={() => start(async () => setResult(await addToGoogleCalendar(googleBookingId, host)))}
+            onClick={() => start(async () => setResult(await addToGoogleCalendar(googleBookingId, hosts)))}
             className={adminSecondary}
           >
             {pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <CalendarCheck className="size-4" aria-hidden />}
             Ielikt Google kalendārā
           </button>
         ) : (
-          <a href={calendarUrl(event, host ? [host] : [])} target="_blank" rel="noopener noreferrer" className={adminSecondary}>
+          <a href={calendarUrl(event, hosts)} target="_blank" rel="noopener noreferrer" className={adminSecondary}>
             <CalendarPlus className="size-4" aria-hidden />
             Pievienot kalendāram
           </a>

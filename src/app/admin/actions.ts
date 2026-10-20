@@ -10,7 +10,7 @@ import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyReviewRequest } from "@/lib/notify";
-import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
+import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { bookingCosts, bookingPrices } from "@/lib/pricing";
@@ -235,7 +235,7 @@ export async function disconnectGoogle() {
  * ieliek savienotajā Google kalendārā kā labojamu notikumu. Klientam nekas netiek sūtīts; viesi (komanda) saņem ielūgumu no Google.
  * Atkārtoti spiežot, tiek atjaunots tas pats notikums (nevis izveidots jauns).
  */
-export async function addToGoogleCalendar(id: string, host: string): Promise<{ error?: string; ok?: boolean }> {
+export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<{ error?: string; ok?: boolean }> {
   const { db } = await requireAdmin();
   const { data } = await db.from("bookings").select("*").eq("id", id).single();
   const b = data as Booking | null;
@@ -251,7 +251,6 @@ export async function addToGoogleCalendar(id: string, host: string): Promise<{ e
   const event = calendarEvent(b, service?.title ?? (slug || (inVenue ? "Telpu noma" : "Pieteikums")), costs);
   if (!event) return { error: "Pieteikumam nav datuma." };
 
-  const hostEmail = CALENDAR_HOSTS.find((h) => h.email === host)?.email;
-  const ok = await upsertGoogleEvent(db, b.id, event, [...event.guests, ...(hostEmail ? [hostEmail] : [])]);
+  const ok = await upsertGoogleEvent(db, b.id, event, [...event.guests, ...pickHosts(hosts)]);
   return ok ? { ok: true } : { error: "Neizdevās ielikt Google kalendārā. Pārbaudiet, vai Google kalendārs ir savienots, un mēģiniet vēlreiz." };
 }
