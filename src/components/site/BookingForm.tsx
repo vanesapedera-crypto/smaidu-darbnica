@@ -412,7 +412,7 @@ export default function BookingForm({
             )}
 
             {/* Telpu noma bez programmas — citu animatoru programmas mūsu telpās nav paredzētas */}
-            {!institution && form.program === NO_PROGRAM && (
+            {!institution && inStudio && form.program === NO_PROGRAM && (
               <p className="rounded-2xl bg-brand/25 p-4 text-sm leading-6">
                 <strong>Lūdzu, ņemiet vērā:</strong> mūsu telpās nav paredzēts vadīt izklaides programmas citiem animatoriem. Izklaides
                 programmas piedāvājam mēs paši — tās varat izvēlēties šeit augstāk. Par šī noteikuma neievērošanu — sods 50 €.
