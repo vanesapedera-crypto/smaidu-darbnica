@@ -17,7 +17,7 @@ import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 import { manifestGallery } from "@/lib/content/media";
-import { missingContent } from "@/lib/admin/missing-content";
+import { missingContent, missingGallery } from "@/lib/admin/missing-content";
 import { toRow } from "@/lib/content/mappers";
 
 /**
@@ -193,7 +193,8 @@ export async function addGalleryImages(
 /** Poga "Pievienot sarakstam" — ieliek datubāzē projekta saturu, kura tur vēl nav (esošos ierakstus nemaina) */
 export async function importMissing(key: string) {
   const { db } = await requireAdmin();
-  const missing = await missingContent(key, db);
+  const missing =
+    key === "galerija" ? await missingGallery(db).then((m) => m && { ...m, table: "gallery_images" }) : await missingContent(key, db);
   if (missing?.rows.length) {
     const { error } = await db.from(missing.table).insert(missing.rows);
     if (error) redirect(`/admin/${key}?kluda=${encodeURIComponent(error.message)}`);

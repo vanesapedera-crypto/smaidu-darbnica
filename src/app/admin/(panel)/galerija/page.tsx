@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { isOptimizable } from "@/lib/images";
-import { EyeOff } from "lucide-react";
+import { EyeOff, Plus } from "lucide-react";
+import { importMissing } from "@/app/admin/actions";
+import { missingGallery } from "@/lib/admin/missing-content";
+import { adminPrimary } from "@/components/admin/styles";
 import { requireAdmin } from "@/lib/auth";
 import { galleryCategories } from "@/lib/content/media";
 import GalleryUploader from "@/components/admin/GalleryUploader";
@@ -10,12 +13,12 @@ import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Foto" };
 
-type Props = { searchParams: Promise<{ albums?: string; saglabats?: string; dzests?: string }> };
+type Props = { searchParams: Promise<{ albums?: string; saglabats?: string; dzests?: string; pievienoti?: string; kluda?: string }> };
 
 type Row = { id: string; src: string; alt: string; album: string; category: string; published: boolean };
 
 export default async function AdminGalleryPage({ searchParams }: Props) {
-  const { albums: selected = "", saglabats, dzests } = await searchParams;
+  const { albums: selected = "", saglabats, dzests, pievienoti, kluda } = await searchParams;
   const { db } = await requireAdmin();
 
   const { data, error } = await db
@@ -24,6 +27,8 @@ export default async function AdminGalleryPage({ searchParams }: Props) {
     .order("album")
     .order("sort");
   const rows = (data ?? []) as Row[];
+  // Albumi, kas mājaslapā redzami no projekta mapes, bet vēl nav šeit
+  const missing = error ? [] : ((await missingGallery(db))?.titles ?? []);
 
   const counts = new Map<string, number>();
   for (const r of rows) counts.set(r.album, (counts.get(r.album) ?? 0) + 1);
@@ -35,8 +40,22 @@ export default async function AdminGalleryPage({ searchParams }: Props) {
       <PageHeader
         title="Foto"
         description="Attēli sadaļu fotolentēm (pēc kategorijas) un pakalpojumu lapām (pēc albuma). Noklikšķiniet uz attēla, lai redzētu tā adresi, mainītu aprakstu, kategoriju vai to paslēptu."
-        notice={saglabats ? "Attēls saglabāts." : dzests ? "Attēls izdzēsts." : undefined}
+        notice={saglabats ? "Attēls saglabāts." : dzests ? "Attēls izdzēsts." : pievienoti ? "Attēli pievienoti — tagad tos var labot un paslēpt." : undefined}
       />
+
+      {kluda && <p className="mt-6 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive">Neizdevās pievienot: {kluda}</p>}
+
+      {missing.length > 0 && (
+        <form action={importMissing.bind(null, "galerija")} className="mt-6 rounded-2xl bg-brand/25 p-5 ring-1 ring-brand sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div className="text-sm">
+            <p className="font-extrabold">Šie albumi ir mājaslapā, bet vēl nav šeit:</p>
+            <p className="mt-1">{missing.join(", ")}</p>
+          </div>
+          <button type="submit" className={`${adminPrimary} mt-3 shrink-0 sm:mt-0`}>
+            <Plus className="size-4" aria-hidden /> Pievienot sarakstam
+          </button>
+        </form>
+      )}
 
       <div className="mt-6">
         <GalleryUploader
