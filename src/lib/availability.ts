@@ -30,3 +30,14 @@ export async function bookedProgramSlots(program: string): Promise<string[]> {
   }
   return ((data ?? []) as string[]).map((t) => t.slice(0, 16));
 }
+
+/**
+ * Programmām ar laika logiem (DAY_RULES): rezervētie laiki ar variantu — "2026-12-14 10:00|2 rūķi".
+ * Ja datubāzē vēl nav funkcijas booked_program_variants, ņem laikus bez varianta (booked_program_slots).
+ */
+export async function bookedProgramVariants(program: string): Promise<string[]> {
+  if (!isSupabaseConfigured || !/^[a-z0-9-]+$/.test(program)) return [];
+  const { data, error } = await supabase.rpc("booked_program_variants", { prog: program });
+  if (error) return (await bookedProgramSlots(program)).map((t) => `${t}|`);
+  return (data ?? []) as string[];
+}

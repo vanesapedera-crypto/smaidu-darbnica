@@ -6,6 +6,17 @@ import Link from "next/link";
 import { Car, CircleCheck, Clock, DoorOpen, LoaderCircle, MapPin, Send } from "lucide-react";
 import {
   FULLY_BOOKED_TEXT,
+  allowedDates,
+  DAY_FULL_TEXT,
+  WINDOW_TAKEN_TEXT,
+  dayRuleText,
+  dayWindows,
+  freeWindows,
+  hasDayRules,
+  isDayFull,
+  outsideWindowsText,
+  variantNotFreeText,
+  windowsAt,
   SLOT_TAKEN_TEXT,
   WEEKDAY_HINT,
   WEEKDAY_TEXT,
@@ -133,20 +144,47 @@ export default function BookingForm({
   const bookedDates = fullyBookedDates(program?.slug).filter((d) => d >= today);
   // Konkrēti pieejamie laiki (sk. PROGRAM_SLOTS): datumu un laiku izvēlas no saraksta; aizņemtie — no /api/availability
   const slots = programSlots(program?.slug);
+  // Tikai noteikti datumi (sk. ALLOWED_DATES) — izvēle ar pogām; pilnībā aizņemtie un pagājušie netiek piedāvāti
+  const onlyDates = allowedDates(program?.slug)?.filter((d) => d >= today && !fullyBookedDates(program?.slug).includes(d));
+  // Īpaši nosacījumi izvēlētajai dienai (sk. DAY_RULES), piem. 14. decembrī — viens rīta laiks līdz 13.00, tikai viens variants
+  const windows = dayWindows(program?.slug, form.eventDate);
+  const atWindows = windowsAt(program?.slug, form.eventDate, form.eventTime);
   const [slotTaken, setSlotTaken] = useState<string[]>([]);
+  // Rezervētie laiki ar variantiem ("2026-12-14 10:00|2 rūķi") — dienām ar laika logiem
+  const [takenVariants, setTakenVariants] = useState<string[]>([]);
   useEffect(() => {
-    if (!slots || !program) return;
+    if ((!slots && !hasDayRules(program?.slug)) || !program) return;
     let stale = false;
     fetch(`/api/availability?program=${program.slug}`)
       .then((r) => r.json())
       .then((d) => {
-        if (!stale) setSlotTaken(Array.isArray(d.taken) ? d.taken : []);
+        if (stale) return;
+        setSlotTaken(Array.isArray(d.taken) ? d.taken : []);
+        setTakenVariants(Array.isArray(d.variants) ? d.variants : []);
       })
       .catch(() => {});
     return () => {
       stale = true;
     };
   }, [slots, program]);
+  const dayFull = (d: string) => isDayFull(program?.slug, d, takenVariants);
+  // Brīvie logi izvēlētajā laikā un to varianti
+  const freeAt = windows && form.eventTime ? freeWindows(program?.slug, form.eventDate, form.eventTime, takenVariants) : [];
+  const freeVariants = [...new Set(freeAt.flatMap((w) => w.variants ?? []))];
+  // Laika kļūda dienām ar laika logiem: laiks ārpus logiem vai logs jau aizņemts
+  const windowError =
+    windows && form.eventTime
+      ? !atWindows.length
+        ? outsideWindowsText(program?.slug, form.eventDate)
+        : !freeAt.length
+          ? WINDOW_TAKEN_TEXT
+          : undefined
+      : undefined;
+  // Ja šajā laikā pieejams tikai viens variants (piem. vakarā — "2 rūķi"), izvēlas to automātiski
+  const onlyVariant = freeVariants.length === 1 ? freeVariants[0] : undefined;
+  useEffect(() => {
+    if (onlyVariant) setVariantChoice(onlyVariant);
+  }, [onlyVariant]);
   const slotKey = `${form.eventDate} ${form.eventTime}`;
   const pickedTaken = Boolean(slots && form.eventDate && slotTaken.includes(slotKey));
   // Laika posms "09:00–10:00" (programmas ilgums — venue.hours, citādi 1 stunda)
@@ -165,6 +203,8 @@ export default function BookingForm({
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant = variants.find((g) => g.title === variantChoice)?.title ?? variants[0]?.title;
+  // Izvēlētais variants šajā laikā nav pieejams (piem. 14. decembrī vakarā — tikai "2 rūķi")
+  const variantError = freeVariants.length && variant && !freeVariants.includes(variant) ? variantNotFreeText(freeVariants) : undefined;
   const programPrice = program
     ? estimateProgramPrice(program.pricing, Number(form.childrenCount), travelling, variant)
     : null;
@@ -265,6 +305,9 @@ export default function BookingForm({
     else if (!form.eventDate) missing.eventDate = "Izvēlieties datumu.";
     else if (dateError) missing.eventDate = dateError;
     if (!slots && !form.eventTime) missing.eventTime = inStudio ? "Izvēlieties laiku." : institution ? "Norādiet sākuma laiku." : "Norādiet ballītes sākuma laiku.";
+    else if (windowError) missing.eventTime = windowError;
+    else if (variantError) missing.eventTime = variantError;
+    if (form.eventDate && dayFull(form.eventDate)) missing.eventDate = DAY_FULL_TEXT;
     if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
     if (headcount && !institution && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
@@ -745,6 +788,63 @@ export default function BookingForm({
                   </p>
                 )}
               </div>
+            ) : onlyDates ? (
+              <div className="space-y-2 sm:col-span-2" id="eventDate">
+                <p className="text-sm font-bold" id="date-label">
+                  Pieejamie datumi<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
+                <div role="radiogroup" aria-labelledby="date-label" className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+                  {onlyDates.map((d) => {
+                    const full = dayFull(d);
+                    const active = form.eventDate === d && !full;
+                    return (
+                      <label
+                        key={d}
+                        className={cn(
+                          "flex flex-col items-center rounded-2xl border-2 px-2 py-3 text-center transition-colors",
+                          full
+                            ? "cursor-not-allowed border-line bg-surface text-ink/35"
+                            : active
+                              ? "cursor-pointer border-ink bg-brand"
+                              : "cursor-pointer border-line hover:border-ink",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="eventDate"
+                          value={d}
+                          checked={active}
+                          disabled={full}
+                          onChange={() => {
+                            setForm((f) => ({ ...f, eventDate: d }));
+                            // Dienai ar vienu pieejamo variantu — izvēlas to uzreiz
+                            const ws = dayWindows(program?.slug, d);
+                            if (ws?.length === 1 && ws[0].variants?.length === 1) setVariantChoice(ws[0].variants[0]);
+                            setErrors((er) => ({ ...er, eventDate: "", eventTime: "" }));
+                          }}
+                          className="sr-only"
+                        />
+                        <span className="text-sm font-extrabold first-letter:uppercase">
+                          {new Date(`${d}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long" })}
+                        </span>
+                        <span className="text-sm">{new Date(`${d}T12:00:00`).toLocaleDateString("lv-LV", { day: "numeric", month: "long" })}</span>
+                        {full ? (
+                          <span className="text-xs font-semibold">Aizņemts</span>
+                        ) : (
+                          dayWindows(program?.slug, d) && <span className="text-xs font-semibold">noteikti laiki</span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+                {onlyDates.length === 0 && <p className="text-sm font-semibold">Brīvu datumu vairs nav.</p>}
+                {windows && !dayFull(form.eventDate) && <p className="text-sm font-semibold">{dayRuleText(program?.slug, form.eventDate, takenVariants)}</p>}
+                {errors.eventDate && (
+                  <p role="alert" className="text-sm font-semibold text-destructive">
+                    {errors.eventDate}
+                  </p>
+                )}
+              </div>
             ) : (
             <Field
               id="eventDate"
@@ -759,7 +859,13 @@ export default function BookingForm({
             )}
             {/* Izbraukuma ballītei — brīvi izvēlams sākuma laiks (telpām zemāk ir trīs laika posmi) */}
             {!inStudio && !slots && (
-              <Field id="eventTime" label="Vēlamais laiks" required error={errors.eventTime}>
+              <Field
+                id="eventTime"
+                label="Vēlamais laiks"
+                required
+                error={windowError ?? variantError ?? errors.eventTime}
+                hint={freeVariants.length ? `Šajā laikā: ${freeVariants.map((v) => `“${v}”`).join(" vai ")}.` : undefined}
+              >
                 <input {...fieldProps("eventTime")} type="time" step={300} />
               </Field>
             )}

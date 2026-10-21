@@ -1,7 +1,15 @@
 import { after, NextResponse } from "next/server";
-import { bookedProgramSlots, bookedSlots } from "@/lib/availability";
+import { bookedProgramSlots, bookedProgramVariants, bookedSlots } from "@/lib/availability";
 import {
   FULLY_BOOKED_TEXT,
+  DATE_NOT_ALLOWED_TEXT,
+  isDateAllowed,
+  dayWindows,
+  windowsAt,
+  freeWindows,
+  outsideWindowsText,
+  variantNotFreeText,
+  WINDOW_TAKEN_TEXT,
   SLOT_TAKEN_TEXT,
   WEEKDAY_TEXT,
   atStudio,
@@ -136,6 +144,19 @@ export async function POST(request: Request) {
 
   // Programmai pilnībā aizņemts datums (sk. FULLY_BOOKED_DATES) — forma to jau neļauj, šī ir pārbaude serverī
   if (!isBusiness && isFullyBooked(row.program, row.event_date)) v.errors.eventDate = FULLY_BOOKED_TEXT;
+  // Programmai ir tikai noteikti datumi (sk. ALLOWED_DATES)
+  if (!isBusiness && !isDateAllowed(row.program, row.event_date)) v.errors.eventDate = DATE_NOT_ALLOWED_TEXT;
+  // Īpaši nosacījumi dienai (sk. DAY_RULES): dienā pieejami tikai noteikti laika logi, katrā — savs variants
+  if (!isBusiness && row.program && row.event_date && dayWindows(row.program, row.event_date)) {
+    const at = windowsAt(row.program, row.event_date, row.event_time);
+    const free = freeWindows(row.program, row.event_date, row.event_time, await bookedProgramVariants(row.program));
+    const chosen = String(row.message ?? "").match(/Izvēle: ([^\n]+)/)?.[1]?.trim();
+    if (!at.length) v.errors.eventTime = outsideWindowsText(row.program, row.event_date);
+    else if (!free.length) v.errors.eventTime = WINDOW_TAKEN_TEXT;
+    else if (!free.some((w) => !w.variants || w.variants.includes(chosen ?? ""))) {
+      v.errors.eventTime = variantNotFreeText([...new Set(free.flatMap((w) => w.variants ?? []))]);
+    }
+  }
   // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS)
   if (!isBusiness && isWeekdayBlocked(row.program, row.event_date)) v.errors.eventDate = WEEKDAY_TEXT;
   // Programmai ar konkrētiem laikiem (sk. PROGRAM_SLOTS): laikam jābūt starp pieejamajiem un vēl brīvam

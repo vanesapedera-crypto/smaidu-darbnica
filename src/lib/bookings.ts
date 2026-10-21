@@ -119,6 +119,102 @@ export function isWeekdayBlocked(program: string | null | undefined, date: strin
 }
 
 /**
+ * Vienīgie datumi, kuros programmu var rezervēt (YYYY-MM-DD). Ja programmai tie ir norādīti, formā datumu izvēlas
+ * no šī saraksta (laiks — brīvi), un serveris citus datumus nepieņem. Pilnībā aizņemtie (FULLY_BOOKED_DATES) netiek piedāvāti.
+ */
+export const ALLOWED_DATES: Record<string, string[]> = {
+  "ziemassvetki-bernudarza": ["2026-12-14", "2026-12-15", "2026-12-16", "2026-12-21", "2026-12-22"],
+};
+export const allowedDates = (program: string | null | undefined) => ALLOWED_DATES[program ?? ""];
+export const isDateAllowed = (program: string | null | undefined, date: string | null | undefined) => {
+  const dates = allowedDates(program);
+  return !dates || !date || dates.includes(date.slice(0, 10));
+};
+/**
+ * Īpaši nosacījumi konkrētām dienām: dienā pieejami tikai norādītie laika logi.
+ * Logs: `from` — agrākais sākums, `until` — programmai jābeidzas līdz (ilgums — `minutes`),
+ * `max` — cik rezervāciju logā var pieņemt (jebkurā no variantiem), `variants` — šajā logā pieejamie programmas varianti,
+ * `label` — nosaukums tekstā.
+ */
+export type DayWindow = { label: string; from?: string; until?: string; max?: number; variants?: string[] };
+export const DAY_RULES: Record<string, { minutes: number; days: Record<string, DayWindow[]> }> = {
+  "ziemassvetki-bernudarza": {
+    // Laiks, ko komanda pavada programmā — 1 stunda
+    minutes: 60,
+    days: {
+      "2026-12-14": [
+        // Rītā — viena rezervācija: vai nu "Rūķis un Ziemassvētku vecītis", vai "2 rūķi"
+        { label: "rītā", until: "13:00", max: 1, variants: ["Rūķis un Ziemassvētku vecītis", "2 rūķi"] },
+        { label: "vakarā", from: "15:30", max: 1, variants: ["2 rūķi"] },
+      ],
+    },
+  },
+};
+export const dayWindows = (program: string | null | undefined, date: string | null | undefined): DayWindow[] | undefined =>
+  DAY_RULES[program ?? ""]?.days[(date ?? "").slice(0, 10)];
+export const hasDayRules = (program: string | null | undefined) => Boolean(DAY_RULES[program ?? ""]);
+const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const hm = (t: string) => `${Number(t.slice(0, 2))}.${t.slice(3, 5)}`;
+/** Laika logi, kuros iekļaujas programma ar šo sākuma laiku */
+export function windowsAt(program: string | null | undefined, date: string | null | undefined, time: string | null | undefined): DayWindow[] {
+  const windows = dayWindows(program, date);
+  if (!windows || !time || !/^\d{1,2}:\d{2}/.test(time)) return [];
+  const start = toMin(time.padStart(5, "0"));
+  const end = start + (DAY_RULES[program ?? ""]?.minutes ?? 0);
+  return windows.filter((w) => (!w.from || start >= toMin(w.from)) && (!w.until || end <= toMin(w.until)));
+}
+/** Vai logs jau ir aizņemts. `booked` — "YYYY-MM-DD HH:MM|variants" (sk. booked_program_variants) */
+export function isWindowFull(program: string | null | undefined, date: string, w: DayWindow, booked: string[]): boolean {
+  if (w.max === undefined) return false;
+  const day = date.slice(0, 10);
+  const count = booked.filter((b) => {
+    const [when, variant = ""] = b.split("|");
+    if (!when.startsWith(day) || !windowsAt(program, day, when.slice(11, 16)).includes(w)) return false;
+    // Ja variants nav zināms, skaita pret visiem logiem šajā laikā
+    return !w.variants || !variant || w.variants.includes(variant.trim());
+  }).length;
+  return count >= w.max;
+}
+/** Brīvie logi šajā laikā (ja laiks nav norādīts — visi brīvie logi dienā) */
+export function freeWindows(program: string | null | undefined, date: string, time: string | null | undefined, booked: string[]): DayWindow[] {
+  const ws = time ? windowsAt(program, date, time) : (dayWindows(program, date) ?? []);
+  return ws.filter((w) => !isWindowFull(program, date, w, booked));
+}
+/** Vai dienā visi logi ir aizņemti */
+export function isDayFull(program: string | null | undefined, date: string, booked: string[]): boolean {
+  const windows = dayWindows(program, date);
+  return Boolean(windows?.length) && freeWindows(program, date, null, booked).length === 0;
+}
+/** Logi sagrupēti pēc laika: "rītā programmai jābeidzas līdz 13.00 — “A” vai “B”" */
+function windowsText(windows: DayWindow[]): string {
+  const groups = new Map<string, DayWindow[]>();
+  for (const w of windows) {
+    const key = `${w.label} ${[w.from && `no ${hm(w.from)}`, w.until && `programmai jābeidzas līdz ${hm(w.until)}`].filter(Boolean).join(", ")}`;
+    groups.set(key, [...(groups.get(key) ?? []), w]);
+  }
+  return [...groups]
+    .map(([k, ws]) => {
+      const variants = [...new Set(ws.flatMap((w) => w.variants ?? []))];
+      return `${k}${variants.length ? ` — ${variants.map((v) => `“${v}”`).join(" vai ")}` : ""}`;
+    })
+    .join("; ");
+}
+/** Paskaidrojums zem datuma: brīvie laiki un varianti */
+export function dayRuleText(program: string | null | undefined, date: string | null | undefined, booked: string[] = []): string {
+  const free = freeWindows(program, date ?? "", null, booked);
+  if (!free.length) return "";
+  return `Šajā datumā pieejams: ${windowsText(free)}.`;
+}
+export const outsideWindowsText = (program: string | null | undefined, date: string | null | undefined) =>
+  `Šajā datumā pieejams tikai: ${windowsText(dayWindows(program, date) ?? [])}.`;
+export const variantNotFreeText = (variants: string[]) =>
+  `Šajā laikā pieejams tikai ${variants.map((v) => `“${v}”`).join(" vai ")}.`;
+export const WINDOW_TAKEN_TEXT = "Šis laiks jau ir aizņemts — lūdzu, izvēlieties citu laiku vai datumu.";
+export const DAY_FULL_TEXT = "Šis datums jau ir aizņemts — lūdzu, izvēlieties citu datumu.";
+
+export const DATE_NOT_ALLOWED_TEXT = "Lūdzu, izvēlieties kādu no pieejamajiem datumiem.";
+
+/**
  * Pilnībā aizņemtie datumi pa programmām (YYYY-MM-DD): šajos datumos programmu rezervēt nevar —
  * forma to neļauj, un serveris pieteikumu noraida. Pārējās programmas un telpu nomu tas neietekmē.
  * Jaunu datumu pievieno šeit.
