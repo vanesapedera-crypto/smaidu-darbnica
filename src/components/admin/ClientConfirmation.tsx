@@ -1,6 +1,6 @@
 import { Check, Clock, MessageCircle, MessageSquare, X } from "lucide-react";
 import { markClientConfirmed } from "@/app/admin/actions";
-import { CONFIRM_DAYS, confirmPath, phoneDigits, reminderText, type Booking } from "@/lib/bookings";
+import { CONFIRM_DAYS, confirmPath, phoneDigits, reminderText, shortConfirmPath, type Booking } from "@/lib/bookings";
 import { whenLabel } from "@/lib/dates";
 import { absoluteUrl } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,8 @@ export default function ClientConfirmation({ booking: b }: { booking: Booking })
   if (!c) return null;
 
   const when = whenLabel(b.event_date, b.event_time, b.location);
-  const path = confirmPath(b);
+  // Ziņā — īsā saite (/r/…), ja to var izveidot; citādi pilnā
+  const path = shortConfirmPath(b) ?? confirmPath(b);
   const text = path ? encodeURIComponent(reminderText(when, absoluteUrl(path))) : "";
   const digits = phoneDigits(b.phone);
 

@@ -272,7 +272,60 @@ export function phoneDigits(phone: string | null): string {
   return digits.length === 8 ? `371${digits}` : digits;
 }
 
-/** Atgādinājuma teksts klientam (WhatsApp / SMS) ar apstiprināšanas saiti */
+/** "7. novembris plkst. 18:00" → "7. novembrī plkst. 18:00" (teikumā "rezervācija … gaida") */
+const MONTH_LOCATIVE: Record<string, string> = {
+  janvāris: "janvārī", februāris: "februārī", marts: "martā", aprīlis: "aprīlī", maijs: "maijā", jūnijs: "jūnijā",
+  jūlijs: "jūlijā", augusts: "augustā", septembris: "septembrī", oktobris: "oktobrī", novembris: "novembrī", decembris: "decembrī",
+};
+const whenLocative = (when: string) => when.replace(/\p{L}+/u, (m) => MONTH_LOCATIVE[m.toLowerCase()] ?? m);
+
+/** Atgādinājuma teksts klientam (WhatsApp / SMS) ar apstiprināšanas saiti — pa rindām, lai viegli lasīt */
 export function reminderText(when: string, url: string): string {
-  return `Sveiki! Rakstām no Smaidu Darbnīcas. Jūsu rezervācija ${when} vēl gaida apstiprinājumu. Lūdzu, apstipriniet to šeit: ${url}`;
+  return [
+    "Sveiki! 👋 Rakstām no Smaidu Darbnīcas.",
+    "",
+    `📅 Jūsu rezervācija ${whenLocative(when)} vēl gaida apstiprinājumu.`,
+    "",
+    "👉 Lūdzu, apstipriniet to šeit:",
+    url,
+    "",
+    "Paldies! 💛",
+  ].join("\n");
+}
+
+/*
+ * Īsā apstiprināšanas saite ziņām: /r/<kods> — rezervācijas ID un žetons saspiesti vienā base64url kodā
+ * (43 rakstzīmes garās adreses /rezervacija/<id>?k=<žetons> vietā). Atverot tā pāradresē uz pilno saiti.
+ */
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+function hexToB64url(hex: string): string {
+  const bytes = hex.match(/../g)!.map((h) => parseInt(h, 16));
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const n = (bytes[i] << 16) | ((bytes[i + 1] ?? 0) << 8) | (bytes[i + 2] ?? 0);
+    const chars = [18, 12, 6, 0].map((sh) => B64[(n >> sh) & 63]);
+    out += chars.slice(0, i + 2 < bytes.length ? 4 : i + 1 < bytes.length ? 3 : 2).join("");
+  }
+  return out;
+}
+function b64urlToHex(code: string): string {
+  let bits = "";
+  for (const ch of code) {
+    const v = B64.indexOf(ch);
+    if (v < 0) return "";
+    bits += v.toString(2).padStart(6, "0");
+  }
+  return (bits.slice(0, bits.length - (bits.length % 8)).match(/.{8}/g) ?? []).map((b) => parseInt(b, 2).toString(16).padStart(2, "0")).join("");
+}
+export function shortConfirmPath(b: Pick<Booking, "id" | "confirm_token">): string | null {
+  const id = b.id.replace(/-/g, "");
+  if (!b.confirm_token || !/^[0-9a-f]{32}$/i.test(id) || !/^[0-9a-f]+$/i.test(b.confirm_token) || b.confirm_token.length % 2) return null;
+  return `/r/${hexToB64url(id + b.confirm_token)}`;
+}
+/** /r/<kods> → pilnā apstiprināšanas saite; null, ja kods nederīgs */
+export function decodeShortConfirm(code: string): string | null {
+  const hex = b64urlToHex(code);
+  if (hex.length < 32 + 16) return null;
+  const id = hex.slice(0, 32).replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+  return `/rezervacija/${id}?k=${hex.slice(32)}`;
 }
