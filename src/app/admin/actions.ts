@@ -13,7 +13,7 @@ import { notifyReviewRequest } from "@/lib/notify";
 import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
-import { bookingCosts, bookingPrices, withCustomServices } from "@/lib/pricing";
+import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 import { manifestGallery } from "@/lib/content/media";
@@ -69,13 +69,16 @@ export async function saveBookingNotes(id: string, form: FormData) {
 }
 
 /**
- * Pirms apstiprināšanas panelī var izlabot datumu, laiku un bērnu skaitu (piem. pēc sarunas ar klientu).
- * Pārbaudes par pieejamajiem laikiem šeit nav — administrators zina, ko dara. Apstiprinātu rezervāciju šeit nemaina.
+ * Rezervācijas labošana panelī: kontakti, programma, datums, laiks, bērni, vieta, ceļa izdevumi un izmaksas.
+ * Pārbaudes par pieejamajiem laikiem šeit nav — administrators zina, ko dara.
+ * Izmaksas: ja teksts atšķiras no automātiskā aprēķina, tās saglabājas kā labotas (sk. withCostOverride);
+ * tukšs lauks — atkal automātiskais aprēķins.
  */
 export async function saveBookingDetails(id: string, form: FormData) {
   const { db } = await requireAdmin();
-  const { data: b } = await db.from("bookings").select("status, message, location").eq("id", id).single();
-  if (!b || b.status === "Apstiprināta") return;
+  const { data: before } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = before as Booking | null;
+  if (!b) return;
 
   const date = String(form.get("event_date") ?? "").trim();
   const time = String(form.get("event_time") ?? "").trim();
@@ -86,8 +89,19 @@ export async function saveBookingDetails(id: string, form: FormData) {
   const n = Number(count);
   row.children_count = count && Number.isInteger(n) && n > 0 && n <= 1000 ? n : null;
 
+  // Teksta lauki (ja formā ir) — kontakti, programma, vieta, adrese
+  const text = (k: string, max = 200) => (form.has(k) ? String(form.get(k) ?? "").trim().slice(0, max) || null : undefined);
+  for (const [k, max] of [["parent_name", 120], ["phone", 40], ["email", 160], ["company_name", 160], ["child_age", 40], ["address", 200], ["event_city", 120]] as const) {
+    const v = text(k, max);
+    if (v !== undefined) row[k] = v;
+  }
+  if (form.has("program")) row.program = text("program", 120) ?? null;
+  const location = text("location", 60);
+  if (location) row.location = location;
+  const loc = (row.location as string | undefined) ?? b.location;
+
   // Izbraukumam — ceļa izdevumi (ja adresi neizdevās aprēķināt automātiski)
-  if (b.location === "Izbraukums" && form.has("travel_km")) {
+  if (loc === "Izbraukums" && form.has("travel_km")) {
     const num = (k: string) => {
       const v = String(form.get(k) ?? "").replace(",", ".").trim();
       return v === "" || !Number.isFinite(Number(v)) || Number(v) < 0 ? null : Number(v);
@@ -103,14 +117,13 @@ export async function saveBookingDetails(id: string, form: FormData) {
     row.message = /Izvēle:[^\n]*/.test(msg) ? msg.replace(/Izvēle:[^\n]*/, `Izvēle: ${variant}`) : [msg, `Izvēle: ${variant}`].filter(Boolean).join("\n\n");
   }
 
-  // Papildu pakalpojumi — rindās "Nosaukums | cena" (sk. parseCustomServices)
-  if (form.has("custom_services")) {
-    const services = String(form.get("custom_services") ?? "")
-      .split("\n")
-      .map((l) => l.split("|").map((x) => x.trim()))
-      .filter(([label, price]) => label && price && Number.isFinite(Number(price.replace(",", ".").replace("€", "").trim())))
-      .map(([label, price]) => ({ label: label.replace(/[;—]/g, "-"), price: Number(price.replace(",", ".").replace("€", "").trim()) }));
-    row.message = withCustomServices((row.message as string | undefined) ?? b.message, services);
+  // Izmaksas: ja teksts nemainīts — paliek automātiskais aprēķins; ja labots — saglabā kā labotas; tukšs — automātiski
+  if (form.has("costs")) {
+    const submitted = String(form.get("costs") ?? "").replace(/\r/g, "").trim();
+    const shown = String(form.get("costs_shown") ?? "").replace(/\r/g, "").trim();
+    const msg = (row.message as string | undefined) ?? b.message;
+    if (!submitted) row.message = withCostOverride(msg, null);
+    else if (submitted !== shown) row.message = withCostOverride(msg, costsFromText(submitted));
   }
 
   await db.from("bookings").update(row).eq("id", id);

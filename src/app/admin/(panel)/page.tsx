@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Building2, Search, User } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
-import { BOOKING_STATUSES, phoneDigits, type Booking } from "@/lib/bookings";
+import { BOOKING_STATUSES, FIXED_VENUES, phoneDigits, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur, parseCustomServices, priceVariants } from "@/lib/pricing";
+import { VAT_NOTE, amountText, bookingCosts, bookingPrices, costsToText, eur, parseCostOverride, priceVariants } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
@@ -212,7 +212,14 @@ export default async function BookingsPage({ searchParams }: Props) {
                     {b.message && (
                       <div>
                         <p className="text-sm text-ink-soft">Ziņojums</p>
-                        <p className="mt-1 text-sm whitespace-pre-line">{b.message}</p>
+                        <p className="mt-1 text-sm whitespace-pre-line">
+                          {/* Labotās izmaksas redzamas sadaļā "Izmaksas" — ziņojumā tās nerāda */}
+                          {b.message
+                            .split("\n")
+                            .filter((l) => !l.startsWith("Izmaksas:"))
+                            .join("\n")
+                            .trim()}
+                        </p>
                       </div>
                     )}
                     {(() => {
@@ -256,79 +263,111 @@ export default async function BookingsPage({ searchParams }: Props) {
                         )
                       );
                     })()}
-                    {/* Pirms apstiprināšanas — var izlabot datumu, laiku un bērnu skaitu */}
-                    {b.status !== "Apstiprināta" && (
-                      <form action={saveBookingDetails.bind(null, b.id)} className="space-y-2 rounded-2xl bg-surface p-4">
-                        <p className="text-sm font-extrabold">Labot pirms apstiprināšanas</p>
-                        {costsOf(b)?.exact === false && (
-                          <p className="text-sm font-semibold text-destructive">
-                            Cena nav zināma (“pēc vienošanās”). Izlabojiet bērnu skaitu, variantu vai ceļa izdevumus un saglabājiet — tad var apstiprināt.
-                          </p>
-                        )}
-                        <div className="grid gap-2 sm:grid-cols-3">
-                          <label className="text-sm text-ink-soft">
-                            Datums
-                            <input type="date" name="event_date" required defaultValue={b.event_date?.slice(0, 10) ?? ""} className={adminInput} />
-                          </label>
-                          <label className="text-sm text-ink-soft">
-                            Laiks
-                            <TimeSelect name="event_time" defaultValue={b.event_time?.slice(0, 5) ?? ""} className={adminInput} />
-                          </label>
-                          <label className="text-sm text-ink-soft">
-                            Bērnu skaits
-                            <input type="number" name="children_count" min={1} max={1000} defaultValue={b.children_count ?? ""} className={adminInput} />
-                          </label>
-                          {/* Programmas variants (piem. "Rūķis un Ziemassvētku vecītis" / "Divi rūķi") */}
-                          {(() => {
-                            const p = programs.find((x) => x.slug === (b.program || b.service_slug));
-                            const vs = p ? priceVariants(p.pricing).map((g) => g.title) : [];
-                            if (!vs.length) return null;
-                            const current = b.message?.match(/Izvēle:\s*([^\n]+)/)?.[1]?.trim() ?? "";
-                            return (
-                              <label className="text-sm text-ink-soft sm:col-span-3">
-                                Variants
-                                <select name="variant" defaultValue={vs.find((v) => v.toLowerCase() === current.toLowerCase()) ?? ""} className={adminInput}>
-                                  <option value="">— izvēlieties —</option>
-                                  {vs.map((v) => (
-                                    <option key={v} value={v}>
-                                      {v}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            );
-                          })()}
-                          <label className="text-sm text-ink-soft sm:col-span-3">
-                            Papildu pakalpojumi
-                            <textarea
-                              name="custom_services"
-                              rows={2}
-                              defaultValue={parseCustomServices(b.message)
-                                .map((x) => `${x.label} | ${x.price}`)
-                                .join("\n")}
-                              placeholder={"Sejas apgleznošana | 50"}
-                              className={`${adminInput} font-mono text-[13px]`}
-                            />
-                            <span className="mt-1 block text-xs">Katrā rindā: nosaukums | cena (€). Tiek pieskaitīti izmaksām un iekļauti klienta e-pastā.</span>
-                          </label>
-                          {b.location === "Izbraukums" && (
-                            <>
-                              <label className="text-sm text-ink-soft">
-                                Ceļš turp un atpakaļ (km)
-                                <input type="number" step="any" min={0} name="travel_km" defaultValue={b.travel_km ?? ""} className={adminInput} />
-                              </label>
-                              <label className="text-sm text-ink-soft">
-                                Ceļa izdevumi (€)
-                                <input type="number" step="any" min={0} name="travel_cost" defaultValue={b.travel_cost ?? ""} className={adminInput} />
-                              </label>
-                            </>
-                          )}
-                        </div>
-                        <button type="submit" className={adminSecondary}>
-                          Saglabāt izmaiņas
-                        </button>
-                      </form>
-                    )}
+                    {/* Rezervācijas labošana — visa informācija un izmaksas */}
+                    {(() => {
+                      const isPrivate = b.inquiry_type !== "business";
+                      const p = programs.find((x) => x.slug === (b.program || b.service_slug));
+                      const vs = p ? priceVariants(p.pricing).map((g) => g.title) : [];
+                      const currentVariant = b.message?.match(/Izvēle:\s*([^\n]+)/)?.[1]?.trim() ?? "";
+                      const costs = costsOf(b);
+                      const costsText = costs ? costsToText(costs.lines) : "";
+                      const overridden = Boolean(parseCostOverride(b.message)?.length);
+                      const field = (label: string, el: React.ReactNode, wide = false) => (
+                        <label className={cn("text-sm text-ink-soft", wide && "sm:col-span-3")}>
+                          {label}
+                          {el}
+                        </label>
+                      );
+                      return (
+                        <details className="rounded-2xl bg-surface p-4" open={costs?.exact === false || undefined}>
+                          <summary className="cursor-pointer text-sm font-extrabold">Labot rezervāciju</summary>
+                          <form action={saveBookingDetails.bind(null, b.id)} className="mt-3 space-y-3">
+                            {costs?.exact === false && (
+                              <p className="text-sm font-semibold text-destructive">
+                                Cena nav zināma (“pēc vienošanās”). Izlabojiet datus vai ierakstiet izmaksas zemāk un saglabājiet — tad var apstiprināt.
+                              </p>
+                            )}
+                            {b.status === "Apstiprināta" && (
+                              <p className="text-sm text-ink-soft">
+                                Rezervācija jau apstiprināta — klientam izmaiņas automātiski netiek sūtītas. Google kalendārā tās atjauno poga “Ielikt Google kalendārā”.
+                              </p>
+                            )}
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              {field("Kontaktpersona", <input name="parent_name" defaultValue={b.parent_name ?? ""} className={adminInput} />)}
+                              {field("Telefons", <input name="phone" defaultValue={b.phone ?? ""} className={adminInput} />)}
+                              {field("E-pasts", <input type="email" name="email" defaultValue={b.email ?? ""} className={adminInput} />)}
+                              {field(isPrivate ? "Iestāde / grupa" : "Uzņēmums", <input name="company_name" defaultValue={b.company_name ?? ""} className={adminInput} />, true)}
+                              {isPrivate &&
+                                field(
+                                  "Izklaides programma",
+                                  <select name="program" defaultValue={b.program ?? ""} className={adminInput}>
+                                    <option value="">— bez programmas (telpu noma) —</option>
+                                    {programs.map((x) => (
+                                      <option key={x.slug} value={x.slug}>
+                                        {x.title}
+                                      </option>
+                                    ))}
+                                  </select>,
+                                  true,
+                                )}
+                              {vs.length > 0 &&
+                                field(
+                                  "Variants",
+                                  <select name="variant" defaultValue={vs.find((v) => v.toLowerCase() === currentVariant.toLowerCase()) ?? ""} className={adminInput}>
+                                    <option value="">— izvēlieties —</option>
+                                    {vs.map((v) => (
+                                      <option key={v} value={v}>
+                                        {v}
+                                      </option>
+                                    ))}
+                                  </select>,
+                                  true,
+                                )}
+                              {field("Datums", <input type="date" name="event_date" defaultValue={b.event_date?.slice(0, 10) ?? ""} className={adminInput} />)}
+                              {field("Laiks", <TimeSelect name="event_time" defaultValue={b.event_time?.slice(0, 5) ?? ""} className={adminInput} />)}
+                              {field("Bērnu skaits", <input type="number" name="children_count" min={1} max={1000} defaultValue={b.children_count ?? ""} className={adminInput} />)}
+                              {isPrivate && field("Vecums", <input name="child_age" defaultValue={b.child_age ?? ""} className={adminInput} />)}
+                              {isPrivate
+                                ? field(
+                                    "Norises vieta",
+                                    <select name="location" defaultValue={b.location ?? "Smaidu Darbnīcā"} className={adminInput}>
+                                      {["Smaidu Darbnīcā", "Izbraukums", ...Object.values(FIXED_VENUES).map((v) => v.name)].map((v) => (
+                                        <option key={v} value={v}>
+                                          {v}
+                                        </option>
+                                      ))}
+                                      {b.location && !["Smaidu Darbnīcā", "Izbraukums", ...Object.values(FIXED_VENUES).map((v) => v.name)].includes(b.location) && (
+                                        <option value={b.location}>{b.location}</option>
+                                      )}
+                                    </select>,
+                                  )
+                                : field("Pilsēta", <input name="event_city" defaultValue={b.event_city ?? ""} className={adminInput} />)}
+                              {field("Adrese", <input name="address" defaultValue={b.address ?? ""} className={adminInput} />, !isPrivate)}
+                              {isPrivate && (
+                                <>
+                                  {field("Ceļš turp un atpakaļ (km)", <input type="number" step="any" min={0} name="travel_km" defaultValue={b.travel_km ?? ""} className={adminInput} />)}
+                                  {field("Ceļa izdevumi (€)", <input type="number" step="any" min={0} name="travel_cost" defaultValue={b.travel_cost ?? ""} className={adminInput} />)}
+                                </>
+                              )}
+                              {isPrivate && (
+                                <label className="text-sm text-ink-soft sm:col-span-3">
+                                  Izmaksas {overridden && <span className="font-semibold text-ink">(labotas ar roku)</span>}
+                                  <textarea name="costs" rows={Math.max(3, costsText.split("\n").length + 1)} defaultValue={costsText} className={`${adminInput} font-mono text-[13px]`} />
+                                  <input type="hidden" name="costs_shown" value={costsText} />
+                                  <span className="mt-1 block text-xs">
+                                    Katrā rindā: nosaukums | cena | +PVN (pēdējais — tikai, ja cena bez PVN). Šīs izmaksas klients saņem apstiprinājuma e-pastā.
+                                    Var mainīt, dzēst vai pievienot rindas (piem. “Sejas apgleznošana | 50”). Lai atkal rēķinātu automātiski — izdzēsiet visu tekstu.
+                                  </span>
+                                </label>
+                              )}
+                            </div>
+                            <button type="submit" className={adminSecondary}>
+                              Saglabāt izmaiņas
+                            </button>
+                          </form>
+                        </details>
+                      );
+                    })()}
                     <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2">
                       <label htmlFor={`notes-${b.id}`} className="text-sm text-ink-soft">
                         Iekšējās piezīmes

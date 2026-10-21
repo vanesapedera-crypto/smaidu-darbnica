@@ -139,6 +139,54 @@ export function withCustomServices(message: string | null | undefined, services:
   return [rest, line].filter(Boolean).join("\n\n");
 }
 
+/**
+ * Administratora labotās izmaksas — aizstāj automātisko aprēķinu pilnībā.
+ * Glabājas ziņojuma rindā "Izmaksas: Rūķis un Ziemassvētku vecītis — 195 € + PVN; Ceļa izdevumi — 18 €".
+ * Panelī tās raksta rindās "Nosaukums | 195 | +PVN" (trešā kolonna — nav obligāta).
+ */
+const OVERRIDE_PREFIX = "Izmaksas:";
+export function parseCostOverride(message: string | null | undefined): CostLine[] | null {
+  const line = (message ?? "").split("\n").find((l) => l.startsWith(OVERRIDE_PREFIX));
+  if (!line) return null;
+  return line
+    .slice(OVERRIDE_PREFIX.length)
+    .split(";")
+    .map((x) => x.trim().match(/^(.+?)\s+—\s+([\d.,]+)\s*€(\s*\+\s*PVN)?$/))
+    .filter((m): m is RegExpMatchArray => Boolean(m))
+    .map((m) => ({ kind: "extra" as const, label: m[1].trim(), amount: Number(m[2].replace(",", ".")), ...(m[3] ? { plusVat: true } : {}) }));
+}
+/** Izmaksas paneļa teksta laukam: "Nosaukums | 195 | +PVN" rindā (tikai rindas ar zināmu cenu) */
+export const costsToText = (lines: CostLine[]) =>
+  lines
+    .filter((l) => l.amount !== null)
+    .map((l) => `${l.kind === "program" ? l.label : l.label} | ${String(l.amount).replace(".", ",")}${l.plusVat ? " | +PVN" : ""}`)
+    .join("\n");
+/** No paneļa teksta ("Nosaukums | cena | +PVN" rindā) → rindas */
+export function costsFromText(text: string): CostLine[] {
+  return text
+    .split("\n")
+    .map((l) => l.split("|").map((x) => x.trim()))
+    .filter(([label, price]) => label && price && Number.isFinite(Number(price.replace(",", ".").replace("€", "").trim())))
+    .map(([label, price, vat]) => ({
+      kind: "extra" as const,
+      label: label.replace(/[;—]/g, "-"),
+      amount: Number(price.replace(",", ".").replace("€", "").trim()),
+      ...(/pvn/i.test(vat ?? "") ? { plusVat: true } : {}),
+    }));
+}
+/** Ieraksta labotās izmaksas ziņojumā (null — noņem, atgriežas automātiskais aprēķins) */
+export function withCostOverride(message: string | null | undefined, lines: CostLine[] | null): string {
+  const rest = (message ?? "")
+    .split("\n")
+    .filter((l) => !l.startsWith(OVERRIDE_PREFIX) && !l.startsWith(CUSTOM_PREFIX))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!lines?.length) return rest;
+  const line = `${OVERRIDE_PREFIX} ${lines.map((l) => `${l.label} — ${String(l.amount).replace(".", ",")} €${l.plusVat ? " + PVN" : ""}`).join("; ")}`;
+  return [rest, line].filter(Boolean).join("\n\n");
+}
+
 /** Rezervāciju ar programmas cenu "pēc vienošanās" nepieņem — teksts formai un serverim */
 export const PRICE_UNKNOWN_TEXT = "Šai izvēlei cenu tiešsaistē aprēķināt nevar — lūdzu, sazinieties ar mums pa telefonu.";
 
@@ -299,6 +347,21 @@ function tierNote(pricing: PriceGroup[], children: number, travelling: boolean, 
 }
 
 export function bookingCosts(b: CostBooking, program: CostProgram | undefined, prices: BookingPrices): BookingCosts | null {
+  // Administrators izmaksas labojis panelī — tās aizstāj automātisko aprēķinu
+  const override = parseCostOverride(b.message);
+  if (override?.length) {
+    return {
+      lines: override,
+      total: Math.round(override.reduce((sum, l) => sum + (l.amount ?? 0), 0) * 100) / 100,
+      exact: true,
+      plusVat: override.some((l) => l.plusVat),
+    };
+  }
+  return autoCosts(b, program, prices);
+}
+
+/** Automātiskais izmaksu aprēķins (programma, papildu iespējas, telpas, izbraukums) */
+export function autoCosts(b: CostBooking, program: CostProgram | undefined, prices: BookingPrices): BookingCosts | null {
   const travelling = b.location === "Izbraukums";
   const children = b.children_count ?? 0;
   const lines: CostLine[] = [];
