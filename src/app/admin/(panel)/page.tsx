@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { BOOKING_STATUSES, phoneDigits, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur, priceVariants } from "@/lib/pricing";
+import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur, parseCustomServices, priceVariants } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
@@ -298,6 +298,19 @@ export default async function BookingsPage({ searchParams }: Props) {
                               </label>
                             );
                           })()}
+                          <label className="text-sm text-ink-soft sm:col-span-3">
+                            Papildu pakalpojumi
+                            <textarea
+                              name="custom_services"
+                              rows={2}
+                              defaultValue={parseCustomServices(b.message)
+                                .map((x) => `${x.label} | ${x.price}`)
+                                .join("\n")}
+                              placeholder={"Sejas apgleznošana | 50"}
+                              className={`${adminInput} font-mono text-[13px]`}
+                            />
+                            <span className="mt-1 block text-xs">Katrā rindā: nosaukums | cena (€). Tiek pieskaitīti izmaksām un iekļauti klienta e-pastā.</span>
+                          </label>
                           {b.location === "Izbraukums" && (
                             <>
                               <label className="text-sm text-ink-soft">

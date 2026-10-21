@@ -13,7 +13,7 @@ import { notifyReviewRequest } from "@/lib/notify";
 import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
-import { bookingCosts, bookingPrices } from "@/lib/pricing";
+import { bookingCosts, bookingPrices, withCustomServices } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 import { manifestGallery } from "@/lib/content/media";
@@ -101,6 +101,16 @@ export async function saveBookingDetails(id: string, form: FormData) {
   if (variant) {
     const msg = String(b.message ?? "");
     row.message = /Izvēle:[^\n]*/.test(msg) ? msg.replace(/Izvēle:[^\n]*/, `Izvēle: ${variant}`) : [msg, `Izvēle: ${variant}`].filter(Boolean).join("\n\n");
+  }
+
+  // Papildu pakalpojumi — rindās "Nosaukums | cena" (sk. parseCustomServices)
+  if (form.has("custom_services")) {
+    const services = String(form.get("custom_services") ?? "")
+      .split("\n")
+      .map((l) => l.split("|").map((x) => x.trim()))
+      .filter(([label, price]) => label && price && Number.isFinite(Number(price.replace(",", ".").replace("€", "").trim())))
+      .map(([label, price]) => ({ label: label.replace(/[;—]/g, "-"), price: Number(price.replace(",", ".").replace("€", "").trim()) }));
+    row.message = withCustomServices((row.message as string | undefined) ?? b.message, services);
   }
 
   await db.from("bookings").update(row).eq("id", id);

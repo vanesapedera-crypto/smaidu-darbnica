@@ -109,6 +109,36 @@ export function fromPrice(pricing: PriceGroup[]): number | null {
   return prices.length ? Math.min(...prices) : null;
 }
 
+/**
+ * Papildu pakalpojumi, ko administrators pievieno rezervācijai panelī (piem. "Sejas apgleznošana — 50 €").
+ * Glabājas ziņojuma rindā "Papildu pakalpojumi: Nosaukums — 50 €; Cits — 30 €" un tiek iekļauti izmaksās
+ * (klienta e-pastā, kalendārā un panelī).
+ */
+export type CustomService = { label: string; price: number };
+const CUSTOM_PREFIX = "Papildu pakalpojumi:";
+export function parseCustomServices(message: string | null | undefined): CustomService[] {
+  const line = (message ?? "").split("\n").find((l) => l.startsWith(CUSTOM_PREFIX));
+  if (!line) return [];
+  return line
+    .slice(CUSTOM_PREFIX.length)
+    .split(";")
+    .map((x) => x.trim().match(/^(.+?)\s+—\s+([\d.,]+)\s*€$/))
+    .filter((m): m is RegExpMatchArray => Boolean(m))
+    .map((m) => ({ label: m[1].trim(), price: Number(m[2].replace(",", ".")) }));
+}
+/** Ieraksta papildu pakalpojumus ziņojumā (aizstāj iepriekšējos; tukšs saraksts — noņem rindu) */
+export function withCustomServices(message: string | null | undefined, services: CustomService[]): string {
+  const rest = (message ?? "")
+    .split("\n")
+    .filter((l) => !l.startsWith(CUSTOM_PREFIX))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!services.length) return rest;
+  const line = `${CUSTOM_PREFIX} ${services.map((x) => `${x.label} — ${String(x.price).replace(".", ",")} €`).join("; ")}`;
+  return [rest, line].filter(Boolean).join("\n\n");
+}
+
 /** Rezervāciju ar programmas cenu "pēc vienošanās" nepieņem — teksts formai un serverim */
 export const PRICE_UNKNOWN_TEXT = "Šai izvēlei cenu tiešsaistē aprēķināt nevar — lūdzu, sazinieties ar mums pa telefonu.";
 
@@ -295,6 +325,9 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
       }
     }
   }
+
+  // Administratora pievienotie papildu pakalpojumi (sk. parseCustomServices)
+  for (const x of parseCustomServices(b.message)) lines.push({ kind: "extra", label: x.label, amount: x.price });
 
   if (atStudio(b.location)) {
     const room = b.event_date ? venuePrice(b.event_date, prices) : null;
