@@ -279,17 +279,24 @@ const MONTH_LOCATIVE: Record<string, string> = {
 };
 const whenLocative = (when: string) => when.replace(/\p{L}+/u, (m) => MONTH_LOCATIVE[m.toLowerCase()] ?? m);
 
-/** Atgādinājuma teksts klientam (WhatsApp / SMS) ar apstiprināšanas saiti — pa rindām, lai viegli lasīt */
+/**
+ * "7. novembris plkst. 18:00–21:00" → "7. novembrī no plkst. 18.00 līdz 21.00";
+ * "7. novembris plkst. 18:00" → "7. novembrī plkst. 18.00"
+ */
+const whenText = (when: string) =>
+  whenLocative(when)
+    .replace(/plkst\. (\d{1,2}):(\d{2})[–-](\d{1,2}):(\d{2})/, "no plkst. $1.$2 līdz $3.$4")
+    .replace(/plkst\. (\d{1,2}):(\d{2})/, "plkst. $1.$2");
+
+/** Atgādinājuma teksts klientam (WhatsApp / SMS) ar apstiprināšanas saiti */
 export function reminderText(when: string, url: string): string {
   return [
-    "Sveiki! 👋 Rakstām no Smaidu Darbnīcas.",
-    "",
-    `📅 Jūsu rezervācija ${whenLocative(when)} vēl gaida apstiprinājumu.`,
-    "",
-    "👉 Lūdzu, apstipriniet to šeit:",
+    "Sveiki! 🌿",
+    `Atgādinām, ka Jūsu rezervācija ${whenText(when)} vēl gaida apstiprinājumu.`,
+    "Lūdzu, apstipriniet savu rezervāciju šeit:",
     url,
-    "",
-    "Paldies! 💛",
+    "Paldies, un uz tikšanos!",
+    "Smaidu Darbnīca ✨",
   ].join("\n");
 }
 
