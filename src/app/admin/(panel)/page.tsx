@@ -300,14 +300,23 @@ export default async function BookingsPage({ searchParams }: Props) {
                               {isPrivate &&
                                 field(
                                   "Izklaides programma",
-                                  <select name="program" defaultValue={b.program ?? ""} className={adminInput}>
-                                    <option value="">— bez programmas (telpu noma) —</option>
-                                    {programs.map((x) => (
-                                      <option key={x.slug} value={x.slug}>
-                                        {x.title}
-                                      </option>
-                                    ))}
-                                  </select>,
+                                  <>
+                                    <select name="program" defaultValue={b.program ?? ""} className={adminInput}>
+                                      <option value="">— bez programmas (telpu noma) —</option>
+                                      {programs.map((x) => (
+                                        <option key={x.slug} value={x.slug}>
+                                          {x.title}
+                                        </option>
+                                      ))}
+                                      {/* Ar roku ierakstīts nosaukums (nav sarakstā) */}
+                                      {b.program && !programs.some((x) => x.slug === b.program) && <option value={b.program}>{b.program}</option>}
+                                    </select>
+                                    <input
+                                      name="program_custom"
+                                      placeholder="vai ierakstiet citu nosaukumu, piem. izrādes nosaukumu"
+                                      className={cn(adminInput, "mt-1")}
+                                    />
+                                  </>,
                                   true,
                                 )}
                               {vs.length > 0 &&

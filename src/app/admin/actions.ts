@@ -95,7 +95,8 @@ export async function saveBookingDetails(id: string, form: FormData) {
     const v = text(k, max);
     if (v !== undefined) row[k] = v;
   }
-  if (form.has("program")) row.program = text("program", 120) ?? null;
+  // Programma: no saraksta vai ar roku ierakstīts nosaukums (piem. izrāde, kas pieteikta caur citu formu)
+  if (form.has("program")) row.program = text("program_custom", 120) || text("program", 120) || null;
   const location = text("location", 60);
   if (location) row.location = location;
   const loc = (row.location as string | undefined) ?? b.location;
