@@ -7,6 +7,7 @@ import {
   dayWindows,
   windowsAt,
   freeWindows,
+  freeVariantsAt,
   outsideWindowsText,
   variantNotFreeText,
   WINDOW_TAKEN_TEXT,
@@ -149,13 +150,13 @@ export async function POST(request: Request) {
   // Īpaši nosacījumi dienai (sk. DAY_RULES): dienā pieejami tikai noteikti laika logi, katrā — savs variants
   if (!isBusiness && row.program && row.event_date && dayWindows(row.program, row.event_date)) {
     const at = windowsAt(row.program, row.event_date, row.event_time);
-    const free = freeWindows(row.program, row.event_date, row.event_time, await bookedProgramVariants(row.program));
+    const booked = await bookedProgramVariants(row.program);
+    const free = freeWindows(row.program, row.event_date, row.event_time, booked);
+    const freeVariants = freeVariantsAt(row.program, row.event_date, row.event_time, booked);
     const chosen = String(row.message ?? "").match(/Izvēle: ([^\n]+)/)?.[1]?.trim();
     if (!at.length) v.errors.eventTime = outsideWindowsText(row.program, row.event_date);
     else if (!free.length) v.errors.eventTime = WINDOW_TAKEN_TEXT;
-    else if (!free.some((w) => !w.variants || w.variants.includes(chosen ?? ""))) {
-      v.errors.eventTime = variantNotFreeText([...new Set(free.flatMap((w) => w.variants ?? []))]);
-    }
+    else if (freeVariants.length && !freeVariants.includes(chosen ?? "")) v.errors.eventTime = variantNotFreeText(freeVariants);
   }
   // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS)
   if (!isBusiness && isWeekdayBlocked(row.program, row.event_date)) v.errors.eventDate = WEEKDAY_TEXT;

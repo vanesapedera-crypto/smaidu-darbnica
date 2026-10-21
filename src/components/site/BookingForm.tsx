@@ -11,6 +11,7 @@ import {
   WINDOW_TAKEN_TEXT,
   dayRuleText,
   dayWindows,
+  freeVariantsAt,
   freeWindows,
   hasDayRules,
   isDayFull,
@@ -170,7 +171,7 @@ export default function BookingForm({
   const dayFull = (d: string) => isDayFull(program?.slug, d, takenVariants);
   // Brīvie logi izvēlētajā laikā un to varianti
   const freeAt = windows && form.eventTime ? freeWindows(program?.slug, form.eventDate, form.eventTime, takenVariants) : [];
-  const freeVariants = [...new Set(freeAt.flatMap((w) => w.variants ?? []))];
+  const freeVariants = windows && form.eventTime ? freeVariantsAt(program?.slug, form.eventDate, form.eventTime, takenVariants) : [];
   // Laika kļūda dienām ar laika logiem: laiks ārpus logiem vai logs jau aizņemts
   const windowError =
     windows && form.eventTime
