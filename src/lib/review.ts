@@ -13,13 +13,16 @@ export type ReviewKind = "venue" | "program";
 export const reviewKind = (b: Pick<Booking, "program" | "location">): ReviewKind =>
   b.program ? "program" : atStudio(b.location) ? "venue" : "program";
 
+/** Smaidu Darbnīcas Google atsauksmes logs (Place ID ChIJuxUP7xj_7kYRsDlBY9z-ook) */
+export const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJuxUP7xj_7kYRsDlBY9z-ook";
+
 /**
  * Saite, kur atstāt atsauksmi: panelī "Iestatījumi → Kontakti → Google atsauksmju saite".
- * Ja tā nav ievadīta — Smaidu Darbnīcas meklēšana Google kartēs (tur ir poga "Uzrakstīt atsauksmi").
+ * Ja tā nav ievadīta — GOOGLE_REVIEW_URL (tiešais Google atsauksmes logs).
  */
 export function reviewUrl(contact: Pick<ContactSettings, "googleReviewUrl" | "city">): string {
   if (contact.googleReviewUrl?.trim()) return contact.googleReviewUrl.trim();
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Smaidu Darbnīca ${contact.city}`)}`;
+  return GOOGLE_REVIEW_URL;
 }
 
 /** Par ko lūdz atsauksmi */

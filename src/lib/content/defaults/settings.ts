@@ -32,7 +32,7 @@ export const defaultSettings: SiteSettings = {
     facebook: "https://www.facebook.com/smaidudarbnica",
     instagram: "https://www.instagram.com/smaidu_darbnica/",
     tiktok: "https://www.tiktok.com/@smaidudarbnica",
-    googleReviewUrl: "",
+    googleReviewUrl: "https://search.google.com/local/writereview?placeid=ChIJuxUP7xj_7kYRsDlBY9z-ook",
     legalName: "Sabiedrība ar ierobežotu atbildību \"JUALEKS\"",
     legalAddress: "Zemgales iela 8, Tukums, LV-3101",
     regNr: "40002054493",
