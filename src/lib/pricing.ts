@@ -1,4 +1,4 @@
-import { atStudio, isInstitutionProgram } from "@/lib/bookings";
+import { atStudio, isInstitutionProgram, sameVariant } from "@/lib/bookings";
 import type { PriceGroup, SiteSettings } from "@/lib/content/types";
 
 /**
@@ -108,6 +108,10 @@ export function fromPrice(pricing: PriceGroup[]): number | null {
     .map((o) => o.price as number);
   return prices.length ? Math.min(...prices) : null;
 }
+
+/** Rezervāciju ar cenu "pēc vienošanās" nepieņem — teksti formai un serverim */
+export const PRICE_UNKNOWN_TEXT = "Šai izvēlei cenu tiešsaistē aprēķināt nevar — lūdzu, sazinieties ar mums pa telefonu.";
+export const TRAVEL_UNKNOWN_TEXT = "Neizdevās aprēķināt ceļa izdevumus — lūdzu, pārbaudiet adresi (iela, mājas numurs, pilsēta).";
 
 /** Atgriež aptuveno programmas cenu vai null, ja to nevar aprēķināt (pēc vienošanās). */
 export function estimateProgramPrice(pricing: PriceGroup[], children: number, travelling: boolean, variant?: string): number | null {
@@ -271,7 +275,7 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
   if (program) {
     // Programmas variants (ja tādi ir) — forma to pieraksta ziņojuma rindā "Izvēle: …"
     const picked = b.message?.match(/Izvēle:\s*(.+)/)?.[1]?.trim();
-    const variant = priceVariants(program.pricing).find((g) => g.title === picked)?.title;
+    const variant = priceVariants(program.pricing).find((g) => sameVariant(g.title, picked))?.title;
     lines.push({
       kind: "program",
       label: variant ?? program.title,

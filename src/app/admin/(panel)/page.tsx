@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { BOOKING_STATUSES, phoneDigits, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur } from "@/lib/pricing";
+import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur, priceVariants } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
@@ -260,6 +260,11 @@ export default async function BookingsPage({ searchParams }: Props) {
                     {b.status !== "Apstiprināta" && (
                       <form action={saveBookingDetails.bind(null, b.id)} className="space-y-2 rounded-2xl bg-surface p-4">
                         <p className="text-sm font-extrabold">Labot pirms apstiprināšanas</p>
+                        {costsOf(b)?.exact === false && (
+                          <p className="text-sm font-semibold text-destructive">
+                            Cena nav zināma (“pēc vienošanās”). Izlabojiet bērnu skaitu, variantu vai ceļa izdevumus un saglabājiet — tad var apstiprināt.
+                          </p>
+                        )}
                         <div className="grid gap-2 sm:grid-cols-3">
                           <label className="text-sm text-ink-soft">
                             Datums
@@ -273,6 +278,38 @@ export default async function BookingsPage({ searchParams }: Props) {
                             Bērnu skaits
                             <input type="number" name="children_count" min={1} max={1000} defaultValue={b.children_count ?? ""} className={adminInput} />
                           </label>
+                          {/* Programmas variants (piem. "Rūķis un Ziemassvētku vecītis" / "Divi rūķi") */}
+                          {(() => {
+                            const p = programs.find((x) => x.slug === (b.program || b.service_slug));
+                            const vs = p ? priceVariants(p.pricing).map((g) => g.title) : [];
+                            if (!vs.length) return null;
+                            const current = b.message?.match(/Izvēle:\s*([^\n]+)/)?.[1]?.trim() ?? "";
+                            return (
+                              <label className="text-sm text-ink-soft sm:col-span-3">
+                                Variants
+                                <select name="variant" defaultValue={vs.find((v) => v.toLowerCase() === current.toLowerCase()) ?? ""} className={adminInput}>
+                                  <option value="">— izvēlieties —</option>
+                                  {vs.map((v) => (
+                                    <option key={v} value={v}>
+                                      {v}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            );
+                          })()}
+                          {b.location === "Izbraukums" && (
+                            <>
+                              <label className="text-sm text-ink-soft">
+                                Ceļš turp un atpakaļ (km)
+                                <input type="number" step="any" min={0} name="travel_km" defaultValue={b.travel_km ?? ""} className={adminInput} />
+                              </label>
+                              <label className="text-sm text-ink-soft">
+                                Ceļa izdevumi (€)
+                                <input type="number" step="any" min={0} name="travel_cost" defaultValue={b.travel_cost ?? ""} className={adminInput} />
+                              </label>
+                            </>
+                          )}
                         </div>
                         <button type="submit" className={adminSecondary}>
                           Saglabāt izmaiņas

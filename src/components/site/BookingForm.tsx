@@ -47,6 +47,7 @@ import {
 } from "@/lib/pricing";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
+import { PRICE_UNKNOWN_TEXT, TRAVEL_UNKNOWN_TEXT } from "@/lib/pricing";
 import TimeSelect from "./TimeSelect";
 
 type Program = { slug: string; title: string; image?: string; pricing: PriceGroup[]; note?: string; extras?: Extra[]; smallMax?: number };
@@ -313,6 +314,14 @@ export default function BookingForm({
     if (form.eventDate && dayFull(form.eventDate)) missing.eventDate = DAY_FULL_TEXT;
     if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
     if (headcount && !institution && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
+    // Cenai jābūt zināmai — rezervāciju ar cenu "pēc vienošanās" nepieņem
+    if (program && program.pricing.length > 0 && programPrice === null && !missing.childrenCount && form.childrenCount) {
+      missing[headcount || institution ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
+    }
+    if (travelling && form.address.trim() && !travelQuote && !missing.address) {
+      missing.address = travel.status === "loading" ? "Uzgaidiet — tiek aprēķināti ceļa izdevumi." : TRAVEL_UNKNOWN_TEXT;
+      if (travel.status === "idle") calculateTravel();
+    }
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
     if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
     if (!form.email.trim()) missing.email = "Norādiet e-pastu.";

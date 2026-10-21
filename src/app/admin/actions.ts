@@ -74,7 +74,7 @@ export async function saveBookingNotes(id: string, form: FormData) {
  */
 export async function saveBookingDetails(id: string, form: FormData) {
   const { db } = await requireAdmin();
-  const { data: b } = await db.from("bookings").select("status").eq("id", id).single();
+  const { data: b } = await db.from("bookings").select("status, message, location").eq("id", id).single();
   if (!b || b.status === "Apstiprināta") return;
 
   const date = String(form.get("event_date") ?? "").trim();
@@ -85,6 +85,23 @@ export async function saveBookingDetails(id: string, form: FormData) {
   row.event_time = /^\d{1,2}:\d{2}$/.test(time) ? time.padStart(5, "0") : null;
   const n = Number(count);
   row.children_count = count && Number.isInteger(n) && n > 0 && n <= 1000 ? n : null;
+
+  // Izbraukumam — ceļa izdevumi (ja adresi neizdevās aprēķināt automātiski)
+  if (b.location === "Izbraukums" && form.has("travel_km")) {
+    const num = (k: string) => {
+      const v = String(form.get(k) ?? "").replace(",", ".").trim();
+      return v === "" || !Number.isFinite(Number(v)) || Number(v) < 0 ? null : Number(v);
+    };
+    row.travel_km = num("travel_km");
+    row.travel_cost = num("travel_cost");
+  }
+
+  // Programmas variants (piem. "Divi rūķi") — glabājas ziņojuma rindā "Izvēle: …"
+  const variant = String(form.get("variant") ?? "").trim();
+  if (variant) {
+    const msg = String(b.message ?? "");
+    row.message = /Izvēle:[^\n]*/.test(msg) ? msg.replace(/Izvēle:[^\n]*/, `Izvēle: ${variant}`) : [msg, `Izvēle: ${variant}`].filter(Boolean).join("\n\n");
+  }
 
   await db.from("bookings").update(row).eq("id", id);
   revalidatePath("/admin");

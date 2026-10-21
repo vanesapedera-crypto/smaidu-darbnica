@@ -26,7 +26,7 @@ import {
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
 import { timeLabel } from "@/lib/dates";
-import { bookingCosts, bookingPrices } from "@/lib/pricing";
+import { PRICE_UNKNOWN_TEXT, TRAVEL_UNKNOWN_TEXT, bookingCosts, bookingPrices } from "@/lib/pricing";
 import { quoteTravel } from "@/lib/travel";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Validator } from "@/lib/validation";
@@ -192,6 +192,20 @@ export async function POST(request: Request) {
     if (quote) ({ roundTripKm: travel_km, cost: travel_cost } = quote);
   }
   const record = { ...row, travel_km, travel_cost };
+
+  // Rezervāciju ar cenu "pēc vienošanās" nepieņem — programmas cenai un ceļa izdevumiem jābūt zināmiem
+  if (!isBusiness && (row.program || row.location === "Izbraukums")) {
+    const [settings, programs] = await Promise.all([getSettings(), getServices("private")]);
+    const program = programs.find((p) => p.slug === row.program);
+    const costs = bookingCosts(record, program, bookingPrices(settings));
+    const unknown = costs?.lines.filter((l) => l.amount === null) ?? [];
+    if (unknown.length) {
+      const errors: Record<string, string> = {};
+      if (unknown.some((l) => l.kind === "travel")) errors.address = TRAVEL_UNKNOWN_TEXT;
+      if (unknown.some((l) => l.kind !== "travel")) errors[row.children_count ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
+      return NextResponse.json({ success: false, errors }, { status: 422 });
+    }
+  }
 
   let { error } = await supabase.from("bookings").insert(record);
 
