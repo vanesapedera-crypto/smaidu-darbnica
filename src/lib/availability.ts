@@ -32,7 +32,7 @@ export async function bookedProgramSlots(program: string): Promise<string[]> {
 }
 
 /**
- * Programmām ar laika logiem (DAY_RULES): rezervētie laiki ar variantu — "2026-12-14 10:00|2 rūķi".
+ * Programmām ar laika logiem (DAY_RULES): rezervētie laiki ar variantu — "2026-12-14 10:00|Divi rūķi".
  * Ja datubāzē vēl nav funkcijas booked_program_variants, ņem laikus bez varianta (booked_program_slots).
  */
 export async function bookedProgramVariants(program: string): Promise<string[]> {

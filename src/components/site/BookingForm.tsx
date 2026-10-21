@@ -12,6 +12,7 @@ import {
   dayRuleLines,
   dayWindows,
   freeVariantsAt,
+  sameVariant,
   freeWindows,
   hasDayRules,
   isDayFull,
@@ -152,7 +153,7 @@ export default function BookingForm({
   const windows = dayWindows(program?.slug, form.eventDate);
   const atWindows = windowsAt(program?.slug, form.eventDate, form.eventTime);
   const [slotTaken, setSlotTaken] = useState<string[]>([]);
-  // Rezervētie laiki ar variantiem ("2026-12-14 10:00|2 rūķi") — dienām ar laika logiem
+  // Rezervētie laiki ar variantiem ("2026-12-14 10:00|Divi rūķi") — dienām ar laika logiem
   const [takenVariants, setTakenVariants] = useState<string[]>([]);
   useEffect(() => {
     if ((!slots && !hasDayRules(program?.slug)) || !program) return;
@@ -182,7 +183,7 @@ export default function BookingForm({
           ? WINDOW_TAKEN_TEXT
           : undefined
       : undefined;
-  // Ja šajā laikā pieejams tikai viens variants (piem. vakarā — "2 rūķi"), tas tiek izvēlēts automātiski (sk. `variant`)
+  // Ja šajā laikā pieejams tikai viens variants (piem. vakarā — "Divi rūķi"), tas tiek izvēlēts automātiski (sk. `variant`)
   const onlyVariant = freeVariants.length === 1 ? freeVariants[0] : undefined;
   const slotKey = `${form.eventDate} ${form.eventTime}`;
   const pickedTaken = Boolean(slots && form.eventDate && slotTaken.includes(slotKey));
@@ -202,11 +203,11 @@ export default function BookingForm({
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant =
-    (onlyVariant && variants.some((g) => g.title === onlyVariant) ? onlyVariant : undefined) ??
+    variants.find((g) => onlyVariant && sameVariant(g.title, onlyVariant))?.title ??
     variants.find((g) => g.title === variantChoice)?.title ??
     variants[0]?.title;
-  // Izvēlētais variants šajā laikā nav pieejams (piem. 14. decembrī vakarā — tikai "2 rūķi")
-  const variantError = freeVariants.length && variant && !freeVariants.includes(variant) ? variantNotFreeText(freeVariants) : undefined;
+  // Izvēlētais variants šajā laikā nav pieejams (piem. 14. decembrī vakarā — tikai "Divi rūķi")
+  const variantError = freeVariants.length && variant && !freeVariants.some((f) => sameVariant(f, variant)) ? variantNotFreeText(freeVariants) : undefined;
   const programPrice = program
     ? estimateProgramPrice(program.pricing, Number(form.childrenCount), travelling, variant)
     : null;

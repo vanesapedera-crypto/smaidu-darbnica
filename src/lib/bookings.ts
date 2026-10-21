@@ -143,17 +143,17 @@ export const DAY_RULES: Record<string, { minutes: number; days: Record<string, D
     minutes: 60,
     days: {
       "2026-12-14": [
-        // Rītā — viena rezervācija: vai nu "Rūķis un Ziemassvētku vecītis", vai "2 rūķi"
-        { label: "rītā", until: "13:00", max: 1, variants: ["Rūķis un Ziemassvētku vecītis", "2 rūķi"] },
-        { label: "vakarā", from: "15:30", max: 1, variants: ["2 rūķi"] },
+        // Rītā — viena rezervācija: vai nu "Rūķis un Ziemassvētku vecītis", vai "Divi rūķi"
+        { label: "rītā", until: "13:00", max: 1, variants: ["Rūķis un Ziemassvētku vecītis", "Divi rūķi"] },
+        { label: "vakarā", from: "15:30", max: 1, variants: ["Divi rūķi"] },
       ],
       "2026-12-15": [
-        // Pēc 14.00 — vai nu viena rezervācija "2 rūķi" (aizņem abas komandas), vai divas "Rūķis un Ziemassvētku vecītis"
-        { label: "vakarā", from: "14:00", max: 2, variants: ["Rūķis un Ziemassvētku vecītis", "2 rūķi"], cost: { "2 rūķi": 2 } },
+        // Pēc 14.00 — vai nu viena rezervācija "Divi rūķi" (aizņem abas komandas), vai divas "Rūķis un Ziemassvētku vecītis"
+        { label: "vakarā", from: "14:00", max: 2, variants: ["Rūķis un Ziemassvētku vecītis", "Divi rūķi"], cost: { "Divi rūķi": 2 } },
       ],
       "2026-12-16": [
-        // Rītā — vai nu viena rezervācija "2 rūķi" (aizņem abas komandas), vai divas "Rūķis un Ziemassvētku vecītis"
-        { label: "rītā", until: "13:00", max: 2, variants: ["Rūķis un Ziemassvētku vecītis", "2 rūķi"], cost: { "2 rūķi": 2 } },
+        // Rītā — vai nu viena rezervācija "Divi rūķi" (aizņem abas komandas), vai divas "Rūķis un Ziemassvētku vecītis"
+        { label: "rītā", until: "13:00", max: 2, variants: ["Rūķis un Ziemassvētku vecītis", "Divi rūķi"], cost: { "Divi rūķi": 2 } },
         // Vakarā pēc 15.00 — tikai "Rūķis un Ziemassvētku vecītis"
         { label: "vakarā", from: "15:00", max: 1, variants: ["Rūķis un Ziemassvētku vecītis"] },
       ],
@@ -173,7 +173,11 @@ export function windowsAt(program: string | null | undefined, date: string | nul
   const end = start + (DAY_RULES[program ?? ""]?.minutes ?? 0);
   return windows.filter((w) => (!w.from || start >= toMin(w.from)) && (!w.until || end <= toMin(w.until)));
 }
-const costOf = (w: DayWindow, variant: string) => w.cost?.[variant] ?? 1;
+/** Variantu nosaukumus salīdzina bez lielo/mazo burtu un atstarpju atšķirībām ("Divi Rūķi" = "Divi rūķi") */
+export const sameVariant = (a: string | null | undefined, b: string | null | undefined) =>
+  (a ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("lv") === (b ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("lv");
+const costOf = (w: DayWindow, variant: string) =>
+  Object.entries(w.cost ?? {}).find(([k]) => sameVariant(k, variant))?.[1] ?? 1;
 /** Cik komandu logā jau aizņemts. `booked` — "YYYY-MM-DD HH:MM|variants" (sk. booked_program_variants) */
 function usedIn(program: string | null | undefined, date: string, w: DayWindow, booked: string[]): number {
   const day = date.slice(0, 10);
@@ -211,7 +215,7 @@ export function isDayFull(program: string | null | undefined, date: string, book
 const hhmm = (min: number) => `${Math.floor(min / 60)}.${String(min % 60).padStart(2, "0")}`;
 /**
  * Logi sagrupēti pēc laika — pa rindai, piem.
- * "Rītā (sākums līdz plkst. 12.00): Rūķis un Ziemassvētku vecītis vai 2 rūķi"
+ * "Rītā (sākums līdz plkst. 12.00): Rūķis un Ziemassvētku vecītis vai Divi rūķi"
  */
 function windowLines(program: string | null | undefined, windows: DayWindow[], variantsOf: (w: DayWindow) => string[] = (w) => w.variants ?? []): string[] {
   const minutes = DAY_RULES[program ?? ""]?.minutes ?? 0;

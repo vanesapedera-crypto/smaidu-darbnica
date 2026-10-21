@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const program = params.get("program");
   const taken = program ? await bookedProgramSlots(program) : await bookedSlots(params.get("date") ?? "");
-  // Programmām ar laika logiem — arī izvēlētie varianti ("2026-12-14 10:00|2 rūķi")
+  // Programmām ar laika logiem — arī izvēlētie varianti ("2026-12-14 10:00|Divi rūķi")
   const variants = program && hasDayRules(program) ? await bookedProgramVariants(program) : undefined;
   return NextResponse.json({ taken, variants }, { headers: { "Cache-Control": "no-store" } });
 }

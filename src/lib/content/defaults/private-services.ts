@@ -152,13 +152,13 @@ const kindergartenXmas: Service = {
         "Rūķis un Ziemassvētku vecītis ieradīsies pie jums ar jautrām rotaļām, dejām, smiekliem un svētku noskaņu. Un noslēgumā – gaidītā dāvaniņu saņemšana!",
     },
     {
-      title: "2 rūķi",
+      title: "Divi rūķi",
       description: "Sirsnīga un jautra programma, kas lieliski piemērota arī pašām mazākajām grupiņām.",
     },
   ],
   pricing: [
     { title: "Rūķis un Ziemassvētku vecītis", options: [{ label: "Cena", price: 195 }] },
-    { title: "2 rūķi", options: [{ label: "Cena", price: 150 }] },
+    { title: "Divi rūķi", options: [{ label: "Cena", price: 150 }] },
   ],
   pricingNote: "+ PVN + ceļa izdevumi",
   faq: [],

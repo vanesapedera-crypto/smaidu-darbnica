@@ -8,6 +8,7 @@ import {
   windowsAt,
   freeWindows,
   freeVariantsAt,
+  sameVariant,
   outsideWindowsText,
   variantNotFreeText,
   WINDOW_TAKEN_TEXT,
@@ -156,7 +157,7 @@ export async function POST(request: Request) {
     const chosen = String(row.message ?? "").match(/Izvēle: ([^\n]+)/)?.[1]?.trim();
     if (!at.length) v.errors.eventTime = outsideWindowsText(row.program, row.event_date);
     else if (!free.length) v.errors.eventTime = WINDOW_TAKEN_TEXT;
-    else if (freeVariants.length && !freeVariants.includes(chosen ?? "")) v.errors.eventTime = variantNotFreeText(freeVariants);
+    else if (freeVariants.length && !freeVariants.some((f) => sameVariant(f, chosen))) v.errors.eventTime = variantNotFreeText(freeVariants);
   }
   // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS)
   if (!isBusiness && isWeekdayBlocked(row.program, row.event_date)) v.errors.eventDate = WEEKDAY_TEXT;
