@@ -46,6 +46,7 @@ import {
 } from "@/lib/pricing";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
+import TimeSelect from "./TimeSelect";
 
 type Program = { slug: string; title: string; image?: string; pricing: PriceGroup[]; note?: string; extras?: Extra[]; smallMax?: number };
 
@@ -867,7 +868,16 @@ export default function BookingForm({
                 error={windowError ?? variantError ?? errors.eventTime}
                 hint={freeVariants.length ? `Šajā laikā: ${freeVariants.map((v) => `“${v}”`).join(" vai ")}.` : undefined}
               >
-                <input {...fieldProps("eventTime")} type="time" step={300} />
+                <TimeSelect
+                  id="eventTime"
+                  value={form.eventTime}
+                  onChange={(v) => {
+                    setForm((f) => ({ ...f, eventTime: v }));
+                    setErrors((er) => ({ ...er, eventTime: "" }));
+                  }}
+                  className={inputClass}
+                  invalid={Boolean(errors.eventTime)}
+                />
               </Field>
             )}
 

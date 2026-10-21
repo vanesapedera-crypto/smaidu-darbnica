@@ -12,6 +12,7 @@ import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import { googleConnection } from "@/lib/google-calendar";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
+import TimeSelect from "@/components/site/TimeSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { saveBookingDetails, saveBookingNotes } from "../actions";
 import { cn } from "@/lib/utils";
@@ -266,7 +267,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                           </label>
                           <label className="text-sm text-ink-soft">
                             Laiks
-                            <input type="time" name="event_time" defaultValue={b.event_time?.slice(0, 5) ?? ""} className={adminInput} />
+                            <TimeSelect name="event_time" defaultValue={b.event_time?.slice(0, 5) ?? ""} className={adminInput} />
                           </label>
                           <label className="text-sm text-ink-soft">
                             Bērnu skaits
