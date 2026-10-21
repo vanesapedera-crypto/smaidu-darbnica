@@ -14,7 +14,7 @@ import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
-import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
+import { reviewEmailText, reviewKind } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 import { manifestGallery } from "@/lib/content/media";
 import { missingContent, missingGallery } from "@/lib/admin/missing-content";
@@ -157,7 +157,8 @@ export async function sendReviewRequest(id: string): Promise<ActionState> {
     to: b.email,
     name: b.parent_name ?? "",
     ...text,
-    url: reviewUrl(contact),
+    // Saite uz atsauksmes formu mājaslapā; pēc tās nosūtīšanas — poga "Iekopēt arī Google"
+    url: absoluteUrl("/atsauksmes#rakstit"),
     replyTo: contact.emailPrivate,
     logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
     footer: { address: `${contact.address}, ${contact.city}`, phone: contact.phonePrivate, email: contact.emailPrivate, site: SITE_URL },

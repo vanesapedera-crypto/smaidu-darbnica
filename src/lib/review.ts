@@ -22,28 +22,29 @@ export function reviewUrl(contact: Pick<ContactSettings, "googleReviewUrl" | "ci
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Smaidu Darbnīca ${contact.city}`)}`;
 }
 
-/** E-pasta teksts: virsraksts, rindkopas un pogas uzraksts */
+/** Par ko lūdz atsauksmi */
+const about = (kind: ReviewKind) => (kind === "venue" ? "mūsu telpām" : "mūsu animatoriem un programmu");
+
+/** E-pasta teksts: tēma un rindkopas (aiz tām — poga "Atstāt atsauksmi") */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- programmas nosaukums pagaidām tekstā netiek lietots
 export function reviewEmailText(kind: ReviewKind, programTitle?: string) {
-  if (kind === "venue") {
-    return {
-      subject: "Kā Jums patika svētki Smaidu Darbnīcā?",
-      paragraphs: [
-        "Paldies, ka svinējāt kopā ar mums Smaidu Darbnīcā! Ceram, ka svētki izdevās tieši tādi, kā vēlējāties.",
-        "Mums būtu ļoti svarīgi uzzināt, kā Jums patika mūsu telpas. Ja atradīsiet minūti, lūdzu, atstājiet mums atsauksmi Google — tā palīdz arī citām ģimenēm mūs atrast.",
-      ],
-    };
-  }
   return {
-    subject: "Kā Jums patika svētki ar Smaidu Darbnīcu?",
+    subject: "Paldies, ka izvēlējāties Smaidu Darbnīcu! 🌿",
     paragraphs: [
-      `Paldies, ka izvēlējāties Smaidu Darbnīcu! Ceram, ka${programTitle ? ` “${programTitle}”` : " mūsu programma"} sagādāja daudz prieka un smieklu.`,
-      "Mums būtu ļoti svarīgi uzzināt, kā Jums patika mūsu animatori un programma. Ja atradīsiet minūti, lūdzu, atstājiet mums atsauksmi Google — tā palīdz arī citiem mūs atrast.",
+      "Paldies, ka izvēlējāties Smaidu Darbnīcu!",
+      `Ceram, ka pasākums izdevās un bērniem tas sagādāja daudz prieka. Būsim ļoti pateicīgi, ja veltīsiet minūti un atstāsiet atsauksmi par ${about(kind)}:`,
     ],
   };
 }
 
 /** Īsā ziņa WhatsApp / SMS ar saiti */
 export function reviewMessageText(kind: ReviewKind, url: string): string {
-  const about = kind === "venue" ? "mūsu telpas" : "mūsu animatori un programma";
-  return `Sveiki! Rakstām no Smaidu Darbnīcas. Paldies, ka svinējāt kopā ar mums! Mums būtu ļoti svarīgi uzzināt, kā Jums patika ${about}. Ja atradīsiet minūti, lūdzu, atstājiet mums atsauksmi Google: ${url}`;
+  return [
+    "Sveiki! 🌿",
+    "Paldies, ka izvēlējāties Smaidu Darbnīcu!",
+    `Ceram, ka pasākums izdevās un bērniem tas sagādāja daudz prieka. Būsim ļoti pateicīgi, ja veltīsiet minūti un atstāsiet atsauksmi par ${about(kind)}:`,
+    url,
+    "Paldies par Jūsu laiku!",
+    "Smaidu Darbnīca ✨",
+  ].join("\n");
 }

@@ -119,9 +119,14 @@ export default function Footer({ contact, services }: { contact: ContactSettings
               </a>
             </p>
           </div>
-          <Link href="/privatuma-politika" className="hover:text-brand">
-            Privātuma politika
-          </Link>
+          <div className="flex gap-5">
+            <Link href="/atsauksmes" className="hover:text-brand">
+              Atsauksmes
+            </Link>
+            <Link href="/privatuma-politika" className="hover:text-brand">
+              Privātuma politika
+            </Link>
+          </div>
         </Container>
       </div>
     </footer>

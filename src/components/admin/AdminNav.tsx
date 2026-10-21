@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   PartyPopper,
   Search,
+  Star,
   UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const groups = [
     items: [
       { href: "/admin/programmas", label: "Izklaides programmas", icon: PartyPopper },
       { href: "/admin/pakalpojumi", label: "Pakalpojumi uzņēmumiem", icon: LayoutDashboard },
+      { href: "/admin/atsauksmes", label: "Atsauksmes", icon: Star },
       { href: "/admin/komanda", label: "Komanda", icon: UsersRound },
       { href: "/admin/klienti", label: "Klienti", icon: Handshake },
       { href: "/admin/galerija", label: "Foto", icon: Images },

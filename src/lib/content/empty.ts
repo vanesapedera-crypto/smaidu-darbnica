@@ -46,6 +46,7 @@ export const emptyTestimonial: Testimonial = {
   company: "",
   text: "",
   logo: "",
+  rating: 0,
   sort: 100,
   published: true,
 };

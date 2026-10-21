@@ -70,6 +70,8 @@ export type Testimonial = {
   company: string;
   text: string;
   logo: string;
+  /** Vērtējums 1–5 zvaigznes (0 — nav norādīts) */
+  rating: number;
   sort: number;
   published: boolean;
 };

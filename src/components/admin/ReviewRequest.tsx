@@ -74,7 +74,7 @@ export default function ReviewRequest({
       )}
       {fallbackUrl && (
         <p className="mt-2 text-xs text-ink-soft">
-          Ieteicams ievadīt Google atsauksmju saiti: Iestatījumi → Kontakti. Līdz tam saite ved uz Smaidu Darbnīcu Google kartēs.
+          Ziņa ved uz atsauksmes formu mājaslapā (/atsauksmes), kur ir arī poga “Iekopēt arī Google”. Ieteicams ievadīt Google atsauksmju saiti: Iestatījumi → Kontakti — līdz tam Google poga ved uz Smaidu Darbnīcu Google kartēs.
         </p>
       )}
     </div>

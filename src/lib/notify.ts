@@ -464,11 +464,11 @@ ${info.logoUrl ? `<img src="${info.logoUrl}" alt="Smaidu Darbnīca" width="110" 
 <p style="margin:0;font-size:28px;line-height:1.25;font-weight:bold;text-transform:uppercase;color:#ffffff">Paldies, ka<br><span style="display:inline-block;margin-top:4px;padding:2px 12px;border-radius:8px;background:${BRAND};color:${INK}">svinējāt ar mums</span></p>
 </td></tr>
 <tr><td style="background:#ffffff;padding:30px 32px 26px">
-${p(`Sveiki${first ? `, ${escape(first)}` : ""}!`, "font-size:17px;font-weight:bold")}
+${p(`Sveiki${first ? `, ${escape(first)}` : ""}! 🌿`, "font-size:17px;font-weight:bold")}
 ${info.paragraphs.map((t) => p(escape(t))).join("\n")}
 <p style="margin:8px 0 26px"><a href="${escape(info.url)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">★ Atstāt atsauksmi</a></p>
-<p style="margin:0;font-size:17px;font-weight:bold">Paldies!</p>
-<p style="margin:4px 0 0">Smaidīgu dienu,<br><b>SMAIDU DARBNĪCA</b></p>
+<p style="margin:0;font-size:17px;font-weight:bold">Paldies par Jūsu laiku!</p>
+<p style="margin:4px 0 0"><b>Smaidu Darbnīca</b> ✨</p>
 </td></tr>
 <tr><td style="background:${INK};border-radius:0 0 20px 20px;padding:22px 32px;font-size:13px;line-height:1.7;color:#bdb6ab">
 <span style="color:#ffffff;font-weight:bold">Smaidu Darbnīca</span><br>
@@ -494,5 +494,37 @@ ${escape(info.footer.address)}<br>
   } catch (e) {
     console.error("[notify] review request failed", e);
     return false;
+  }
+}
+
+/** Paziņojums komandai par jaunu atsauksmi no mājaslapas formas (tā vēl nav publicēta — jāpārskata panelī) */
+export async function notifyNewTestimonial(t: { author: string; event: string; rating: number; text: string }) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return;
+  const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.smaidudarbnica.lv").replace(/\/$/, "");
+  const stars = t.rating ? `${"★".repeat(t.rating)}${"☆".repeat(5 - t.rating)}` : "";
+  const body = `${eyebrow("Atsauksme")}
+${stars ? `<p style="margin:0 0 8px;font-size:22px;color:#e0a800;letter-spacing:2px">${stars}</p>` : ""}
+<p style="margin:0 0 18px;font-size:17px;line-height:1.6">“${escape(t.text)}”</p>
+${facts([
+  ["Vārds", escape(t.author)],
+  ["Pasākums", escape(t.event)],
+])}
+<p style="margin:22px 0 0"><a href="${site}/admin/atsauksmes" style="display:inline-block;padding:12px 22px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">Pārskatīt un publicēt</a></p>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: sender(),
+        to: [process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"],
+        subject: `Jauna atsauksme: ${t.author}${stars ? ` ${stars}` : ""}`,
+        html: shell("Jauna", "atsauksme", body),
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) console.error("[notify] Resend (jauna atsauksme)", res.status, await res.text());
+  } catch (e) {
+    console.error("[notify] testimonial failed", e);
   }
 }

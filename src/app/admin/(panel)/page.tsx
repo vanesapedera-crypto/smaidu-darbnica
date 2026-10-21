@@ -10,7 +10,8 @@ import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/Client
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import { googleConnection } from "@/lib/google-calendar";
-import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
+import { reviewKind, reviewMessageText } from "@/lib/review";
+import { absoluteUrl } from "@/lib/seo";
 import StatusSelect from "@/components/admin/StatusSelect";
 import TimeSelect from "@/components/site/TimeSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
@@ -203,7 +204,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                         id={b.id}
                         hasEmail={Boolean(b.email)}
                         phoneDigits={phoneDigits(b.phone)}
-                        message={reviewMessageText(reviewKind(b), reviewUrl(settings.contact))}
+                        message={reviewMessageText(reviewKind(b), absoluteUrl("/atsauksmes#rakstit"))}
                         about={reviewKind(b) === "venue" ? "par telpām" : "par animatoriem un programmu"}
                         requestedAt={b.review_requested_at ?? null}
                         fallbackUrl={!settings.contact.googleReviewUrl?.trim()}

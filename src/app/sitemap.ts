@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/izklaides-programmas", 0.7],
     ["/izrades", 0.7],
     ["/telpu-noma", 0.6],
+    ["/atsauksmes", 0.5],
     ["/izklaides-programmas/pieteikt", 0.4],
     ["/privatuma-politika", 0.2],
   ];
