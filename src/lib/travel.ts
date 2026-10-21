@@ -22,7 +22,7 @@ export const TRAVEL_ORIGIN = "Pasta iela 25, Tukums, LV-3101";
 // Aptuvenas Pasta ielas 25 koordinātas — izmanto tikai tad, ja sākumpunkta adresi neizdodas atrast
 const ORIGIN_FALLBACK = { lat: 56.9674, lon: 23.1553 };
 
-const USER_AGENT = "SmaiduDarbnica/1.0 (smaidudarbnica@gmail.com)";
+const USER_AGENT = "SmaiduDarbnica/1.0 (smaidu.darbnica@gmail.com)";
 const DAY = 60 * 60 * 24;
 
 type Point = { lat: number; lon: number; label: string };
@@ -92,11 +92,57 @@ async function osmGeocode(text: string): Promise<Point | null> {
   return r ? { lat: Number(r.lat), lon: Number(r.lon), label: r.display_name } : null;
 }
 
+/** Rezerves adrešu meklētājs (Photon, arī no OpenStreetMap datiem), ja Nominatim neatbild */
+async function photonGeocode(text: string): Promise<Point | null> {
+  const url = `https://photon.komoot.io/api/?${new URLSearchParams({ q: text, limit: "1", lat: "56.95", lon: "24.1" })}`;
+  const data = await getJson<{ features: { geometry: { coordinates: [number, number] }; properties: Record<string, string> }[] }>(url);
+  const f = data.features?.find((x) => x.properties.countrycode === "LV") ?? null;
+  if (!f) return null;
+  const p = f.properties;
+  const label = [p.name, p.street && `${p.street} ${p.housenumber ?? ""}`.trim(), p.city ?? p.county, p.postcode].filter(Boolean).join(", ");
+  return { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], label };
+}
+
+async function osmFind(text: string): Promise<Point | null> {
+  try {
+    return await osmGeocode(text);
+  } catch (e) {
+    console.warn("[travel] nominatim", (e as Error).message);
+    return photonGeocode(text);
+  }
+}
+
+/** Maršruts pa ceļiem: OSRM publiskais serveris, ja tas neatbild — routing.openstreetmap.de */
 async function osrmDistance(a: Point, b: Point): Promise<number> {
-  const url = `https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=false`;
-  const data = await getJson<{ code: string; routes: { distance: number }[] }>(url);
-  if (data.code !== "Ok" || !data.routes?.[0]) throw new Error("OSRM: maršruts nav atrasts");
-  return data.routes[0].distance; // metros
+  const path = `${a.lon},${a.lat};${b.lon},${b.lat}?overview=false`;
+  let lastError: unknown;
+  for (const base of ["https://router.project-osrm.org/route/v1/driving/", "https://routing.openstreetmap.de/routed-car/route/v1/driving/"]) {
+    try {
+      const data = await getJson<{ code: string; routes: { distance: number }[] }>(base + path);
+      if (data.code === "Ok" && data.routes?.[0]) return data.routes[0].distance; // metros
+      lastError = new Error("OSRM: maršruts nav atrasts");
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Adreses varianti meklēšanai: lauku adresēm ("Dreijeri", Krimuldas pag., Siguldas nov., LV-2145) meklētājs bieži
+ * neatrod pilnu tekstu — tad mēģina bez pēdiņām, ar pilniem vārdiem (pagasts, novads), pēc pagasta un pēc pasta indeksa.
+ */
+export function addressVariants(address: string): string[] {
+  const clean = address.replace(/["“”„«»]/g, "").replace(/\s+/g, " ").trim().replace(/[.,;\s]+$/, "");
+  const full = clean
+    .replace(/\bpag\.?(?=[\s,]|$)/gi, "pagasts")
+    .replace(/\bnov\.?(?=[\s,]|$)/gi, "novads")
+    .replace(/\bpils\.?(?=[\s,]|$)/gi, "pilsēta");
+  const parts = full.split(",").map((x) => x.trim()).filter(Boolean);
+  const postcode = full.match(/LV-?\s?(\d{4})/i)?.[1];
+  const area = parts.filter((x) => /pagasts|novads|pilsēta/i.test(x)).join(", ");
+  const lv = (t: string) => (/latvij/i.test(t) ? t : `${t}, Latvija`);
+  return [...new Set([address, clean, full, parts.slice(0, 2).join(", "), area, postcode && `LV-${postcode}`].filter((x): x is string => Boolean(x)).map(lv))];
 }
 
 /* ---------------- Kopējā funkcija ---------------- */
@@ -130,13 +176,17 @@ async function routeTo(rawAddress: string): Promise<Route | null> {
   if (memo.has(cacheKey)) return memo.get(cacheKey)!;
 
   const key = process.env.ORS_API_KEY;
-  const geocode = (t: string) => (key ? orsGeocode(t, key) : osmGeocode(t));
+  const geocode = (t: string) => (key ? orsGeocode(t, key) : osmFind(t));
   const distance = (a: Point, b: Point) => (key ? orsDistance(a, b, key) : osrmDistance(a, b));
 
   if (!origin) origin = (await geocode(TRAVEL_ORIGIN).catch(() => null)) ?? { ...ORIGIN_FALLBACK, label: TRAVEL_ORIGIN };
 
-  // Ja lietotājs nav norādījis valsti, meklējam Latvijā
-  const target = await geocode(/latvij/i.test(address) ? address : `${address}, Latvija`);
+  // Meklē adresi; ja pilnu tekstu neatrod — vienkāršākus variantus (sk. addressVariants). Valsts — Latvija.
+  let target: Point | null = null;
+  for (const variant of addressVariants(address)) {
+    target = await geocode(variant);
+    if (target) break;
+  }
   if (!target) {
     memo.set(cacheKey, null);
     return null;

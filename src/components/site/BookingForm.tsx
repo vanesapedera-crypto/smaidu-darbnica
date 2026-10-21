@@ -47,7 +47,7 @@ import {
 } from "@/lib/pricing";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
-import { PRICE_UNKNOWN_TEXT, TRAVEL_UNKNOWN_TEXT } from "@/lib/pricing";
+import { PRICE_UNKNOWN_TEXT } from "@/lib/pricing";
 import TimeSelect from "./TimeSelect";
 
 type Program = { slug: string; title: string; image?: string; pricing: PriceGroup[]; note?: string; extras?: Extra[]; smallMax?: number };
@@ -249,7 +249,9 @@ export default function BookingForm({
   const extrasTotal = chosenExtras.reduce((sum, x) => sum + (x.price ?? 0), 0);
   // Izbraukuma piemaksa — ballītēm tālāk par 10 km no Smaidu Darbnīcas (tāpat kā ceļa izdevumi).
   // Par to informējam tikai tad, kad adrese ir aprēķināta un ir tālāk (sk. ceļa izdevumu rezultātu pie adreses).
-  const far = Boolean(travelQuote && travelQuote.oneWayKm > prices.freeTravelKm);
+  // Ja adresi neizdevās aprēķināt — izbraukuma piemaksu skaitām vienmēr (ceļa izdevumus aprēķināsim, apstiprinot)
+  const travelFailed = travelling && travel.status === "error" && travel.address === form.address.trim();
+  const far = Boolean(travelQuote && travelQuote.oneWayKm > prices.freeTravelKm) || travelFailed;
   // Iestādēm izbraukuma piemaksu nepiemēro — tikai ceļa izdevumus par km
   const surcharge = far && !institution ? prices.travelSurcharge : 0;
   const total = Math.round(((programPrice ?? 0) + extrasTotal + (roomPrice ?? 0) + surcharge + (travelQuote?.cost ?? 0)) * 100) / 100;
@@ -318,9 +320,9 @@ export default function BookingForm({
     if (program && program.pricing.length > 0 && programPrice === null && !missing.childrenCount && form.childrenCount) {
       missing[headcount || institution ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
     }
-    if (travelling && form.address.trim() && !travelQuote && !missing.address) {
-      missing.address = travel.status === "loading" ? "Uzgaidiet — tiek aprēķināti ceļa izdevumi." : TRAVEL_UNKNOWN_TEXT;
-      if (travel.status === "idle") calculateTravel();
+    // Ceļa izdevumi: ja tos neizdodas aprēķināt, rezervāciju tāpat pieņem (aprēķināsim, apstiprinot); tikai jāuzgaida aprēķins
+    if (travelling && form.address.trim() && travel.status === "loading" && !missing.address) {
+      missing.address = "Uzgaidiet — tiek aprēķināti ceļa izdevumi.";
     }
     if (!form.parentName.trim()) missing.parentName = "Norādiet vārdu.";
     if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
@@ -1063,6 +1065,7 @@ export default function BookingForm({
                 {roomPrice !== null && ticketRow("Telpu noma", eur(roomPrice))}
                 {surcharge > 0 && ticketRow("Izbraukuma piemaksa", eur(surcharge))}
                 {travelQuote && ticketRow(`Ceļa izdevumi (${travelQuote.roundTripKm.toLocaleString("lv-LV")} km)`, eur(travelQuote.cost))}
+                {travelFailed && ticketRow("Ceļa izdevumi", "aprēķināsim, apstiprinot")}
                 <div className="flex items-end justify-between gap-4 border-t border-white/15 pt-4">
                   <dt className="font-extrabold">Kopā</dt>
                   <dd className="font-display text-3xl leading-none font-extrabold text-brand">{eur(total)}</dd>

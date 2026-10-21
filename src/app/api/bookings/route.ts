@@ -26,7 +26,7 @@ import {
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
 import { timeLabel } from "@/lib/dates";
-import { PRICE_UNKNOWN_TEXT, TRAVEL_UNKNOWN_TEXT, bookingCosts, bookingPrices } from "@/lib/pricing";
+import { PRICE_UNKNOWN_TEXT, bookingCosts, bookingPrices } from "@/lib/pricing";
 import { quoteTravel } from "@/lib/travel";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Validator } from "@/lib/validation";
@@ -181,13 +181,13 @@ export async function POST(request: Request) {
   }
 
   // Izbraukuma ballītēm ceļa izdevumus pārrēķinām serverī (formas vērtībai neuzticamies).
-  // Ja kartes pakalpojums neatbild 6 s laikā, pieteikums tiek saglabāts bez aprēķina.
+  // Ja kartes pakalpojums neatbild 15 s laikā, ceļa izdevumus aprēķina, apstiprinot rezervāciju (izbraukuma piemaksa — vienmēr).
   let travel_km: number | null = null;
   let travel_cost: number | null = null;
   if (!isBusiness && row.location === "Izbraukums" && row.address) {
     const quote = await Promise.race([
       quoteTravel(row.address).catch(() => null),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000)),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000)),
     ]);
     if (quote) ({ roundTripKm: travel_km, cost: travel_cost } = quote);
   }
@@ -201,9 +201,11 @@ export async function POST(request: Request) {
     const unknown = costs?.lines.filter((l) => l.amount === null) ?? [];
     if (unknown.length) {
       const errors: Record<string, string> = {};
-      if (unknown.some((l) => l.kind === "travel")) errors.address = TRAVEL_UNKNOWN_TEXT;
-      if (unknown.some((l) => l.kind !== "travel")) errors[row.children_count ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
-      return NextResponse.json({ success: false, errors }, { status: 422 });
+      // Ceļa izdevumus, ja tos neizdevās aprēķināt, aprēķinām, apstiprinot rezervāciju (ar izbraukuma piemaksu) — tas netraucē
+      if (unknown.some((l) => l.kind !== "travel")) {
+        errors[row.children_count ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
+        return NextResponse.json({ success: false, errors }, { status: 422 });
+      }
     }
   }
 

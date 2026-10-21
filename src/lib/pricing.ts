@@ -109,9 +109,8 @@ export function fromPrice(pricing: PriceGroup[]): number | null {
   return prices.length ? Math.min(...prices) : null;
 }
 
-/** Rezervāciju ar cenu "pēc vienošanās" nepieņem — teksti formai un serverim */
+/** Rezervāciju ar programmas cenu "pēc vienošanās" nepieņem — teksts formai un serverim */
 export const PRICE_UNKNOWN_TEXT = "Šai izvēlei cenu tiešsaistē aprēķināt nevar — lūdzu, sazinieties ar mums pa telefonu.";
-export const TRAVEL_UNKNOWN_TEXT = "Neizdevās aprēķināt ceļa izdevumus — lūdzu, pārbaudiet adresi (iela, mājas numurs, pilsēta).";
 
 /** Atgriež aptuveno programmas cenu vai null, ja to nevar aprēķināt (pēc vienošanās). */
 export function estimateProgramPrice(pricing: PriceGroup[], children: number, travelling: boolean, variant?: string): number | null {
@@ -236,8 +235,12 @@ export type BookingCosts = {
 export const VAT_NOTE = "Kopsummā nav iekļauts PVN.";
 
 /** Rindas summa tekstā: "pēc vienošanās", "185 €" vai "150 € + PVN" */
-export const amountText = (l: Pick<CostLine, "amount" | "plusVat">) =>
-  l.amount === null ? "pēc vienošanās" : `${eur(l.amount)}${l.plusVat ? " + PVN" : ""}`;
+export const amountText = (l: Pick<CostLine, "amount" | "plusVat"> & { kind?: CostLine["kind"] }) =>
+  l.amount === null
+    ? l.kind === "travel"
+      ? "aprēķināsim, apstiprinot rezervāciju"
+      : "pēc vienošanās"
+    : `${eur(l.amount)}${l.plusVat ? " + PVN" : ""}`;
 
 /** Cenas formāts: 12,6 → "12,60 €", 185 → "185 €" */
 export const eur = (n: number) =>
@@ -299,7 +302,11 @@ export function bookingCosts(b: CostBooking, program: CostProgram | undefined, p
   } else if (travelling) {
     // Izbraukuma piemaksa un ceļa izdevumi — adresēm tālāk par freeTravelKm (vienā virzienā), tāpat kā formā.
     // Ja attālums nav zināms (adresi neizdevās aprēķināt), ceļa izdevumi ir "pēc vienošanās".
-    if (b.travel_km == null) lines.push({ kind: "travel", label: "Ceļa izdevumi", amount: null });
+    // Ja attālums nav zināms — izbraukuma piemaksu skaita vienmēr, ceļa izdevumus aprēķina, apstiprinot rezervāciju
+    if (b.travel_km == null) {
+      if (prices.travelSurcharge > 0 && !institution) lines.push({ kind: "surcharge", label: "Izbraukuma piemaksa", amount: prices.travelSurcharge });
+      lines.push({ kind: "travel", label: "Ceļa izdevumi", amount: null });
+    }
     else if (b.travel_km / 2 > prices.freeTravelKm) {
       if (prices.travelSurcharge > 0 && !institution) lines.push({ kind: "surcharge", label: "Izbraukuma piemaksa", amount: prices.travelSurcharge });
       if (b.travel_cost) lines.push({ kind: "travel", label: `Ceļa izdevumi (${b.travel_km.toLocaleString("lv-LV")} km)`, amount: b.travel_cost });
