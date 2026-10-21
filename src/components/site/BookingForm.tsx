@@ -9,7 +9,7 @@ import {
   allowedDates,
   DAY_FULL_TEXT,
   WINDOW_TAKEN_TEXT,
-  dayRuleText,
+  dayRuleLines,
   dayWindows,
   freeVariantsAt,
   freeWindows,
@@ -182,11 +182,8 @@ export default function BookingForm({
           ? WINDOW_TAKEN_TEXT
           : undefined
       : undefined;
-  // Ja šajā laikā pieejams tikai viens variants (piem. vakarā — "2 rūķi"), izvēlas to automātiski
+  // Ja šajā laikā pieejams tikai viens variants (piem. vakarā — "2 rūķi"), tas tiek izvēlēts automātiski (sk. `variant`)
   const onlyVariant = freeVariants.length === 1 ? freeVariants[0] : undefined;
-  useEffect(() => {
-    if (onlyVariant) setVariantChoice(onlyVariant);
-  }, [onlyVariant]);
   const slotKey = `${form.eventDate} ${form.eventTime}`;
   const pickedTaken = Boolean(slots && form.eventDate && slotTaken.includes(slotKey));
   // Laika posms "09:00–10:00" (programmas ilgums — venue.hours, citādi 1 stunda)
@@ -204,7 +201,10 @@ export default function BookingForm({
   const vat = institution && institution.plusVat !== false ? " + PVN" : "";
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
-  const variant = variants.find((g) => g.title === variantChoice)?.title ?? variants[0]?.title;
+  const variant =
+    (onlyVariant && variants.some((g) => g.title === onlyVariant) ? onlyVariant : undefined) ??
+    variants.find((g) => g.title === variantChoice)?.title ??
+    variants[0]?.title;
   // Izvēlētais variants šajā laikā nav pieejams (piem. 14. decembrī vakarā — tikai "2 rūķi")
   const variantError = freeVariants.length && variant && !freeVariants.includes(variant) ? variantNotFreeText(freeVariants) : undefined;
   const programPrice = program
@@ -840,7 +840,19 @@ export default function BookingForm({
                   })}
                 </div>
                 {onlyDates.length === 0 && <p className="text-sm font-semibold">Brīvu datumu vairs nav.</p>}
-                {windows && !dayFull(form.eventDate) && <p className="text-sm font-semibold">{dayRuleText(program?.slug, form.eventDate, takenVariants)}</p>}
+                {windows && !dayFull(form.eventDate) && (
+                  <div className="rounded-2xl bg-surface p-4 text-sm leading-6">
+                    <p className="font-extrabold">Pieejamie laiki šajā datumā:</p>
+                    <ul className="mt-1 space-y-1">
+                      {dayRuleLines(program?.slug, form.eventDate, takenVariants).map((line) => (
+                        <li key={line} className="flex gap-2">
+                          <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-ink" />
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {errors.eventDate && (
                   <p role="alert" className="text-sm font-semibold text-destructive">
                     {errors.eventDate}

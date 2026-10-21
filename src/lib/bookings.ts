@@ -208,28 +208,32 @@ export function isDayFull(program: string | null | undefined, date: string, book
   const windows = dayWindows(program, date);
   return Boolean(windows?.length) && freeWindows(program, date, null, booked).length === 0;
 }
-/** Logi sagrupēti pēc laika: "rītā programmai jābeidzas līdz 13.00 — “A” vai “B”" */
-function windowsText(windows: DayWindow[], variantsOf: (w: DayWindow) => string[] = (w) => w.variants ?? []): string {
+const hhmm = (min: number) => `${Math.floor(min / 60)}.${String(min % 60).padStart(2, "0")}`;
+/**
+ * Logi sagrupēti pēc laika — pa rindai, piem.
+ * "Rītā (sākums līdz plkst. 12.00): Rūķis un Ziemassvētku vecītis vai 2 rūķi"
+ */
+function windowLines(program: string | null | undefined, windows: DayWindow[], variantsOf: (w: DayWindow) => string[] = (w) => w.variants ?? []): string[] {
+  const minutes = DAY_RULES[program ?? ""]?.minutes ?? 0;
   const groups = new Map<string, DayWindow[]>();
   for (const w of windows) {
-    const key = `${w.label} ${[w.from && `no ${hm(w.from)}`, w.until && `programmai jābeidzas līdz ${hm(w.until)}`].filter(Boolean).join(", ")}`;
+    const when = [w.from && `no plkst. ${hm(w.from)}`, w.until && `līdz plkst. ${hhmm(toMin(w.until) - minutes)}`].filter(Boolean).join(" ");
+    const key = `${w.label.charAt(0).toUpperCase()}${w.label.slice(1)} (sākums ${when})`;
     groups.set(key, [...(groups.get(key) ?? []), w]);
   }
-  return [...groups]
-    .map(([k, ws]) => {
-      const variants = [...new Set(ws.flatMap(variantsOf))];
-      return `${k}${variants.length ? ` — ${variants.map((v) => `“${v}”`).join(" vai ")}` : ""}`;
-    })
-    .join("; ");
+  return [...groups].map(([k, ws]) => {
+    const variants = [...new Set(ws.flatMap(variantsOf))];
+    return `${k}${variants.length ? `: ${variants.join(" vai ")}` : ""}`;
+  });
 }
-/** Paskaidrojums zem datuma: brīvie laiki un varianti */
-export function dayRuleText(program: string | null | undefined, date: string | null | undefined, booked: string[] = []): string {
+/** Brīvie laiki dienā pa rindai (rāda zem datuma) */
+export function dayRuleLines(program: string | null | undefined, date: string | null | undefined, booked: string[] = []): string[] {
   const free = freeWindows(program, date ?? "", null, booked);
-  if (!free.length) return "";
-  return `Šajā datumā pieejams: ${windowsText(free, (w) => windowFreeVariants(program, date ?? "", w, booked))}.`;
+  return windowLines(program, free, (w) => windowFreeVariants(program, date ?? "", w, booked));
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- vienots paraksts ar pārējām teksta funkcijām
 export const outsideWindowsText = (program: string | null | undefined, date: string | null | undefined) =>
-  `Šajā datumā pieejams tikai: ${windowsText(dayWindows(program, date) ?? [])}.`;
+  "Šajā laikā programma nav pieejama — lūdzu, izvēlieties kādu no pieejamajiem laikiem (sk. augstāk).";
 export const variantNotFreeText = (variants: string[]) =>
   `Šajā laikā pieejams tikai ${variants.map((v) => `“${v}”`).join(" vai ")}.`;
 export const WINDOW_TAKEN_TEXT = "Šis laiks jau ir aizņemts — lūdzu, izvēlieties citu laiku vai datumu.";
