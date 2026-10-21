@@ -689,7 +689,14 @@ export default function BookingForm({
                     apgleznošana.
                   </p>
                 )}
-                <Field id="address" label={institution?.addressLabel ?? "Ballītes adrese"} required error={errors.address} className="sm:col-span-2">
+                <Field
+                  id="address"
+                  label={institution?.addressLabel ?? "Ballītes adrese"}
+                  required
+                  error={errors.address}
+                  hint="Ar pasta indeksu, piem.: Rīgas iela 5, Tukums, LV-3101 vai “Dreijeri”, Krimuldas pag., LV-2145"
+                  className="sm:col-span-2"
+                >
                   <div className="flex gap-2">
                     <input
                       {...fieldProps("address")}
