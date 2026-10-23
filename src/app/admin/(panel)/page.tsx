@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Pieteikumi" };
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 type Props = { searchParams: Promise<{ tips?: string; statuss?: string; q?: string; google?: string }> };
 
