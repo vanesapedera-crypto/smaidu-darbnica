@@ -2,6 +2,7 @@ import { CalendarCheck, CalendarX } from "lucide-react";
 import { disconnectGoogle } from "@/app/admin/actions";
 import type { AdminContext } from "@/lib/auth";
 import { googleConnection, isGoogleConfigured } from "@/lib/google-calendar";
+import ResendInvites from "./ResendInvites";
 import { adminSecondary } from "./styles";
 
 const MESSAGES: Record<string, string> = {
@@ -40,11 +41,14 @@ export default async function GoogleCalendarCard({ db, message }: { db: AdminCon
       </div>
       <div className="mt-3 shrink-0 sm:mt-0">
         {conn ? (
-          <form action={disconnectGoogle}>
-            <button type="submit" className={adminSecondary}>
-              Atvienot
-            </button>
-          </form>
+          <div className="flex flex-wrap items-start gap-2">
+            <ResendInvites />
+            <form action={disconnectGoogle}>
+              <button type="submit" className={adminSecondary}>
+                Atvienot
+              </button>
+            </form>
+          </div>
         ) : (
           configured && (
             // Parasta saite (nevis Link) — pāradresē uz Google

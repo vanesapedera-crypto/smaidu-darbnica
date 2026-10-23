@@ -1,4 +1,6 @@
+import GoogleReviewsSection from "@/components/site/GoogleReviewsSection";
 import ProgramCard from "@/components/site/ProgramCard";
+import { reviewUrl } from "@/lib/review";
 import { StageHeading, StageHero } from "@/components/site/stage";
 import { ButtonLink, Container, Section } from "@/components/site/ui";
 import { getServices, getSettings } from "@/lib/content/queries";
@@ -48,6 +50,9 @@ export default async function ProgramsPage() {
           </div>
         </Container>
       </Section>
+
+      {/* Google atsauksmes (ja ir GOOGLE_PLACES_API_KEY) */}
+      <GoogleReviewsSection writeUrl={reviewUrl(settings.contact)} tone="surface" />
     </>
   );
 }

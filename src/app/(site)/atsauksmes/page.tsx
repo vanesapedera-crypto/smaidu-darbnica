@@ -1,4 +1,5 @@
 import { Quote, Star } from "lucide-react";
+import GoogleReviewsSection from "@/components/site/GoogleReviewsSection";
 import TestimonialForm from "@/components/site/TestimonialForm";
 import { StageHeading, StageHero } from "@/components/site/stage";
 import { Container, Section } from "@/components/site/ui";
@@ -34,6 +35,9 @@ export default async function TestimonialsPage() {
         crumbs={[{ name: "Atsauksmes", path: "/atsauksmes" }]}
         photos={[{ src: settings.programs.heroImage, caption: "Smaidu Darbnīca" }]}
       />
+
+      {/* Google atsauksmes (ja ir GOOGLE_PLACES_API_KEY) */}
+      <GoogleReviewsSection writeUrl={reviewUrl(settings.contact)} />
 
       <Section id="rakstit" tone="surface" className="scroll-mt-20">
         <Container className="max-w-3xl">

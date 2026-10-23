@@ -71,7 +71,11 @@ export async function googleConnection(db: AdminContext["db"]): Promise<Connecti
   return { email: data.email ?? "", refreshToken: data.refresh_token };
 }
 
+// Piekļuves žetons derīgs stundu — glabājam atmiņā, lai vairākiem notikumiem pēc kārtas nav jāprasa katru reizi
+let cachedToken: { refreshToken: string; token: string; until: number } | null = null;
+
 async function accessToken(refreshToken: string): Promise<string | null> {
+  if (cachedToken && cachedToken.refreshToken === refreshToken && cachedToken.until > Date.now()) return cachedToken.token;
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -88,6 +92,7 @@ async function accessToken(refreshToken: string): Promise<string | null> {
     console.error("[google] access token", res.status, data.error);
     return null;
   }
+  cachedToken = { refreshToken, token: data.access_token, until: Date.now() + ((data.expires_in ?? 3600) - 300) * 1000 };
   return data.access_token;
 }
 
@@ -129,9 +134,17 @@ export async function upsertGoogleEvent(db: AdminContext["db"], bookingId: strin
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   try {
     let res = await fetch(`${API}?sendUpdates=all`, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
-    // Notikums jau ir (rezervācija apstiprināta atkārtoti) — atjauno to
+    // Notikums jau ir (rezervācija apstiprināta atkārtoti) — atjauno to; Google kalendārā ar roku pievienotos viesus saglabā
     if (res.status === 409) {
-      res = await fetch(`${API}/${id}?sendUpdates=all`, { method: "PUT", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
+      const existing = await fetch(`${API}/${id}`, { headers, signal: AbortSignal.timeout(10000) })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      const known = new Set(body.attendees.map((a) => a.email));
+      const kept = ((existing?.attendees ?? []) as { email?: string }[])
+        .filter((a) => a.email && !known.has(a.email.toLowerCase()) && a.email.toLowerCase() !== own)
+        .map((a) => ({ email: a.email!.toLowerCase() }));
+      const merged = { ...body, attendees: [...body.attendees, ...kept] };
+      res = await fetch(`${API}/${id}?sendUpdates=all`, { method: "PUT", headers, body: JSON.stringify(merged), signal: AbortSignal.timeout(10000) });
     }
     if (!res.ok) console.error("[google] event", res.status, await res.text());
     return res.ok;

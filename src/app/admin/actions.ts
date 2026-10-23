@@ -14,7 +14,7 @@ import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
-import { reviewEmailText, reviewKind } from "@/lib/review";
+import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 import { manifestGallery } from "@/lib/content/media";
 import { missingContent, missingGallery } from "@/lib/admin/missing-content";
@@ -157,8 +157,8 @@ export async function sendReviewRequest(id: string): Promise<ActionState> {
     to: b.email,
     name: b.parent_name ?? "",
     ...text,
-    // Saite uz atsauksmes formu mājaslapā; pēc tās nosūtīšanas — poga "Iekopēt arī Google"
-    url: absoluteUrl("/atsauksmes#rakstit"),
+    // Saite uzreiz uz Google atsauksmes logu
+    url: reviewUrl(contact),
     replyTo: contact.emailPrivate,
     logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
     footer: { address: `${contact.address}, ${contact.city}`, phone: contact.phonePrivate, email: contact.emailPrivate, site: SITE_URL },
@@ -347,6 +347,13 @@ export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<
   if (!b) return { error: "Pieteikums nav atrasts." };
   if (b.status !== "Apstiprināta") return { error: "Kalendārā var ielikt tikai apstiprinātas rezervācijas." };
 
+  if (!b.event_date) return { error: "Pieteikumam nav datuma." };
+  const ok = await pushToGoogle(db, b, pickHosts(hosts));
+  return ok ? { ok: true } : { error: "Neizdevās ielikt Google kalendārā. Pārbaudiet, vai Google kalendārs ir savienots, un mēģiniet vēlreiz." };
+}
+
+/** Ieliek (vai atjauno) rezervācijas notikumu savienotajā Google kalendārā un nosūta ielūgumus visiem viesiem */
+async function pushToGoogle(db: Awaited<ReturnType<typeof requireAdmin>>["db"], b: Booking, hosts: string[] = []): Promise<boolean> {
   const isBusiness = b.inquiry_type === "business";
   const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
   const slug = b.service_slug || b.program || "";
@@ -354,8 +361,25 @@ export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<
   const inVenue = !isBusiness && atStudio(b.location);
   const costs = isBusiness ? null : bookingCosts(b, service, bookingPrices(settings));
   const event = calendarEvent(b, service?.title ?? (slug || (inVenue ? "Telpu noma" : "Pieteikums")), costs);
-  if (!event) return { error: "Pieteikumam nav datuma." };
+  if (!event) return false;
+  return upsertGoogleEvent(db, b.id, event, [...event.guests, ...hosts]);
+}
 
-  const ok = await upsertGoogleEvent(db, b.id, event, [...event.guests, ...pickHosts(hosts)]);
-  return ok ? { ok: true } : { error: "Neizdevās ielikt Google kalendārā. Pārbaudiet, vai Google kalendārs ir savienots, un mēģiniet vēlreiz." };
+/**
+ * Poga "Nosūtīt ielūgumus vēlreiz" — visas apstiprinātās rezervācijas no šodienas uz priekšu ieliek (vai atjauno)
+ * Google kalendārā, un visi viesi (Kristīne, telpu kopēja u. c.) saņem ielūgumu vēlreiz. Klientiem nekas netiek sūtīts.
+ * Google kalendārā ar roku pievienotie viesi (piem. animatores) saglabājas.
+ */
+export async function resendAllToGoogle(): Promise<{ error?: string; done?: number; failed?: number }> {
+  const { db } = await requireAdmin();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await db.from("bookings").select("*").eq("status", "Apstiprināta").gte("event_date", today).order("event_date");
+  if (error) return { error: error.message };
+  let done = 0;
+  let failed = 0;
+  for (const b of (data ?? []) as Booking[]) {
+    if (await pushToGoogle(db, b)) done++;
+    else failed++;
+  }
+  return { done, failed };
 }

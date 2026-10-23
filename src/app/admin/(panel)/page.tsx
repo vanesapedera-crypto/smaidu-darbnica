@@ -10,8 +10,7 @@ import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/Client
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import { googleConnection } from "@/lib/google-calendar";
-import { reviewKind, reviewMessageText } from "@/lib/review";
-import { absoluteUrl } from "@/lib/seo";
+import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
 import TimeSelect from "@/components/site/TimeSelect";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
@@ -19,6 +18,8 @@ import { saveBookingDetails, saveBookingNotes } from "../actions";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Pieteikumi" };
+// Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
+export const maxDuration = 120;
 
 type Props = { searchParams: Promise<{ tips?: string; statuss?: string; q?: string; google?: string }> };
 
@@ -204,7 +205,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                         id={b.id}
                         hasEmail={Boolean(b.email)}
                         phoneDigits={phoneDigits(b.phone)}
-                        message={reviewMessageText(reviewKind(b), absoluteUrl("/atsauksmes#rakstit"))}
+                        message={reviewMessageText(reviewKind(b), reviewUrl(settings.contact))}
                         about={reviewKind(b) === "venue" ? "par telpām" : "par animatoriem un programmu"}
                         requestedAt={b.review_requested_at ?? null}
                         fallbackUrl={!settings.contact.googleReviewUrl?.trim()}

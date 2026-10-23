@@ -74,7 +74,7 @@ export default function ReviewRequest({
       )}
       {fallbackUrl && (
         <p className="mt-2 text-xs text-ink-soft">
-          Ziņa ved uz atsauksmes formu mājaslapā (/atsauksmes), kur ir arī poga “Iekopēt arī Google”.
+          Ziņa ved uzreiz uz Smaidu Darbnīcas Google atsauksmes logu.
         </p>
       )}
     </div>
