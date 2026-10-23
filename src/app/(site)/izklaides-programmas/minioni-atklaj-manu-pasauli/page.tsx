@@ -49,7 +49,7 @@ export default async function MinionsShowPage() {
   const [quote, ...closing] = program.suitableFor;
   const facts = [
     { label: "Izrādes ilgums", value: program.duration },
-    price !== null && { label: "Samaksa", value: `${eur(price)} no bērna` },
+    price !== null && { label: "Samaksa", value: `${eur(price)} + PVN no bērna` },
   ].filter(Boolean) as { label: string; value: string }[];
 
   return (

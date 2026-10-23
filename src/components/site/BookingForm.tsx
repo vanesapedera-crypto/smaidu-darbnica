@@ -7,6 +7,7 @@ import { Car, CircleCheck, Clock, DoorOpen, LoaderCircle, MapPin, Send } from "l
 import {
   FULLY_BOOKED_TEXT,
   allowedDates,
+  programPlusVat,
   DAY_FULL_TEXT,
   WINDOW_TAKEN_TEXT,
   dayRuleLines,
@@ -199,8 +200,8 @@ export default function BookingForm({
   ]
     .filter(Boolean)
     .join(" ");
-  // Cena bez PVN — rāda kā "150 € + PVN" (iestādes formā)
-  const vat = institution && institution.plusVat !== false ? " + PVN" : "";
+  // Izklaides programmu cenas ir bez PVN — rāda kā "150 € + PVN" (PVN netiek pieskaitīts)
+  const vat = programPlusVat(form.program) ? " + PVN" : "";
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant =
@@ -461,7 +462,7 @@ export default function BookingForm({
                 {programs.map((p) => (
                   <option key={p.slug} value={p.slug}>
                     {p.title}
-                    {fromPrice(p.pricing) !== null ? ` — no ${fromPrice(p.pricing)} €` : ""}
+                    {fromPrice(p.pricing) !== null ? ` — no ${fromPrice(p.pricing)} €${programPlusVat(p.slug) ? " + PVN" : ""}` : ""}
                   </option>
                 ))}
               </select>
@@ -528,7 +529,7 @@ export default function BookingForm({
                       {g.options.map((o) => (
                         <div key={o.label} className="flex justify-between gap-3">
                           <dt className="text-ink-soft">{o.label}</dt>
-                          <dd className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : eur(o.price)}</dd>
+                          <dd className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : `${eur(o.price)}${vat}`}</dd>
                         </div>
                       ))}
                     </dl>
@@ -1081,7 +1082,7 @@ export default function BookingForm({
             ) : (
               <p className="mt-3 text-sm leading-6 text-white/60">Izvēlieties programmu un datumu — šeit parādīsies izmaksas.</p>
             )}
-            {vat && hasCosts && <p className="mt-3 text-sm text-white/60">{VAT_NOTE}</p>}
+            {program && vat && hasCosts && <p className="mt-3 text-sm text-white/60">{VAT_NOTE}</p>}
             {travelling && !travelQuote && hasCosts && (
               <p className="mt-3 text-sm text-white/60">Ievadiet {institution ? "adresi" : "ballītes adresi"}, lai aprēķinātu ceļa izdevumus.</p>
             )}

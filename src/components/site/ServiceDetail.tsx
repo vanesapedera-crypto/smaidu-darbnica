@@ -241,7 +241,7 @@ export default function ServiceDetail({
                             <dt className="text-white/80">{o.label}</dt>
                             <dd className="font-extrabold whitespace-nowrap">{o.price === null
                               ? "Pēc vienošanās"
-                              : `${Number.isInteger(o.price) ? o.price : o.price.toFixed(2).replace(".", ",")} €`}</dd>
+                              : `${Number.isInteger(o.price) ? o.price : o.price.toFixed(2).replace(".", ",")} €${isBusiness ? "" : " + PVN"}`}</dd>
                           </div>
                         ))}
                       </dl>

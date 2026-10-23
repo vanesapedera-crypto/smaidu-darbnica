@@ -1,4 +1,4 @@
-import { atStudio, isInstitutionProgram, sameVariant } from "@/lib/bookings";
+import { atStudio, isInstitutionProgram, programPlusVat, sameVariant } from "@/lib/bookings";
 import type { PriceGroup, SiteSettings } from "@/lib/content/types";
 
 /**
@@ -377,7 +377,8 @@ export function autoCosts(b: CostBooking, program: CostProgram | undefined, pric
       label: variant ?? program.title,
       amount: estimateProgramPrice(program.pricing, children, travelling, variant),
       note: tierNote(program.pricing, children, travelling, variant),
-      ...(institution ? { plusVat: true } : {}),
+      // Izklaides programmu cenas ir bez PVN — rāda "+ PVN" (PVN netiek pieskaitīts); izņēmumi — NO_VAT_PROGRAMS
+      ...(programPlusVat(program.slug) ? { plusVat: true } : {}),
     });
     // Papildu iespējas forma pieraksta ziņojuma rindā "Papildu iespējas: …" — atrodam tās pēc nosaukuma
     const chosen = b.message?.match(/Papildu iespējas:\s*(.+)/)?.[1] ?? "";

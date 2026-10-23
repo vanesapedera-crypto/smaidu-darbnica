@@ -57,6 +57,10 @@ export const needsHeadcount = (program: string | null | undefined) => Boolean(pr
 export const INSTITUTION_PROGRAMS = ["ziemassvetki-bernudarza"];
 export const isInstitutionProgram = (program: string | null | undefined) => INSTITUTION_PROGRAMS.includes(program ?? "");
 
+/** Izklaides programmu cenām pierakstām "+ PVN" (PVN netiek pieskaitīts) — izņemot šīs programmas */
+export const NO_VAT_PROGRAMS = ["ziemassvetki-dobele"];
+export const programPlusVat = (program: string | null | undefined) => !NO_VAT_PROGRAMS.includes(program ?? "");
+
 /**
  * Programmas, kas notiek noteiktā vietā (ne mūsu telpās, ne klienta adresē) — piem. "Ziemassvētki “Pilsētas mājā” Dobelē".
  * `name` — norises vieta (glabājas pieteikuma laukā `location`), `address` — kalendāram un apstiprinājumam.
