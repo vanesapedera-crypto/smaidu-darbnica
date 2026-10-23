@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   images: {
+    // Vercel bezmaksas plānā ir 5000 attēlu pārveidojumu mēnesī — pārsniedzot, mājaslapa tiek apturēta.
+    // Mūsu attēli jau ir samazināti WebP (public/media; augšupielādētie — pārlūkā pirms augšupielādes),
+    // tāpēc tos rāda tieši, bez Vercel attēlu optimizācijas.
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75, 85],
     deviceSizes: [640, 828, 1080, 1280, 1600, 1920, 2400],
