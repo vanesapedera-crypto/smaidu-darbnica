@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { Building2, Search, User } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
-import { BOOKING_STATUSES, FIXED_VENUES, phoneDigits, type Booking } from "@/lib/bookings";
+import { FIXED_VENUES, phoneDigits, type Booking } from "@/lib/bookings";
 import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { VAT_NOTE, amountText, bookingCosts, bookingPrices, costsToText, eur, parseCostOverride, priceVariants } from "@/lib/pricing";
@@ -18,29 +17,28 @@ import { saveBookingDetails, saveBookingNotes } from "../actions";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Pieteikumi" };
+
+/** Pieteikuma veids sarakstā: uzņēmumiem, izbraukums, telpu noma (ar vai bez programmas) vai norises vieta */
+function kindLabel(b: Booking): string {
+  if (b.inquiry_type === "business") return "Uzņēmumiem";
+  if (b.location === "Izbraukums") return "Izbraukums";
+  if (b.location && b.location !== "Smaidu Darbnīcā") return b.location;
+  return b.program ? "Telpu noma + programma" : "Telpu noma";
+}
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
 export const maxDuration = 60;
 
-type Props = { searchParams: Promise<{ tips?: string; statuss?: string; q?: string; google?: string }> };
-
-const TYPES = [
-  { value: "", label: "Visi" },
-  { value: "business", label: "Uzņēmumi" },
-  { value: "private", label: "Privātpersonas" },
-];
+type Props = { searchParams: Promise<{ q?: string; google?: string }> };
 
 /**
  * Pieteikumu saraksts — paplašināta sākotnējā paneļa versija:
- * tā pati `bookings` tabula un statusa maiņa, plus filtri, meklēšana un detaļas.
+ * visi pieteikumi vienā sarakstā (uzņēmumi, telpu noma, izbraukumi), meklēšana un detaļas.
  */
 export default async function BookingsPage({ searchParams }: Props) {
   const { db } = await requireAdmin();
-  const { tips = "", statuss = "", q = "", google } = await searchParams;
+  const { q = "", google } = await searchParams;
 
   let query = db.from("bookings").select("*").order("event_date", { ascending: true, nullsFirst: false });
-  if (tips === "business") query = query.eq("inquiry_type", "business");
-  if (tips === "private") query = query.or("inquiry_type.eq.private,inquiry_type.is.null");
-  if (BOOKING_STATUSES.includes(statuss as never)) query = query.eq("status", statuss);
   if (q.trim()) {
     // Meklē vārdā, uzņēmumā, telefonā un e-pastā (komati un iekavas tiek izņemti, lai nesabojātu filtru)
     const term = q.trim().replace(/[,()%*]/g, " ");
@@ -71,70 +69,12 @@ export default async function BookingsPage({ searchParams }: Props) {
   ]);
   const label = (slug: string | null) => (slug ? (serviceTitle.get(slug) ?? slug) : "—");
 
-  const link = (params: Record<string, string>) => {
-    const sp = new URLSearchParams({ tips, statuss, q, ...params });
-    for (const [k, v] of [...sp.entries()]) if (!v) sp.delete(k);
-    return `/admin${sp.size ? `?${sp}` : ""}`;
-  };
 
-  return (
-    <>
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold md:text-3xl">Pieteikumi</h1>
-          <p className="mt-1 text-sm text-ink-soft">Uzņēmumu pieprasījumi un bērnu ballīšu rezervācijas no mājaslapas formām.</p>
-        </div>
-      </header>
+  // Aktīvie (jauni un apstiprinātie) un atceltie pieteikumi — atsevišķi
+  const active = bookings.filter((b) => b.status !== "Atcelta");
+  const cancelled = bookings.filter((b) => b.status === "Atcelta");
 
-      <GoogleCalendarCard db={db} message={google} />
-
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {TYPES.map((t) => (
-            <Link
-              key={t.value}
-              href={link({ tips: t.value })}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-bold",
-                tips === t.value ? "bg-ink text-white" : "bg-white ring-1 ring-line hover:ring-ink",
-              )}
-            >
-              {t.label}
-            </Link>
-          ))}
-          <span className="mx-1 hidden w-px bg-line sm:block" />
-          {["", ...BOOKING_STATUSES].map((s) => (
-            <Link
-              key={s || "all"}
-              href={link({ statuss: s })}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-bold",
-                statuss === s ? "bg-brand" : "bg-white ring-1 ring-line hover:ring-ink",
-              )}
-            >
-              {s || "Visi statusi"}
-            </Link>
-          ))}
-        </div>
-        <form className="flex gap-2" action="/admin">
-          {tips && <input type="hidden" name="tips" value={tips} />}
-          {statuss && <input type="hidden" name="statuss" value={statuss} />}
-          <input name="q" defaultValue={q} placeholder="Meklēt vārdu, uzņēmumu, telefonu…" className={cn(adminInput, "w-64")} />
-          <button type="submit" className={adminSecondary} aria-label="Meklēt">
-            <Search className="size-4" />
-          </button>
-        </form>
-      </div>
-
-      {error ? (
-        <p className="mt-8 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive">
-          Kļūda, nolasot pieteikumus: {error.message}. Ja tas ir pirmais palaišanas reizes, pārliecinieties, ka datubāzes migrācija ir palaista.
-        </p>
-      ) : bookings.length === 0 ? (
-        <p className="mt-8 rounded-2xl bg-white p-10 text-center text-ink-soft ring-1 ring-line">Pieteikumu nav.</p>
-      ) : (
-        <ul className="mt-6 space-y-3">
-          {bookings.map((b) => (
+  const renderRow = (b: Booking) => (
             <li key={b.id} className="relative rounded-2xl bg-white ring-1 ring-line">
               <details className="group">
                 <summary className="cursor-pointer list-none p-4 pr-4 pb-16 sm:p-5 sm:pr-48 [&::-webkit-details-marker]:hidden">
@@ -150,7 +90,13 @@ export default async function BookingsPage({ searchParams }: Props) {
                         {b.inquiry_type === "business" ? <Building2 className="size-4" /> : <User className="size-4" />}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate font-bold">{b.company_name || b.parent_name || "—"}</p>
+                        <p className="truncate font-bold">
+                          {b.company_name || b.parent_name || "—"}
+                          {/* Veids — lai vienā sarakstā uzreiz redzams, kas tas ir */}
+                          <span className="ml-2 rounded-full bg-surface px-2 py-0.5 align-middle text-xs font-semibold text-ink-soft">
+                            {kindLabel(b)}
+                          </span>
+                        </p>
                         <p className="truncate text-sm text-ink-soft">
                           {b.company_name ? b.parent_name : b.phone}
                         </p>
@@ -402,8 +348,48 @@ export default async function BookingsPage({ searchParams }: Props) {
                 />
               </div>
             </li>
-          ))}
-        </ul>
+  );
+
+  return (
+    <>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold md:text-3xl">Pieteikumi</h1>
+          <p className="mt-1 text-sm text-ink-soft">Uzņēmumu pieprasījumi un bērnu ballīšu rezervācijas no mājaslapas formām.</p>
+        </div>
+      </header>
+
+      <GoogleCalendarCard db={db} message={google} />
+
+      <div className="mt-6 flex justify-end">
+        <form className="flex gap-2" action="/admin">
+          <input name="q" defaultValue={q} placeholder="Meklēt vārdu, uzņēmumu, telefonu…" className={cn(adminInput, "w-64 max-w-full")} />
+          <button type="submit" className={adminSecondary} aria-label="Meklēt">
+            <Search className="size-4" />
+          </button>
+        </form>
+      </div>
+
+      {error ? (
+        <p className="mt-8 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive">
+          Kļūda, nolasot pieteikumus: {error.message}. Ja tas ir pirmais palaišanas reizes, pārliecinieties, ka datubāzes migrācija ir palaista.
+        </p>
+      ) : bookings.length === 0 ? (
+        <p className="mt-8 rounded-2xl bg-white p-10 text-center text-ink-soft ring-1 ring-line">Pieteikumu nav.</p>
+      ) : (
+        <>
+          <ul className="mt-6 space-y-3">{active.map(renderRow)}</ul>
+          {active.length === 0 && (
+            <p className="mt-6 rounded-2xl bg-white p-10 text-center text-ink-soft ring-1 ring-line">Aktīvu pieteikumu nav.</p>
+          )}
+          {/* Atceltie — atsevišķi, sakļauti saraksta beigās */}
+          {cancelled.length > 0 && (
+            <details className="mt-10">
+              <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Atceltie pieteikumi ({cancelled.length})</summary>
+              <ul className="mt-4 space-y-3 opacity-80">{cancelled.map(renderRow)}</ul>
+            </details>
+          )}
+        </>
       )}
     </>
   );
