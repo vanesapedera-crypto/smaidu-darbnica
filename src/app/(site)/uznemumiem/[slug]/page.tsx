@@ -32,7 +32,8 @@ export default async function ServicePage({ params }: Props) {
   const [service, settings] = await Promise.all([getService("business", slug), getSettings()]);
   if (!service) notFound();
 
-  const images = await getAlbumImages(service.albums, 12);
+  // Galerijas albumi + albums ar pakalpojuma adresi (attēli, kas pievienoti panelī pie pakalpojuma)
+  const images = await getAlbumImages([...new Set([...service.albums, service.slug])], 12);
 
   return (
     <ServiceDetail

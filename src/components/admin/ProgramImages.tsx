@@ -12,7 +12,7 @@ type Img = { id?: string; src: string };
  * Programmas attēli (lapas sadaļa "Foto"): augšupielāde uzreiz vairākiem attēliem un noņemšana.
  * Attēli glabājas galerijā albumā ar programmas adresi (sk. addProgramImages).
  */
-export default function ProgramImages({ slug, title, images }: { slug: string; title: string; images: Img[] }) {
+export default function ProgramImages({ slug, title, images, business = false }: { slug: string; title: string; images: Img[]; business?: boolean }) {
   const router = useRouter();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState("");
@@ -34,7 +34,7 @@ export default function ProgramImages({ slug, title, images }: { slug: string; t
       setProgress((p) => p && { ...p, done: p.done + 1 });
     }
     if (uploaded.length) {
-      const result = await addProgramImages(slug, uploaded, title);
+      const result = await addProgramImages(slug, uploaded, title, business);
       if (result?.error) setError(result.error);
     }
     setProgress(null);
@@ -53,9 +53,9 @@ export default function ProgramImages({ slug, title, images }: { slug: string; t
 
   return (
     <div className="rounded-2xl bg-white p-5 ring-1 ring-line sm:p-7">
-      <h2 className="text-base font-extrabold">Programmas attēli</h2>
+      <h2 className="text-base font-extrabold">{business ? "Pakalpojuma attēli" : "Programmas attēli"}</h2>
       <p className="mt-1 text-sm leading-6 text-ink-soft">
-        Rāda programmas lapā sadaļā “Foto”. Var izvēlēties vairākus attēlus uzreiz — tie tiek samazināti automātiski.
+        Rāda šīs lapas fotogalerijā. Var izvēlēties vairākus attēlus uzreiz — tie tiek samazināti automātiski.
       </p>
 
       {images.length > 0 ? (

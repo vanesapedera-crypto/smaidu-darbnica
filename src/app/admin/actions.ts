@@ -255,7 +255,7 @@ const programCategory = (slug: string) => (slug.includes("ziemassvetki") ? "ziem
  * un programmas lapa tos rāda sadaļā "Foto". Ja albumā līdz šim bija tikai projekta bildes (nav datubāzē),
  * tās vispirms ieliek datubāzē — citādi pēc pirmās augšupielādes tās lapā vairs nerādītos.
  */
-export async function addProgramImages(slug: string, images: { src: string; width: number; height: number }[], title: string) {
+export async function addProgramImages(slug: string, images: { src: string; width: number; height: number }[], title: string, business = false) {
   const { db } = await requireAdmin();
   if (!slug) return { error: "Programmai nav adreses (slug)." };
   const { count } = await db.from("gallery_images").select("id", { count: "exact", head: true }).eq("album", slug);
@@ -269,7 +269,7 @@ export async function addProgramImages(slug: string, images: { src: string; widt
     ...img,
     alt: `${title} — Smaidu Darbnīca`,
     album: slug,
-    category: programCategory(slug),
+    category: business ? "uznemumu-pasakumi" : programCategory(slug),
     sort: start + i,
     published: true,
   }));

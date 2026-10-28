@@ -54,7 +54,7 @@ export default async function EntityEditPage({ params }: Props) {
 
   // Izklaides programmām — attēlu bloks (albums ar programmas adresi; ja datubāzē nav — projekta bildes, tikai apskatei)
   let programImages: { id?: string; src: string }[] | null = null;
-  if ((key === "pakalpojumi" || key === "programmas") && !isNew && row.audience === "private" && row.slug) {
+  if ((key === "pakalpojumi" || key === "programmas") && !isNew && row.slug) {
     const slug = String(row.slug);
     const { data: imgs } = await db.from("gallery_images").select("id, src").eq("album", slug).order("sort").order("created_at");
     programImages = imgs?.length ? imgs : manifestGallery().filter((g) => g.album === slug).map((g) => ({ src: g.src }));
@@ -87,7 +87,7 @@ export default async function EntityEditPage({ params }: Props) {
         />
         {programImages && (
           <div className="mt-6">
-            <ProgramImages slug={String(row.slug)} title={String(row.title ?? "")} images={programImages} />
+            <ProgramImages slug={String(row.slug)} title={String(row.title ?? "")} images={programImages} business={row.audience === "business"} />
           </div>
         )}
       </div>

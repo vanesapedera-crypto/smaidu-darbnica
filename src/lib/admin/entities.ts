@@ -113,9 +113,6 @@ export const entities: Record<EntityKey, EntityConfig> = {
       },
       { name: "pricing_note", label: "Piezīme par cenu", type: "textarea", rows: 2, wide: true, help: "Ballītēm: ja tukšs, rāda piezīmi par izbraukuma izmaksām (cenas — sadaļā “Izklaides programmas”)." },
 
-      { name: "h-gallery", label: "Galerija", type: "heading" },
-      { name: "albums", label: "Galerijas albumi šai lapai", type: "albums", wide: true, options: albumOptions },
-
       { name: "h-seo", label: "Meklētājiem (SEO)", type: "heading" },
       { name: "seo_title", label: "SEO virsraksts", type: "text", help: "Ja tukšs — tiek izmantots nosaukums" },
       { name: "seo_description", label: "SEO apraksts", type: "textarea", rows: 2, help: "Ja tukšs — tiek izmantots īsais apraksts" },
