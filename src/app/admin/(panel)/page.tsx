@@ -70,9 +70,13 @@ export default async function BookingsPage({ searchParams }: Props) {
   const label = (slug: string | null) => (slug ? (serviceTitle.get(slug) ?? slug) : "—");
 
 
-  // Aktīvie (jauni un apstiprinātie) un atceltie pieteikumi — atsevišķi
-  const active = bookings.filter((b) => b.status !== "Atcelta");
+  // Sarakstā augšā — tikai gaidāmie (šodien un vēlāk, vai bez datuma); notikušie un atceltie — atsevišķi, sakļauti
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" }); // YYYY-MM-DD
+  const isPast = (b: Booking) => Boolean(b.event_date && b.event_date.slice(0, 10) < today);
   const cancelled = bookings.filter((b) => b.status === "Atcelta");
+  const active = bookings.filter((b) => b.status !== "Atcelta" && !isPast(b));
+  // Notikušie — jaunākie augšā
+  const past = bookings.filter((b) => b.status !== "Atcelta" && isPast(b)).reverse();
 
   const renderRow = (b: Booking) => (
             <li key={b.id} className="relative rounded-2xl bg-white ring-1 ring-line">
@@ -380,11 +384,18 @@ export default async function BookingsPage({ searchParams }: Props) {
         <>
           <ul className="mt-6 space-y-3">{active.map(renderRow)}</ul>
           {active.length === 0 && (
-            <p className="mt-6 rounded-2xl bg-white p-10 text-center text-ink-soft ring-1 ring-line">Aktīvu pieteikumu nav.</p>
+            <p className="mt-6 rounded-2xl bg-white p-10 text-center text-ink-soft ring-1 ring-line">Gaidāmu pieteikumu nav.</p>
+          )}
+          {/* Notikušie (datums jau pagājis) — atsevišķi, sakļauti */}
+          {past.length > 0 && (
+            <details className="mt-10">
+              <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Notikušie pieteikumi ({past.length})</summary>
+              <ul className="mt-4 space-y-3">{past.map(renderRow)}</ul>
+            </details>
           )}
           {/* Atceltie — atsevišķi, sakļauti saraksta beigās */}
           {cancelled.length > 0 && (
-            <details className="mt-10">
+            <details className="mt-4">
               <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Atceltie pieteikumi ({cancelled.length})</summary>
               <ul className="mt-4 space-y-3 opacity-80">{cancelled.map(renderRow)}</ul>
             </details>
