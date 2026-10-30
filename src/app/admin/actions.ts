@@ -290,6 +290,36 @@ export async function removeProgramImage(id: string) {
   return {};
 }
 
+/** Noņem citu galerijas albumu no pakalpojuma lapas (pašas bildes galerijā paliek) */
+export async function removeServiceAlbum(serviceId: string, album: string) {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("services").select("albums").eq("id", serviceId).maybeSingle();
+  const albums = Array.isArray(data?.albums) ? (data.albums as string[]) : [];
+  const { error } = await db.from("services").update({ albums: albums.filter((a) => a !== album) }).eq("id", serviceId);
+  if (error) return { error: error.message };
+  refreshSite();
+  revalidatePath("/admin", "layout");
+  return {};
+}
+
+/** Uzņēmumu pakalpojuma lapas bilžu režģis (Iestatījumi → Uzņēmumiem → Pakalpojumu lapu bildes) */
+export async function setServicePhotos(slug: string, change: { add?: string[]; remove?: string }) {
+  const { db } = await requireAdmin();
+  const settings = await getSettings();
+  const all = { ...settings.business.servicePhotos };
+  let list = [...(all[slug] ?? [])];
+  if (change.remove) list = list.filter((s) => s !== change.remove);
+  if (change.add) list = [...list, ...change.add];
+  all[slug] = list;
+  const { data } = await db.from("site_settings").select("value").eq("key", "business").maybeSingle();
+  const value = { ...((data?.value as Record<string, unknown>) ?? {}), servicePhotos: all };
+  const { error } = await db.from("site_settings").upsert({ key: "business", value });
+  if (error) return { error: error.message };
+  refreshSite();
+  revalidatePath("/admin", "layout");
+  return {};
+}
+
 /* ------------------------------ Iestatījumi ------------------------------ */
 
 export async function saveSettings(key: SettingsKey, _: ActionState, form: FormData): Promise<ActionState> {

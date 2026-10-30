@@ -36,6 +36,10 @@ export type FieldDef = {
   options?: { value: string; label: string }[];
   /** Laukam "table": objekta lauku nosaukumi kolonnu secībā, piem. ["name", "image"] */
   columns?: string[];
+  /** Laukam "table": kolonnu nosaukumi formā (ja atšķiras no noklusējuma) */
+  columnLabels?: string[];
+  /** Laukam "lines": katra rinda ir bilde — rāda kā bilžu režģi */
+  images?: boolean;
 };
 
 /** Vērtība pēc ceļa ar punktiem, piem. "servicePhotos.mazulu-zona" */

@@ -6,6 +6,7 @@ import type { FieldDef } from "@/lib/admin/fields";
 import type { ActionState } from "@/app/admin/actions";
 import { cn } from "@/lib/utils";
 import ImageField from "./ImageField";
+import VisualRows, { visualColumns } from "./VisualRows";
 import { adminInput, adminPrimary } from "./styles";
 
 /**
@@ -54,7 +55,7 @@ export default function AdminForm({
                 <FieldInput field={f} value={values[f.name]} folder={folder} />
               </>
             )}
-            {f.help && <p className="text-xs leading-5 text-ink-soft">{f.help}</p>}
+            {f.help && !visualColumns(f) && <p className="text-xs leading-5 text-ink-soft">{f.help}</p>}
           </div>
           ),
         )}
@@ -78,6 +79,8 @@ export default function AdminForm({
 
 function FieldInput({ field, value, folder }: { field: FieldDef; value: string | string[] | boolean | undefined; folder: string }) {
   const text = typeof value === "string" ? value : "";
+  const cols = visualColumns(field);
+  if (cols) return <VisualRows field={field} cols={cols} defaultValue={text} folder={folder} />;
 
   switch (field.type) {
     case "image":

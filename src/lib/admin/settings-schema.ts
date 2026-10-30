@@ -5,8 +5,6 @@ import type { FieldDef } from "./fields";
 
 export type SettingsKey = keyof SiteSettings;
 
-const IMG_HELP = "Attēla adresi var nokopēt sadaļā “Foto” vai augšupielādēt jaunu attēlu turpat.";
-
 export const settingsSchemas: Record<SettingsKey, { title: string; description: string; fields: FieldDef[] }> = {
   home: {
     title: "Sākums",
@@ -45,7 +43,7 @@ export const settingsSchemas: Record<SettingsKey, { title: string; description: 
         type: "photos",
         rows: 2,
         wide: true,
-        help: "Pirmajā rindā: attēla adrese | paraksts. " + IMG_HELP,
+        help: "Pirmā bilde ar parakstu.",
       },
       {
         name: "xmasCards",
@@ -91,13 +89,13 @@ export const settingsSchemas: Record<SettingsKey, { title: string; description: 
         help: "Katrā rindā viena spēle: Nosaukums | Attēla adrese. Bez attēla spēle rādās kā kartīte ar nosaukumu.",
       },
 
-      { name: "h-photos", label: "Pakalpojumu lapu bildes", type: "heading", help: "Bilžu režģis katra pakalpojuma lapā. Viena attēla adrese rindā. " + IMG_HELP },
-      { name: "servicePhotos.radosas-darbnicas", label: "Radošās darbnīcas", type: "lines", rows: 6, wide: true },
-      { name: "servicePhotos.pasakumu-organizesana", label: "Pasākumu vadīšana un organizēšana", type: "lines", rows: 6, wide: true },
-      { name: "servicePhotos.mazulu-zona", label: "Mazuļu zona", type: "lines", rows: 6, wide: true },
-      { name: "servicePhotos.sejas-apgleznosana", label: "Sejas apgleznošana", type: "lines", rows: 6, wide: true },
-      { name: "servicePhotos.putu-ballite", label: "Putu ballīte", type: "lines", rows: 6, wide: true },
-      { name: "servicePhotos.sporta-speles", label: "Sporta spēles uzņēmumiem", type: "lines", rows: 6, wide: true },
+      { name: "h-photos", label: "Pakalpojumu lapu bildes", type: "heading", help: "Bilžu režģis katra pakalpojuma lapā." },
+      { name: "servicePhotos.radosas-darbnicas", label: "Radošās darbnīcas", type: "lines", images: true, rows: 6, wide: true },
+      { name: "servicePhotos.pasakumu-organizesana", label: "Pasākumu vadīšana un organizēšana", type: "lines", images: true, rows: 6, wide: true },
+      { name: "servicePhotos.mazulu-zona", label: "Mazuļu zona", type: "lines", images: true, rows: 6, wide: true },
+      { name: "servicePhotos.sejas-apgleznosana", label: "Sejas apgleznošana", type: "lines", images: true, rows: 6, wide: true },
+      { name: "servicePhotos.putu-ballite", label: "Putu ballīte", type: "lines", images: true, rows: 6, wide: true },
+      { name: "servicePhotos.sporta-speles", label: "Sporta spēles uzņēmumiem", type: "lines", images: true, rows: 6, wide: true },
     ],
   },
   shows: {
@@ -122,7 +120,7 @@ export const settingsSchemas: Record<SettingsKey, { title: string; description: 
       },
 
       { name: "h-photos", label: "Bilžu karuselis lapas apakšā", type: "heading" },
-      { name: "photos", label: "Bildes", type: "lines", rows: 10, wide: true, help: "Viena attēla adrese rindā. " + IMG_HELP },
+      { name: "photos", label: "Bildes", type: "lines", images: true, rows: 10, wide: true },
     ],
   },
   programs: {
@@ -147,6 +145,7 @@ export const settingsSchemas: Record<SettingsKey, { title: string; description: 
         label: "Tēli",
         type: "table",
         columns: ["name", "image"],
+        columnLabels: ["Vārds", "Bilde"],
         rows: 10,
         wide: true,
         help: "Katrā rindā viens tēls: Vārds | Attēla adrese.",

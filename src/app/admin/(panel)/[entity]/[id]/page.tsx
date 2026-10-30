@@ -10,7 +10,8 @@ import AdminForm from "@/components/admin/AdminForm";
 import DeleteButton from "@/components/admin/DeleteButton";
 import PageHeader from "@/components/admin/PageHeader";
 import ProgramImages from "@/components/admin/ProgramImages";
-import { manifestGallery } from "@/lib/content/media";
+import { albumTitle, manifestGallery } from "@/lib/content/media";
+import { getSettings } from "@/lib/content/queries";
 import { adminSecondary } from "@/components/admin/styles";
 
 type Props = { params: Promise<{ entity: string; id: string }> };
@@ -53,11 +54,27 @@ export default async function EntityEditPage({ params }: Props) {
       : null;
 
   // Izklaides programmām — attēlu bloks (albums ar programmas adresi; ja datubāzē nav — projekta bildes, tikai apskatei)
+  // + citi lapai pievienotie albumi un (uzņēmumiem) bilžu režģis no iestatījumiem — tieši tas, ko rāda publiskā lapa
   let programImages: { id?: string; src: string }[] | null = null;
+  let otherAlbums: { album: string; title: string; images: string[] }[] = [];
+  let gridPhotos: string[] | null = null;
   if ((key === "pakalpojumi" || key === "programmas") && !isNew && row.slug) {
     const slug = String(row.slug);
-    const { data: imgs } = await db.from("gallery_images").select("id, src").eq("album", slug).order("sort").order("created_at");
-    programImages = imgs?.length ? imgs : manifestGallery().filter((g) => g.album === slug).map((g) => ({ src: g.src }));
+    const albums = (Array.isArray(row.albums) ? (row.albums as string[]) : []).filter((a) => a !== slug);
+    const { data: imgs } = await db
+      .from("gallery_images")
+      .select("id, src, album")
+      .in("album", [slug, ...albums])
+      .order("sort")
+      .order("created_at");
+    const local = manifestGallery();
+    const pick = (album: string) => {
+      const stored = (imgs ?? []).filter((g) => g.album === album);
+      return stored.length ? stored.map((g) => ({ id: g.id as string, src: g.src as string })) : local.filter((g) => g.album === album).map((g) => ({ src: g.src }));
+    };
+    programImages = pick(slug);
+    otherAlbums = albums.map((a) => ({ album: a, title: albumTitle(a) || a, images: pick(a).map((g) => g.src) }));
+    if (row.audience === "business") gridPhotos = (await getSettings()).business.servicePhotos[slug] ?? [];
   }
 
   return (
@@ -87,7 +104,15 @@ export default async function EntityEditPage({ params }: Props) {
         />
         {programImages && (
           <div className="mt-6">
-            <ProgramImages slug={String(row.slug)} title={String(row.title ?? "")} images={programImages} business={row.audience === "business"} />
+            <ProgramImages
+              serviceId={id}
+              slug={String(row.slug)}
+              title={String(row.title ?? "")}
+              images={programImages}
+              business={row.audience === "business"}
+              otherAlbums={otherAlbums}
+              gridPhotos={gridPhotos}
+            />
           </div>
         )}
       </div>
