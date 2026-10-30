@@ -101,6 +101,7 @@ export default function BookingForm({
   notice,
   venue,
   choice,
+  characters = [],
 }: {
   programs: Program[];
   /** Telpu nomas un izbraukuma cenas no paneļa */
@@ -114,6 +115,8 @@ export default function BookingForm({
   venue?: { name: string; address: string; hours?: number };
   /** Obligāta izvēle, piem. { label: "Gardā aktivitāte", options: ["Virtuļu pagatavošana", "Svētku vafeļu pagatavošana"] } */
   choice?: { label: string; title?: string; options: string[] };
+  /** Programmai "Pārsteiguma tēls" — pieejamie tēli ar bildēm (no paneļa: Iestatījumi → Izklaides programmas → Pārsteiguma tēli) */
+  characters?: { name: string; image: string }[];
 }) {
   // Sākuma stāvoklis: iestādes formā programma un izbraukums ir noteikti jau iepriekš
   const start = {
@@ -137,11 +140,14 @@ export default function BookingForm({
   const [variantChoice, setVariantChoice] = useState("");
   // Obligātā izvēle (piem. virtuļi vai vafeles), ja formai tāda ir
   const [picked, setPicked] = useState("");
+  // Izvēlētais pārsteiguma tēls (tikai programmai "Pārsteiguma tēls")
+  const [character, setCharacter] = useState("");
 
   const inStudio = form.location === LOCATIONS.studio;
   // Izbraukums — klienta adresē (ar ceļa izdevumiem); noteiktā vietā (venue) nav ne telpu nomas, ne ceļa izdevumu
   const travelling = form.location === LOCATIONS.travel;
   const program = programs.find((p) => p.slug === form.program);
+  const showCharacters = program?.slug === "parsteiguma-tels" && characters.length > 0;
   // Bērnu skaits un vecums ir obligāti tikai programmām, kur tas ietekmē cenu (ne telpu nomai vien, ne pārsteiguma tēlam)
   const headcount = needsHeadcount(program?.slug);
   // Programmai pilnībā aizņemtie datumi (sk. FULLY_BOOKED_DATES): rezervēt nevar; zem datuma lauka rāda, kuri tie ir
@@ -305,6 +311,7 @@ export default function BookingForm({
         ? "Izvēlieties izklaides programmu vai “Nebūs nepieciešama”."
         : "Izbraukuma ballītei izvēlieties izklaides programmu.";
     if (choice && !picked) missing.choice = "Izvēlieties vienu no iespējām.";
+    if (showCharacters && !character) missing.character = "Izvēlieties tēlu.";
     if (institution && !form.companyName.trim()) missing.companyName = "Norādiet nosaukumu.";
     if (travelling && !form.address.trim()) missing.address = institution ? "Norādiet adresi." : "Norādiet ballītes adresi.";
     if (slots && (!form.eventDate || !form.eventTime)) missing.eventDate = "Izvēlieties laiku.";
@@ -355,6 +362,7 @@ export default function BookingForm({
             // Programmas variants — pēc tā serveris rēķina izmaksas e-pastam un panelim (sk. bookingCosts)
             variant && `Izvēle: ${variant}`,
             choice && picked && `${choice.label}: ${picked}`,
+            showCharacters && character && `Tēls: ${character}`,
             chosenExtras.length > 0 &&
               `Papildu iespējas: ${chosenExtras.map((x) => `${x.label}${x.price !== null ? ` (${eur(x.price)})` : ""}`).join(", ")}`,
           ]
@@ -374,6 +382,7 @@ export default function BookingForm({
         setExtras([]);
         setVariantChoice("");
         setPicked("");
+        setCharacter("");
         return;
       }
       setErrors(data.errors ?? {});
@@ -575,6 +584,59 @@ export default function BookingForm({
                 {errors.choice && (
                   <p role="alert" className="text-sm font-semibold text-destructive">
                     {errors.choice}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Pārsteiguma tēls — pieejamie tēli ar bildēm, jāizvēlas viens */}
+            {showCharacters && (
+              <div className="space-y-2">
+                <p className="text-sm font-bold" id="character">
+                  Izvēlieties tēlu<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
+                <div role="radiogroup" aria-labelledby="character" className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+                  {characters.map((c) => {
+                    const active = character === c.name;
+                    return (
+                      <label
+                        key={c.name}
+                        className={cn(
+                          "flex cursor-pointer flex-col overflow-hidden rounded-2xl border-2 bg-white transition-colors",
+                          active ? "border-ink ring-3 ring-brand" : "border-line hover:border-ink",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="character"
+                          value={c.name}
+                          checked={active}
+                          onChange={() => {
+                            setCharacter(c.name);
+                            setErrors((er) => ({ ...er, character: "" }));
+                          }}
+                          className="sr-only"
+                        />
+                        <span className="relative aspect-[4/5]">
+                          {c.image && (
+                            <Image
+                              src={c.image}
+                              alt={c.name}
+                              fill
+                              sizes="(min-width: 1024px) 15vw, (min-width: 640px) 22vw, 30vw"
+                              className="object-contain p-2"
+                              unoptimized={!isOptimizable(c.image)}
+                            />
+                          )}
+                        </span>
+                        <span className={cn("px-2 py-2 text-center text-xs font-extrabold uppercase", active && "bg-brand")}>{c.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {errors.character && (
+                  <p role="alert" className="text-sm font-semibold text-destructive">
+                    {errors.character}
                   </p>
                 )}
               </div>
@@ -1050,6 +1112,7 @@ export default function BookingForm({
             {institution && form.companyName.trim() && ticketRow(institution.ticketLabel ?? institution.nameLabel.split(" ")[0], form.companyName.trim())}
             {placeLabel && ticketRow("Vieta", placeLabel)}
             {choice && picked && ticketRow(choice.label, picked)}
+            {showCharacters && character && ticketRow("Tēls", character)}
             {form.childrenCount && ticketRow("Bērnu skaits", form.childrenCount)}
           </dl>
 

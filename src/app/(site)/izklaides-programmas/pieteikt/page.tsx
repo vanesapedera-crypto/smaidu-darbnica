@@ -48,6 +48,7 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
             key={selected}
             defaultProgram={selected}
             prices={bookingPrices(settings)}
+            characters={settings.programs.characters}
             programs={programs.map(({ slug, title, heroImage, pricing, pricingNote, body }) => ({
               slug,
               title,
