@@ -7,7 +7,7 @@ export const metadata = { title: "Pieteikšanās" };
 
 export default async function LoginPage() {
   const member = await getMember();
-  if (member) redirect(homeFor(member.role));
+  if (member) redirect(homeFor(member));
 
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">

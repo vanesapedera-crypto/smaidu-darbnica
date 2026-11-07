@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { requireMember } from "@/lib/auth";
+import { ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
+import { requireSection } from "@/lib/auth";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { bookingCosts, bookingPrices } from "@/lib/pricing";
+import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
+import { timeLabel } from "@/lib/dates";
 import BookingCard, { isTrip, isVenue, matches, stateOf, type Filter } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
 import { adminSecondary } from "@/components/admin/styles";
@@ -25,7 +26,7 @@ const FILTERS: { value: Filter; label: string }[] = [
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 
-type Props = { searchParams: Promise<{ m?: string; f?: string; atceltie?: string }> };
+type Props = { searchParams: Promise<{ m?: string; f?: string; atceltie?: string; r?: string; d?: string }> };
 
 /**
  * Rezervāciju kalendārs visai komandai — tikai skatīšanai.
@@ -33,7 +34,7 @@ type Props = { searchParams: Promise<{ m?: string; f?: string; atceltie?: string
  * Labot var tikai administratore sadaļā "Pieteikumi" (to nosaka arī datubāzes RLS).
  */
 export default async function CalendarPage({ searchParams }: Props) {
-  const { db, role } = await requireMember();
+  const { db, role } = await requireSection("kalendars");
   const sp = await searchParams;
 
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
@@ -48,12 +49,15 @@ export default async function CalendarPage({ searchParams }: Props) {
   const end = iso(year, month, daysInMonth);
   const prev = month === 0 ? `${year - 1}-12` : `${year}-${pad(month)}`;
   const next = month === 11 ? `${year + 1}-01` : `${year}-${pad(month + 2)}`;
-  const href = (o: { m?: string; f?: Filter; atceltie?: boolean }) => {
+  // r — atvērtā rezervācija, d — atvērtā diena (rāda tikai to)
+  const href = (o: { m?: string; f?: Filter; atceltie?: boolean; r?: string; d?: string }) => {
     const p = new URLSearchParams();
     p.set("m", o.m ?? `${year}-${pad(month + 1)}`);
     p.set("f", o.f ?? filter);
     if (o.atceltie ?? showCancelled) p.set("atceltie", "1");
-    return `/admin/kalendars?${p}`;
+    if (o.r) p.set("r", o.r);
+    if (o.d) p.set("d", o.d);
+    return `/admin/kalendars?${p}${o.r || o.d ? "#izvele" : ""}`;
   };
 
   const [{ data, error }, business, programs, settings] = await Promise.all([
@@ -80,6 +84,13 @@ export default async function CalendarPage({ searchParams }: Props) {
     const day = b.event_date!.slice(0, 10);
     byDay.set(day, [...(byDay.get(day) ?? []), b]);
   }
+
+  // Atvērtā rezervācija (r) vai diena (d)
+  const selected = sp.r ? bookings.filter((b) => b.id === sp.r) : sp.d ? (byDay.get(sp.d) ?? []) : [];
+  const dayTitle = (day: string) => {
+    const d = new Date(`${day}T12:00:00Z`);
+    return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()].toLowerCase()}, ${WEEKDAY_NAMES[d.getUTCDay()]}`;
+  };
 
   // Mēneša režģis no pirmdienas
   const firstWeekday = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7;
@@ -153,33 +164,48 @@ export default async function CalendarPage({ searchParams }: Props) {
             return (
               <div key={i} className={cn("min-h-16 border-b border-r border-line p-1 text-xs sm:min-h-24 sm:p-1.5", (i + 1) % 7 === 0 && "border-r-0", !d && "bg-surface/50")}>
                 {d && (
-                  <a href={items.length ? `#d-${day}` : undefined} className={cn("block h-full", !items.length && "pointer-events-none")}>
-                    <span className={cn("inline-grid size-6 place-items-center rounded-full font-bold", day === today && "bg-brand text-ink")}>{d}</span>
-                    {/* Telefonā — punkti, lielākā ekrānā — laiks un nosaukums */}
-                    <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
-                      {items.map((b) => (
-                        <span key={b.id} className={cn("size-2 rounded-full", stateOf(b).dot, isTrip(b) && "ring-2 ring-purple-500 ring-offset-1")} />
-                      ))}
-                    </span>
+                  <>
+                    <Link
+                      href={items.length ? href({ d: day }) : "#"}
+                      aria-disabled={!items.length || undefined}
+                      className={cn("block", !items.length && "pointer-events-none")}
+                    >
+                      <span className={cn("inline-grid size-6 place-items-center rounded-full font-bold", day === today && "bg-brand text-ink", day === sp.d && "ring-2 ring-ink")}>
+                        {d}
+                      </span>
+                      {/* Telefonā — punkti (uzspiežot atveras diena) */}
+                      <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
+                        {items.map((b) => (
+                          <span key={b.id} className={cn("size-2 rounded-full", stateOf(b).dot, isTrip(b) && "ring-2 ring-purple-500 ring-offset-1")} />
+                        ))}
+                      </span>
+                    </Link>
+                    {/* Lielākā ekrānā — katra rezervācija atsevišķi; uzspiežot atveras tikai tā */}
                     <span className="mt-1 hidden space-y-1 sm:block">
                       {items.slice(0, 3).map((b) => (
-                        <span
+                        <Link
                           key={b.id}
+                          href={href({ r: b.id })}
                           className={cn(
-                            "flex items-center gap-1 truncate rounded px-1.5 py-0.5 font-semibold ring-1",
+                            "flex items-center gap-1 truncate rounded px-1.5 py-0.5 font-semibold ring-1 hover:ring-2",
                             // Izbraukuma ballītes — lillā; statusu rāda punktiņš
                             isTrip(b) ? "bg-purple-100 text-purple-900 ring-purple-300" : stateOf(b).tone,
+                            b.id === sp.r && "ring-2 ring-ink",
                           )}
                         >
                           {isTrip(b) && <span className={cn("size-1.5 shrink-0 rounded-full", stateOf(b).dot)} />}
                           <span className="truncate">
                             {(b.event_time ?? "").slice(0, 5)} {b.company_name || b.parent_name || label(b)}
                           </span>
-                        </span>
+                        </Link>
                       ))}
-                      {items.length > 3 && <span className="block px-1 text-ink-soft">+{items.length - 3}</span>}
+                      {items.length > 3 && (
+                        <Link href={href({ d: day })} className="block px-1 text-ink-soft hover:text-ink">
+                          +{items.length - 3}
+                        </Link>
+                      )}
                     </span>
-                  </a>
+                  </>
                 )}
               </div>
             );
@@ -195,24 +221,56 @@ export default async function CalendarPage({ searchParams }: Props) {
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm bg-purple-100 ring-1 ring-purple-300" /> Izbraukuma ballīte</span>
       </div>
 
-      {/* Saraksts pa dienām */}
-      <section className="mt-8 space-y-6">
+      {/* Atvērtā rezervācija vai diena — tikai tā */}
+      {selected.length > 0 && (
+        <section id="izvele" className="mt-8 scroll-mt-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-extrabold">{dayTitle(selected[0].event_date!.slice(0, 10))}</h3>
+            <Link href={href({})} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
+              <X className="size-4" aria-hidden /> Aizvērt
+            </Link>
+          </div>
+          <ul className="mt-2 space-y-2">
+            {selected.map((b) => (
+              <BookingCard key={b.id} b={b} label={label(b)} costs={costsOf(b)} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Visa mēneša saraksts — īsi; uzspiežot atveras tikai attiecīgā rezervācija */}
+      <section className="mt-8 space-y-5">
         {byDay.size === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā mēnesī rezervāciju nav.</p>}
-        {[...byDay.entries()].map(([day, items]) => {
-          const d = new Date(`${day}T12:00:00Z`);
-          return (
-            <div key={day} id={`d-${day}`} className="scroll-mt-6">
-              <h3 className="text-sm font-extrabold">
-                {d.getUTCDate()}. {MONTHS[d.getUTCMonth()].toLowerCase()}, {WEEKDAY_NAMES[d.getUTCDay()]}
-              </h3>
-              <ul className="mt-2 space-y-2">
-                {items.map((b) => (
-                  <BookingCard key={b.id} b={b} label={label(b)} costs={costsOf(b)} />
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+        {[...byDay.entries()].map(([day, items]) => (
+          <div key={day}>
+            <h3 className="text-sm font-extrabold">{dayTitle(day)}</h3>
+            <ul className="mt-2 divide-y divide-line rounded-2xl bg-white ring-1 ring-line">
+              {items.map((b) => {
+                const st = stateOf(b);
+                const c = costsOf(b);
+                return (
+                  <li key={b.id}>
+                    <Link
+                      href={href({ r: b.id })}
+                      className={cn(
+                        "grid items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto]",
+                        isTrip(b) && "border-l-4 border-purple-400",
+                        b.id === sp.r && "bg-brand-soft",
+                      )}
+                    >
+                      <span className="text-sm font-semibold">{timeLabel(b.event_time, b.location) || "—"}</span>
+                      <span className="min-w-0 truncate text-sm">
+                        <b>{label(b)}</b> · {b.company_name || b.parent_name || "—"}
+                        {c?.exact && <span className="text-ink-soft"> · {eur(c.total)}{c.plusVat ? " + PVN" : ""}</span>}
+                      </span>
+                      <span className={cn("w-fit rounded-full px-2.5 py-1 text-xs font-bold ring-1", st.tone)}>{st.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </section>
     </>
   );

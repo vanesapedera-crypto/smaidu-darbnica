@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { History, Paperclip, Plus, Search } from "lucide-react";
-import { requireMember } from "@/lib/auth";
+import { isManagerRole, requireSection } from "@/lib/auth";
 import { OFFER_SEASONS, type OfferRow } from "@/lib/team/types";
 import { missingTable } from "@/lib/team/files";
 import PageHeader from "@/components/admin/PageHeader";
@@ -18,7 +18,8 @@ type Props = { searchParams: Promise<{ q?: string; s?: string; dzests?: string }
  * rediģējot piedāvājumu, sānā redzams, kas šim klientam piedāvāts iepriekš.
  */
 export default async function OffersPage({ searchParams }: Props) {
-  const { db } = await requireMember(["owner", "manager"]);
+  const { db, role } = await requireSection("piedavajumi");
+  const canEdit = isManagerRole(role);
   const { q = "", s = "", dzests } = await searchParams;
 
   let query = db.from("offers").select("*").eq("kind", "client").order("offer_date", { ascending: false, nullsFirst: false });
@@ -43,9 +44,11 @@ export default async function OffersPage({ searchParams }: Props) {
               <History className="size-4" aria-hidden /> Klientu vēsture
             </Link>
             <Link href="/admin/standarta-piedavajumi" className={adminSecondary}>Standarta piedāvājumi</Link>
-            <Link href="/admin/piedavajumi/jauns" className={adminPrimary}>
-              <Plus className="size-4" aria-hidden /> Jauns piedāvājums
-            </Link>
+            {canEdit && (
+              <Link href="/admin/piedavajumi/jauns" className={adminPrimary}>
+                <Plus className="size-4" aria-hidden /> Jauns piedāvājums
+              </Link>
+            )}
           </>
         }
       />

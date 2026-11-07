@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CopyPlus, FileStack, Paperclip, Plus } from "lucide-react";
-import { isManagerRole, requireMember } from "@/lib/auth";
+import { isManagerRole, requireSection } from "@/lib/auth";
 import type { OfferRow } from "@/lib/team/types";
 import { missingTable } from "@/lib/team/files";
 import PageHeader from "@/components/admin/PageHeader";
@@ -13,7 +13,7 @@ type Props = { searchParams: Promise<{ dzests?: string }> };
 
 /** Standarta piedāvājumi — sagataves, no kurām ātri izveidot piedāvājumu konkrētam klientam. Visa komanda redz, labo vadība. */
 export default async function TemplatesPage({ searchParams }: Props) {
-  const { db, role } = await requireMember();
+  const { db, role } = await requireSection("standarta");
   const canEdit = isManagerRole(role);
   const { dzests } = await searchParams;
   const [{ data, error }, { data: used }] = await Promise.all([

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Building2, CalendarCheck, FileText, Plus, Search, User } from "lucide-react";
-import { requireMember } from "@/lib/auth";
+import { requireSection } from "@/lib/auth";
 import { phoneDigits, type Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
@@ -46,7 +46,7 @@ type Client = {
  * Uzņēmumus un iestādes apvieno pēc nosaukuma, privātpersonas — pēc e-pasta vai telefona.
  */
 export default async function ClientHistoryPage({ searchParams }: Props) {
-  const { db } = await requireMember(["owner", "manager"]);
+  const { db } = await requireSection("klientu_vesture");
   const { q = "", v = "" } = await searchParams;
   const kind: Kind = v === "uznemumi" || v === "privati" ? v : "visi";
 

@@ -20,6 +20,7 @@ supabase/migrations/20261018090000_google_calendar.sql
 supabase/migrations/20261021090000_booked_program_variants.sql
 supabase/migrations/20261021100000_testimonials_public.sql
 supabase/migrations/20261107090000_team_access.sql
+supabase/migrations/20261107120000_team_sections.sql
 ```
 
 Tas:

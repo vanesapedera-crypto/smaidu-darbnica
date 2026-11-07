@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, clearSession, saveSession, roleOf, homeFor } from "@/lib/auth";
+import { requireAdmin, clearSession, saveSession, accessOf, homeFor } from "@/lib/auth";
 import { createUserClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getEntity } from "@/lib/admin/entities";
 import { parse, slugify, setPath } from "@/lib/admin/fields";
@@ -47,11 +47,11 @@ export async function login(_: ActionState, form: FormData): Promise<ActionState
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.session) return { error: "Nepareizs e-pasts vai parole." };
 
-  const role = await roleOf(createUserClient(data.session.access_token));
-  if (!role) return { error: "Šim lietotājam nav piekļuves panelim." };
+  const access = await accessOf(createUserClient(data.session.access_token));
+  if (!access) return { error: "Šim lietotājam nav piekļuves panelim." };
 
   await saveSession(data.session);
-  redirect(homeFor(role));
+  redirect(homeFor(access));
 }
 
 export async function logout() {

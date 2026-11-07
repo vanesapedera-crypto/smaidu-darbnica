@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isManagerRole, requireAdmin, requireMember } from "@/lib/auth";
+import { canSee, isManagerRole, requireAdmin, requireMember, requireSection } from "@/lib/auth";
+import { isSection, type Section } from "@/lib/team/sections";
 import { slugify } from "@/lib/admin/fields";
 import { ACCESS_COOKIE } from "@/lib/auth-cookies";
 import { cookies } from "next/headers";
@@ -16,7 +17,6 @@ import { OFFER_STATUSES, TEAM_BUCKET, type OfferKind, type TeamFolder } from "@/
 
 export type TeamActionState = { error?: string; ok?: string } | undefined;
 
-const MANAGERS = ["owner", "manager"] as const;
 const text = (form: FormData, key: string, max = 20000) => {
   const v = String(form.get(key) ?? "").trim().slice(0, max);
   return v || null;
@@ -26,10 +26,15 @@ const text = (form: FormData, key: string, max = 20000) => {
 
 /** Vienreizēja augšupielādes adrese privātajā krātuvē (pārlūks augšupielādē failu tieši). */
 export async function createTeamUploadUrl(folder: TeamFolder, fileName: string) {
-  const { db, role } = await requireMember();
+  const member = await requireMember();
+  const { db } = member;
   const safeFolder: TeamFolder = folder === "piedavajumi" || folder === "standarta" ? folder : "scenariji";
-  // Scenāriju failus var augšupielādēt visa komanda, piedāvājumu — tikai vadība
-  if (safeFolder !== "scenariji" && !isManagerRole(role)) return { error: "Nav tiesību." };
+  // Scenāriju failus var augšupielādēt ikviens ar sadaļu "Scenāriji", piedāvājumu — tikai ar tiesībām labot
+  const allowed =
+    safeFolder === "scenariji"
+      ? canSee(member, "scenariji")
+      : isManagerRole(member.role) && (canSee(member, "piedavajumi") || canSee(member, "standarta"));
+  if (!allowed) return { error: "Nav tiesību." };
   const dot = fileName.lastIndexOf(".");
   const ext = dot > 0 ? fileName.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) : "";
   const base = slugify(dot > 0 ? fileName.slice(0, dot) : fileName) || "fails";
@@ -60,8 +65,8 @@ function fileFields(form: FormData) {
 
 /** Jaunu scenāriju var pievienot visa komanda; labot esošu — administratore un vadība. */
 export async function saveScript(id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
-  const { db, email, role } = await requireMember();
-  if (id && !isManagerRole(role)) return { error: "Labot scenārijus var tikai Vanesa un Kristīne." };
+  const { db, email, role } = await requireSection("scenariji");
+  if (id && !isManagerRole(role)) return { error: "Labot scenārijus var tikai tie, kam ir tiesības labot." };
   const title = text(form, "title", 300);
   if (!title) return { error: "Ievadiet nosaukumu." };
   const year = Number(form.get("year"));
@@ -106,7 +111,10 @@ export async function deleteScript(id: string) {
 const offerBase = (kind: OfferKind) => (kind === "template" ? "/admin/standarta-piedavajumi" : "/admin/piedavajumi");
 
 export async function saveOffer(kind: OfferKind, id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
-  const { db, email } = await requireMember([...MANAGERS]);
+  const member = await requireMember();
+  const { db, email } = member;
+  const sectionOk = canSee(member, "piedavajumi") || (kind === "template" && canSee(member, "standarta"));
+  if (!isManagerRole(member.role) || !sectionOk) return { error: "Nav tiesību labot piedāvājumus." };
   const title = text(form, "title", 300);
   if (!title) return { error: "Ievadiet piedāvājuma nosaukumu." };
   const client = text(form, "client_name", 300);
@@ -168,31 +176,41 @@ export async function deleteOffer(kind: OfferKind, id: string) {
 
 /* ------------------------------ Komandas piekļuve ------------------------------ */
 
-export async function grantAccess(_: TeamActionState, form: FormData): Promise<TeamActionState> {
-  const { db } = await requireAdmin();
-  const email = text(form, "email", 200);
-  const role = String(form.get("role") ?? "");
-  if (!email || !email.includes("@")) return { error: "Ievadiet e-pastu." };
-  if (role !== "manager" && role !== "viewer" && role !== "animator") return { error: "Izvēlieties lomu." };
+/** Sadaļas no formas ķeksīšiem (name="sections") */
+const sectionsFrom = (form: FormData): Section[] => [...new Set(form.getAll("sections").filter(isSection))];
 
-  const { error } = await db.rpc("grant_team_access", { p_email: email, p_name: text(form, "name", 100) ?? "", p_role: role });
+/**
+ * Piešķir vai maina komandas locekļa piekļuvi: kuras sadaļas redz (ķeksīši) un vai var labot.
+ * Var administratore un tie, kam ir sadaļa "Komandas piekļuve".
+ */
+export async function grantAccess(_: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const { db } = await requireSection("piekluve");
+  const email = text(form, "email", 200);
+  if (!email || !email.includes("@")) return { error: "Ievadiet e-pastu." };
+  const sections = sectionsFrom(form);
+  if (!sections.length) return { error: "Atzīmējiet vismaz vienu sadaļu." };
+  // "Var labot" → manager; citādi paliek esošā skatītāja loma (Keitai — viewer: kalendārs atveras ar telpu nomu)
+  const current = String(form.get("current_role") ?? "");
+  const role = form.get("can_edit") === "1" ? "manager" : current === "viewer" ? "viewer" : "animator";
+
+  const { error } = await db.rpc("grant_team_access", { p_email: email, p_name: text(form, "name", 100) ?? "", p_role: role, p_sections: sections });
   if (error) {
     if (error.message.includes("LIETOTAJS_NAV_ATRASTS")) {
-      return { error: "Šāds lietotājs vēl nav izveidots. Vispirms izveidojiet to Supabase (sk. norādes zemāk)." };
+      return { error: "Šāds lietotājs vēl nav izveidots. Konts jāizveido Vanesai Supabase (sk. norādes zemāk)." };
     }
-    if (error.message.includes("grant_team_access")) {
-      return { error: "Datubāzē vēl nav komandas tabulu — palaidiet migrāciju 20261107090000_team_access.sql." };
+    if (error.message.includes("grant_team_access") || error.message.includes("function")) {
+      return { error: "Datubāzē vēl nav jaunās piekļuves funkcijas — palaidiet migrāciju 20261107120000_team_sections.sql." };
     }
     return { error: error.message };
   }
-  revalidatePath("/admin/komandas-piekluve");
-  return { ok: `Piekļuve piešķirta: ${email}` };
+  revalidatePath("/admin", "layout");
+  return { ok: `Saglabāts: ${email}` };
 }
 
 export async function revokeAccess(userId: string) {
-  const { db } = await requireAdmin();
+  const { db } = await requireSection("piekluve");
   await db.from("team_access").delete().eq("user_id", userId);
-  revalidatePath("/admin/komandas-piekluve");
+  revalidatePath("/admin", "layout");
 }
 
 /* ------------------------------ Parole ------------------------------ */

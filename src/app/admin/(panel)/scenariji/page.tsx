@@ -1,5 +1,5 @@
 import { Download, FileText, Pencil, Plus, Search } from "lucide-react";
-import { isManagerRole, requireMember } from "@/lib/auth";
+import { isManagerRole, requireSection } from "@/lib/auth";
 import { saveScript, deleteScript } from "@/app/admin/team-actions";
 import { fileSize, type ScriptRow } from "@/lib/team/types";
 import { missingTable, signedUrls } from "@/lib/team/files";
@@ -19,7 +19,7 @@ type Props = { searchParams: Promise<{ q?: string }> };
  * labot — administratore un vadība; dzēst — tikai administratore.
  */
 export default async function ScriptsPage({ searchParams }: Props) {
-  const { db, role } = await requireMember();
+  const { db, role } = await requireSection("scenariji");
   const { q = "" } = await searchParams;
   const canEdit = isManagerRole(role);
   const canDelete = role === "owner";

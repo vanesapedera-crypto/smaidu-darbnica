@@ -17,14 +17,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       {/* Lielā ekrānā sānjosla ir kolonna: logo augšā, izvēlne pa vidu (ritināma, ja neietilpst), lietotājs apakšā */}
       <aside className="border-b border-line bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0">
         <div className="flex items-center justify-between gap-4 px-4 py-4 lg:block lg:shrink-0 lg:px-5 lg:py-5">
-          <Link href={homeFor(admin.role)} aria-label="Paneļa sākums">
+          <Link href={homeFor(admin)} aria-label="Paneļa sākums">
             <Image src="/brand/logo-dark.svg" alt="Smaidu Darbnīca" width={489} height={291} className="h-10 w-auto lg:h-12" />
           </Link>
           <Link href="/" target="_blank" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink lg:mt-4">
             Skatīt mājaslapu <ExternalLink className="size-3.5" aria-hidden />
           </Link>
         </div>
-        <AdminNav role={admin.role} />
+        <AdminNav role={admin.role} sections={admin.sections} />
         <div className="hidden shrink-0 border-t border-line px-5 py-4 lg:block">
           <p className="truncate text-xs text-ink-soft">{admin.email}</p>
           <p className="text-xs font-semibold text-ink-soft">{ROLE_LABEL[admin.role]}</p>

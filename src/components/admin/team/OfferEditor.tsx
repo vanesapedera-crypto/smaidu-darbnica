@@ -37,8 +37,8 @@ export default async function OfferEditor({
   const isNew = id === "jauns";
   if (!isNew && !isUuid(id)) notFound();
   const canEdit = isManagerRole(member.role);
-  // Klientu piedāvājumi — tikai vadībai; standarta piedāvājumus pārējie var tikai skatīt
-  if (!canEdit && (kind === "client" || isNew)) redirect("/admin/standarta-piedavajumi");
+  // Bez tiesībām labot — tikai skatīšana (jaunu izveidot nevar)
+  if (!canEdit && isNew) redirect(base);
 
   let offer: Partial<OfferRow> | null = null;
   if (!isNew) {
@@ -82,7 +82,7 @@ export default async function OfferEditor({
   const fileUrl = offer?.file_path ? (urls.get(offer.file_path) ?? null) : null;
   const usedTemplate = (templates ?? []).find((t) => t.id === offer?.template_id);
 
-  if (!canEdit && offer) return <OfferView offer={offer as OfferRow} fileUrl={fileUrl} />;
+  if (!canEdit && offer) return <OfferView offer={offer as OfferRow} fileUrl={fileUrl} base={base} />;
 
   const title = isNew
     ? kind === "template" ? "Jauns standarta piedāvājums" : "Jauns piedāvājums"
@@ -240,17 +240,17 @@ export default async function OfferEditor({
   );
 }
 
-/** Standarta piedāvājums tikai skatīšanai (komandai, kas to nevar labot) */
-function OfferView({ offer, fileUrl }: { offer: OfferRow; fileUrl: string | null }) {
+/** Piedāvājums tikai skatīšanai (tiem, kam nav tiesību labot) */
+function OfferView({ offer, fileUrl, base }: { offer: OfferRow; fileUrl: string | null; base: string }) {
   return (
     <>
-      <Link href="/admin/standarta-piedavajumi" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
-        <ArrowLeft className="size-4" aria-hidden /> Standarta piedāvājumi
+      <Link href={base} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
+        <ArrowLeft className="size-4" aria-hidden /> {offer.kind === "template" ? "Standarta piedāvājumi" : "Piedāvājumi"}
       </Link>
       <div className="mt-3">
         <PageHeader
           title={offer.title}
-          description={[offer.season, offer.price].filter(Boolean).join(" · ") || undefined}
+          description={[offer.client_name, lvDate(offer.offer_date), offer.season, offer.price, offer.status].filter(Boolean).join(" · ") || undefined}
           actions={offer.body ? <CopyButton text={offer.body} /> : undefined}
         />
       </div>
