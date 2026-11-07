@@ -2,28 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Building2,
-  CalendarDays,
-  Clapperboard,
-  FileStack,
-  FileText,
-  KeyRound,
-  Contact,
-  DoorOpen,
-  Globe,
-  Handshake,
-  House,
-  Images,
-  Inbox,
-  Info,
-  LayoutDashboard,
-  PartyPopper,
-  Search,
-  Star,
-  UserCog,
-  UsersRound,
-} from "lucide-react";
+import { CalendarDays, FileStack, FileText, Handshake, Inbox, KeyRound, UserCog } from "lucide-react";
 import type { TeamRole } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +12,9 @@ type Group = { title: string; items: Item[]; roles?: TeamRole[] };
 const MANAGERS: TeamRole[] = ["owner", "manager"];
 const OWNER: TeamRole[] = ["owner"];
 
-// Secība un nosaukumi — tādi paši kā mājaslapas izvēlnē. `roles` — kam grupa/sadaļa redzama (bez tā — visiem).
+// `roles` — kam grupa/sadaļa redzama (bez tā — visiem).
+// Sadaļas "Lapas", "Saturs" un "Meklētājiem" izvēlnē nav (2026-11-07): saturu Vanesa maina kodā.
+// Pašas lapas paliek (/admin/iestatijumi/*, /admin/programmas u.c.) — tās var atvērt pēc adreses.
 const groups: Group[] = [
   {
     title: "Pieteikumi",
@@ -51,39 +32,6 @@ const groups: Group[] = [
       { href: "/admin/standarta-piedavajumi", label: "Standarta piedāvājumi", icon: FileStack },
       { href: "/admin/komandas-piekluve", label: "Komandas piekļuve", icon: UserCog, roles: OWNER },
       { href: "/admin/parole", label: "Mainīt paroli", icon: KeyRound },
-    ],
-  },
-  {
-    roles: OWNER,
-    title: "Lapas",
-    items: [
-      { href: "/admin/iestatijumi/home", label: "Sākums", icon: House },
-      { href: "/admin/iestatijumi/about", label: "Par mums", icon: Info },
-      { href: "/admin/iestatijumi/business", label: "Uzņēmumiem", icon: Building2 },
-      { href: "/admin/iestatijumi/shows", label: "Izrādes", icon: Clapperboard },
-      { href: "/admin/iestatijumi/programs", label: "Izklaides programmas", icon: PartyPopper },
-      { href: "/admin/iestatijumi/venue", label: "Telpu noma", icon: DoorOpen },
-      { href: "/admin/iestatijumi/contact", label: "Kontakti", icon: Contact },
-    ],
-  },
-  {
-    roles: OWNER,
-    title: "Saturs",
-    items: [
-      { href: "/admin/programmas", label: "Izklaides programmas", icon: PartyPopper },
-      { href: "/admin/pakalpojumi", label: "Pakalpojumi uzņēmumiem", icon: LayoutDashboard },
-      { href: "/admin/atsauksmes", label: "Atsauksmes", icon: Star },
-      { href: "/admin/komanda", label: "Komanda", icon: UsersRound },
-      { href: "/admin/klienti", label: "Klienti", icon: Handshake },
-      { href: "/admin/galerija", label: "Foto", icon: Images },
-    ],
-  },
-  {
-    roles: OWNER,
-    title: "Meklētājiem",
-    items: [
-      { href: "/admin/iestatijumi/seo", label: "SEO iestatījumi", icon: Globe },
-      { href: "/admin/seo", label: "SEO lapām", icon: Search },
     ],
   },
 ];

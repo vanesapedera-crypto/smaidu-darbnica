@@ -6,7 +6,7 @@
 --   manager  — Kristīne: pieteikumi un kalendārs (skatīt), piedāvājumi, standarta piedāvājumi,
 --              scenāriji, klientu vēsture (pievienot un labot, bet ne dzēst)
 --   viewer   — Keita: kalendārs, standarta piedāvājumi (skatīt), scenāriji (skatīt un pievienot)
---   animator — Gunta, Agita, Madara K, Madara R: tāpat kā viewer
+--   animator — Gunta, Agija, Madara K, Madara R: tāpat kā viewer
 --
 -- Dzēst ierakstus var tikai administratore. Pieteikumus labot, saturu, cenas un
 -- iestatījumus mainīt — arī tikai administratore (esošās public.is_admin() politikas nemainās).
