@@ -68,16 +68,11 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
                 </label>
                 <PhotoField value={w?.image ?? null} />
               </div>
-              <label className="block space-y-1.5">
-                <span className="block text-sm font-bold">Piezīmes (iekšējās)</span>
-                <textarea name="notes" rows={3} defaultValue={w?.notes ?? ""} placeholder="Kur iepirkts, ilgums, kas jāņem līdzi…" className={adminInput} />
-              </label>
             </div>
           </TeamForm>
         ) : (
           <div className="space-y-5">
             <WorkshopItems initial={items} participants={w?.participants ?? null} readOnly />
-            {w?.notes && <p className="text-sm whitespace-pre-line">{w.notes}</p>}
           </div>
         )}
         {!isNew && role === "owner" && (

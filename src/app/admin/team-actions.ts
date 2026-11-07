@@ -253,7 +253,6 @@ export async function saveWorkshop(id: string | null, _: TeamActionState, form: 
   const participants = Number(form.get("participants"));
   const row = {
     title,
-    notes: text(form, "notes", 5000),
     description: text(form, "description", 5000),
     image: text(form, "image", 500),
     items: parseItems(items),
@@ -315,7 +314,6 @@ export async function saveCostItem(id: string | null, _: TeamActionState, form: 
     cost: Math.max(0, numField(form, "cost")),
     description: text(form, "description", 5000),
     image: text(form, "image", 500),
-    notes: text(form, "notes", 2000),
     updated_at: new Date().toISOString(),
   };
   const { error } = id ? await db.from("cost_items").update(row).eq("id", id) : await db.from("cost_items").insert(row);

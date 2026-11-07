@@ -160,10 +160,6 @@ function ItemFields({ item }: { item?: CostItemRow & { description: string | nul
         <textarea name="description" rows={4} defaultValue={item?.description ?? ""} className={adminInput} />
       </label>
       <PhotoField value={item?.image ?? null} />
-      <label className="block space-y-1.5 md:col-span-4">
-        <span className="block text-sm font-bold">Piezīmes (iekšējās)</span>
-        <input name="notes" defaultValue={item?.notes ?? ""} className={adminInput} />
-      </label>
     </div>
   );
 }
