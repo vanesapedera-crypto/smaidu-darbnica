@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, clearSession, saveSession } from "@/lib/auth";
+import { requireAdmin, clearSession, saveSession, roleOf, homeFor } from "@/lib/auth";
 import { createUserClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getEntity } from "@/lib/admin/entities";
 import { parse, slugify, setPath } from "@/lib/admin/fields";
@@ -13,6 +13,7 @@ import { notifyReviewRequest } from "@/lib/notify";
 import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
+import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
 import { reviewEmailText, reviewKind, reviewUrl } from "@/lib/review";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
@@ -46,12 +47,11 @@ export async function login(_: ActionState, form: FormData): Promise<ActionState
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.session) return { error: "Nepareizs e-pasts vai parole." };
 
-  const { data: isAdmin, error: rpcError } = await createUserClient(data.session.access_token).rpc("is_admin");
-  if (rpcError) return { error: "Datubāzē nav funkcijas is_admin() — palaidiet migrāciju (sk. supabase/README.md)." };
-  if (isAdmin !== true) return { error: "Šim lietotājam nav administratora tiesību." };
+  const role = await roleOf(createUserClient(data.session.access_token));
+  if (!role) return { error: "Šim lietotājam nav piekļuves panelim." };
 
   await saveSession(data.session);
-  redirect("/admin");
+  redirect(homeFor(role));
 }
 
 export async function logout() {
@@ -380,6 +380,17 @@ export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<
   if (!b.event_date) return { error: "Pieteikumam nav datuma." };
   const ok = await pushToGoogle(db, b, pickHosts(hosts));
   return ok ? { ok: true } : { error: "Neizdevās ielikt Google kalendārā. Pārbaudiet, vai Google kalendārs ir savienots, un mēģiniet vēlreiz." };
+}
+
+/** Atceltai rezervācijai — izņem notikumu no visu iesaistīto kalendāriem (sk. removeBookingFromCalendars) */
+export async function removeFromCalendars(id: string): Promise<{ error?: string; ok?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  if (!b.event_date) return { error: "Pieteikumam nav datuma." };
+  const ok = await removeBookingFromCalendars(db, b);
+  return ok ? { ok: true } : { error: "Neizdevās. Mēģiniet vēlreiz." };
 }
 
 /** Ieliek (vai atjauno) rezervācijas notikumu savienotajā Google kalendārā un nosūta ielūgumus visiem viesiem */

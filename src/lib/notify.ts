@@ -316,16 +316,17 @@ ${footer}
  * (adrese ir kontaktos) vai Google kalendāra iestatījumos izvēlēts "Pievienot ielūgumus: no visiem".
  * `uid` — nemainīgs pieteikumam (atkārtots ielūgums atjauno to pašu notikumu, nevis veido jaunu).
  */
-export async function sendCalendarInvite(event: CalendarEvent, attendees: string[], uid: string) {
+export async function sendCalendarInvite(event: CalendarEvent, attendees: string[], uid: string, cancel = false) {
   const key = process.env.RESEND_API_KEY;
   if (!key || attendees.length === 0) return;
 
-  const ics = calendarIcs(event, { uid, organizer: senderEmail(), attendees });
+  // cancel — atcelšana (METHOD:CANCEL ar to pašu UID): Google kalendārs notikumu izņem no saņēmēja kalendāra
+  const ics = calendarIcs(event, { uid, organizer: senderEmail(), attendees, cancel });
   const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#1a1816">
 <p style="font-size:18px;margin:0 0 12px"><b>${escape(event.text)}</b></p>
 ${event.location ? `<p style="margin:0 0 12px">${escape(event.location)}</p>` : ""}
 <p style="white-space:pre-wrap;margin:0">${escape(event.details)}</p>
-<p style="margin-top:20px;font-size:13px;color:#7a7268">Apstiprināta rezervācija — notikums pielikumā tiek pievienots Google kalendāram automātiski.</p>
+<p style="margin-top:20px;font-size:13px;color:#7a7268">${cancel ? "Rezervācija atcelta — notikums tiek izņemts no Google kalendāra automātiski." : "Apstiprināta rezervācija — notikums pielikumā tiek pievienots Google kalendāram automātiski."}</p>
 </div>`;
 
   try {
@@ -337,13 +338,13 @@ ${event.location ? `<p style="margin:0 0 12px">${escape(event.location)}</p>` : 
         to: attendees,
         // Sūtītāja adresei nav pastkastītes — atbildes uz šo e-pastu nāk uz rezervāciju e-pastu
         reply_to: process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com",
-        subject: `Kalendārs: ${event.text}`,
+        subject: `${cancel ? "Atcelts" : "Kalendārs"}: ${event.text}`,
         html,
         attachments: [
           {
             filename: "invite.ics",
             content: Buffer.from(ics, "utf-8").toString("base64"),
-            content_type: "text/calendar; charset=utf-8; method=REQUEST",
+            content_type: `text/calendar; charset=utf-8; method=${cancel ? "CANCEL" : "REQUEST"}`,
           },
         ],
       }),

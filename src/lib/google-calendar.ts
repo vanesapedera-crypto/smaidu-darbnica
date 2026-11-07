@@ -154,20 +154,29 @@ export async function upsertGoogleEvent(db: AdminContext["db"], bookingId: strin
   }
 }
 
-/** Atceļ rezervācijas notikumu savienotajā Google kalendārā (viesi saņem paziņojumu). Ja notikuma nav — neko nedara. */
-export async function cancelGoogleEvent(db: AdminContext["db"], bookingId: string): Promise<void> {
+/**
+ * Atceļ rezervācijas notikumu savienotajā Google kalendārā (viesi saņem paziņojumu).
+ * Atgriež: "deleted" — izdzēsts visiem; "gone" — jau bija izdzēsts; "missing" — Google kalendārā tāda notikuma nav
+ * (piem. ielūgums agrāk aizgāja kā .ics e-pasts); "failed" — nav savienojuma vai kļūda.
+ */
+export async function cancelGoogleEvent(db: AdminContext["db"], bookingId: string): Promise<"deleted" | "gone" | "missing" | "failed"> {
   const conn = await googleConnection(db);
-  if (!conn) return;
+  if (!conn) return "failed";
   const token = await accessToken(conn.refreshToken);
-  if (!token) return;
+  if (!token) return "failed";
   try {
     const res = await fetch(`${API}/${eventId(bookingId)}?sendUpdates=all`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok && res.status !== 404 && res.status !== 410) console.error("[google] cancel", res.status, await res.text());
+    if (res.ok) return "deleted";
+    if (res.status === 410) return "gone";
+    if (res.status === 404) return "missing";
+    console.error("[google] cancel", res.status, await res.text());
+    return "failed";
   } catch (e) {
     console.error("[google] cancel failed", e);
+    return "failed";
   }
 }

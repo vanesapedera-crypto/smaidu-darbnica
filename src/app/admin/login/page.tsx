@@ -1,12 +1,13 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { getAdmin } from "@/lib/auth";
+import { getMember, homeFor } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 
 export const metadata = { title: "Pieteikšanās" };
 
 export default async function LoginPage() {
-  if (await getAdmin()) redirect("/admin");
+  const member = await getMember();
+  if (member) redirect(homeFor(member.role));
 
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">

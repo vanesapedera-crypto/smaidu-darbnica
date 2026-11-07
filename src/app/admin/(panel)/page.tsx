@@ -5,6 +5,7 @@ import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { VAT_NOTE, amountText, bookingCosts, bookingPrices, costsToText, eur, parseCostOverride, priceVariants } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
+import RemoveFromCalendar from "@/components/admin/RemoveFromCalendar";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
@@ -205,6 +206,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                     {/* Google kalendārs: aizpildīts notikums ar viesiem (tikai pieteikumiem ar datumu) */}
                     {(() => {
                       const event = calendarEvent(b, label(b.service_slug || b.program), costsOf(b));
+                      if (event && b.status === "Atcelta") return <RemoveFromCalendar id={b.id} />;
                       return (
                         event && (
                           <CalendarLink

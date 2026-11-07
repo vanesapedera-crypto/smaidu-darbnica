@@ -162,7 +162,7 @@ function fold(line: string): string {
  * Kalendāra ielūgums (METHOD:REQUEST). `uid` — nemainīgs pieteikumam, lai atkārtots ielūgums atjauno to pašu notikumu.
  * `organizer` — sūtītāja e-pasts (tas pats, no kura aiziet e-pasts).
  */
-export function calendarIcs(e: CalendarEvent, opts: { uid: string; organizer: string; attendees: string[] }): string {
+export function calendarIcs(e: CalendarEvent, opts: { uid: string; organizer: string; attendees: string[]; cancel?: boolean }): string {
   const [from, to] = e.dates.split("/");
   const timed = from.includes("T");
   const when = timed
@@ -177,7 +177,7 @@ export function calendarIcs(e: CalendarEvent, opts: { uid: string; organizer: st
     "PRODID:-//Smaidu Darbnica//Rezervacijas//LV",
     "VERSION:2.0",
     "CALSCALE:GREGORIAN",
-    "METHOD:REQUEST",
+    opts.cancel ? "METHOD:CANCEL" : "METHOD:REQUEST",
     "BEGIN:VEVENT",
     `UID:${opts.uid}`,
     // Secības numurs aug ar laiku — atkārtoti nosūtīts ielūgums aizstāj iepriekšējo
@@ -189,7 +189,7 @@ export function calendarIcs(e: CalendarEvent, opts: { uid: string; organizer: st
     `LOCATION:${icsText(e.location)}`,
     `ORGANIZER;CN=Smaidu Darbnīca:mailto:${opts.organizer}`,
     ...opts.attendees.map((a) => `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:${a}`),
-    "STATUS:CONFIRMED",
+    opts.cancel ? "STATUS:CANCELLED" : "STATUS:CONFIRMED",
     "TRANSP:OPAQUE",
     "END:VEVENT",
     "END:VCALENDAR",

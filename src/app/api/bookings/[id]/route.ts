@@ -4,7 +4,8 @@ import { getAdmin, type AdminContext } from "@/lib/auth";
 import { BOOKING_STATUSES, atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
 import { calendarEvent, pickHosts } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { cancelGoogleEvent, upsertGoogleEvent } from "@/lib/google-calendar";
+import { upsertGoogleEvent } from "@/lib/google-calendar";
+import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { notifyClientConfirmed, sendCalendarInvite } from "@/lib/notify";
 import { whenLabel } from "@/lib/dates";
 import { bookingCosts, bookingPrices, parseNotice } from "@/lib/pricing";
@@ -118,7 +119,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     // Atceļot apstiprinātu rezervāciju — notikums savienotajā Google kalendārā tiek atcelts (viesi saņem paziņojumu)
-    if (status === "Atcelta" && before?.status === "Apstiprināta") after(() => cancelGoogleEvent(admin.db, id));
+    // (arī tie, kas agrāk aizgāja kā .ics ielūgumi — sk. removeBookingFromCalendars)
+    if (status === "Atcelta" && before?.status === "Apstiprināta") after(() => removeBookingFromCalendars(admin.db, before));
 
     revalidatePath("/admin");
     return NextResponse.json({ success: true, clientEmail, calendar });
