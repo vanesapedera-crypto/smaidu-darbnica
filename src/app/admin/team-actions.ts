@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { canSee, isManagerRole, requireAdmin, requireMember, requireSection } from "@/lib/auth";
 import { isSection, type Section } from "@/lib/team/sections";
+import { parseItems } from "@/lib/team/workshops";
 import { slugify } from "@/lib/admin/fields";
 import { ACCESS_COOKIE } from "@/lib/auth-cookies";
 import { cookies } from "next/headers";
@@ -234,4 +235,45 @@ export async function changePassword(_: TeamActionState, form: FormData): Promis
     return { error: `Neizdevās nomainīt paroli${body?.msg || body?.message ? `: ${body.msg ?? body.message}` : "."}` };
   }
   return { ok: "Parole nomainīta." };
+}
+
+/* ------------------------------ Radošās darbnīcas ------------------------------ */
+
+export async function saveWorkshop(id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const { db, email } = await requireSection("darbnicas", true);
+  const title = text(form, "title", 300);
+  if (!title) return { error: "Ievadiet darbnīcas nosaukumu." };
+  let items: unknown = [];
+  try {
+    items = JSON.parse(String(form.get("items") ?? "[]"));
+  } catch {
+    return { error: "Neizdevās nolasīt materiālus." };
+  }
+  const participants = Number(form.get("participants"));
+  const row = {
+    title,
+    notes: text(form, "notes", 5000),
+    items: parseItems(items),
+    participants: Number.isInteger(participants) && participants > 0 && participants < 100000 ? participants : null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (id) {
+    const { error } = await db.from("workshops").update(row).eq("id", id);
+    if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+    revalidatePath("/admin/darbnicas");
+    return { ok: "Saglabāts." };
+  }
+  const { data, error } = await db.from("workshops").insert({ ...row, created_by: email }).select("id").single();
+  if (error || !data) return { error: `Neizdevās saglabāt: ${error?.message ?? ""}` };
+  revalidatePath("/admin/darbnicas");
+  redirect(`/admin/darbnicas/${data.id}?saglabats=1`);
+}
+
+/** Dzēst var tikai administratore */
+export async function deleteWorkshop(id: string) {
+  const { db } = await requireAdmin();
+  await db.from("workshops").delete().eq("id", id);
+  revalidatePath("/admin/darbnicas");
+  redirect("/admin/darbnicas?dzests=1");
 }

@@ -7,6 +7,7 @@ export const SECTIONS = [
   { key: "klientu_vesture", label: "Klientu vēsture", hint: "katra klienta pasākumi un piedāvājumi", href: "/admin/klientu-vesture" },
   { key: "standarta", label: "Standarta piedāvājumi", hint: "gatavu piedāvājumu veidnes", href: "/admin/standarta-piedavajumi" },
   { key: "scenariji", label: "Izrāžu scenāriji", hint: "skatīt un pievienot jaunus", href: "/admin/scenariji" },
+  { key: "darbnicas", label: "Radošās darbnīcas", hint: "materiālu pašizmaksa vienai personai", href: "/admin/darbnicas" },
   { key: "piekluve", label: "Komandas piekļuve", hint: "var mainīt, kurš ko redz", href: "/admin/komandas-piekluve" },
 ] as const;
 
