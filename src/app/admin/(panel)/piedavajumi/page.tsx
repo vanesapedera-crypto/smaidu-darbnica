@@ -45,9 +45,14 @@ export default async function OffersPage({ searchParams }: Props) {
             </Link>
             <Link href="/admin/standarta-piedavajumi" className={adminSecondary}>Standarta piedāvājumi</Link>
             {canEdit && (
-              <Link href="/admin/piedavajumi/jauns" className={adminPrimary}>
-                <Plus className="size-4" aria-hidden /> Jauns piedāvājums
-              </Link>
+              <>
+                <Link href="/admin/piedavajumi/jauns" className={adminSecondary}>
+                  <Plus className="size-4" aria-hidden /> Bez aprēķina
+                </Link>
+                <Link href="/admin/piedavajuma-izveide" className={adminPrimary}>
+                  <Plus className="size-4" aria-hidden /> Piedāvājuma izveide
+                </Link>
+              </>
             )}
           </>
         }

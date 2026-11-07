@@ -35,11 +35,18 @@ async function toWebp(file: File): Promise<{ blob: Blob; width: number; height: 
 
 export type UploadResult = { url: string; width: number | null; height: number | null };
 
-export async function uploadImage(file: File, folder: string): Promise<UploadResult> {
+type UploadTarget = { path: string; token: string; publicUrl: string } | { error: string };
+
+/** `getTarget` — servera darbība, kas izsniedz augšupielādes adresi (pēc noklusējuma — administratorei) */
+export async function uploadImage(
+  file: File,
+  folder: string,
+  getTarget: (fileName: string, folder: string, ext: "webp" | "svg") => Promise<UploadTarget> = createUploadUrl,
+): Promise<UploadResult> {
   const isSvg = file.type === "image/svg+xml";
   const { blob, width, height } = isSvg ? { blob: file, width: null, height: null } : await toWebp(file);
 
-  const target = await createUploadUrl(file.name, folder, isSvg ? "svg" : "webp");
+  const target = await getTarget(file.name, folder, isSvg ? "svg" : "webp");
   if ("error" in target) throw new Error(target.error);
 
   const { error } = await storage()

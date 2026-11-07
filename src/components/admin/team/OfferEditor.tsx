@@ -101,6 +101,19 @@ export default async function OfferEditor({
           actions={
             !isNew && (
               <>
+                {(offer as { calc?: unknown } | null)?.calc ? (
+                  <>
+                    <Link href={`/admin/piedavajuma-izveide?id=${id}`} className={adminSecondary}>
+                      Atvērt aprēķinu
+                    </Link>
+                    <Link href={`/admin/dokuments/${id}?veids=prezentacija`} target="_blank" className={adminSecondary}>
+                      Prezentācija (PDF)
+                    </Link>
+                    <Link href={`/admin/dokuments/${id}?veids=piedavajums`} target="_blank" className={adminSecondary}>
+                      Piedāvājums (PDF)
+                    </Link>
+                  </>
+                ) : null}
                 {offer?.body && <CopyButton text={offer.body} />}
                 {kind === "template" ? (
                   <Link href={`/admin/piedavajumi/jauns?no=${id}`} className={adminSecondary}>

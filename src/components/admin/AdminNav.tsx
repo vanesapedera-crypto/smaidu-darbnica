@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, FileStack, FileText, Handshake, History, Inbox, KeyRound, Palette, UserCog } from "lucide-react";
+import { CalendarDays, FileStack, FileText, Handshake, History, Inbox, KeyRound, Palette, UserCog, Calculator, Coins } from "lucide-react";
 import type { TeamRole } from "@/lib/auth";
 import type { Section } from "@/lib/team/sections";
 import { cn } from "@/lib/utils";
 
-type Item = { href: string; label: string; icon: typeof Inbox; exact?: boolean; ownerOnly?: boolean; section?: Section };
+type Item = { href: string; label: string; icon: typeof Inbox; exact?: boolean; ownerOnly?: boolean; section?: Section; edit?: boolean };
 type Group = { title: string; items: Item[] };
 
 // Sadaļas "Lapas", "Saturs" un "Meklētājiem" izvēlnē nav (2026-11-07): saturu Vanesa maina kodā.
@@ -26,10 +26,12 @@ const groups: Group[] = [
     title: "Komanda",
     items: [
       { href: "/admin/scenariji", label: "Izrāžu scenāriji", icon: FileText, section: "scenariji" },
+      { href: "/admin/piedavajuma-izveide", label: "Piedāvājuma izveide", icon: Calculator, section: "piedavajumi", edit: true },
       { href: "/admin/piedavajumi", label: "Piedāvājumi", icon: Handshake, section: "piedavajumi" },
       { href: "/admin/klientu-vesture", label: "Klientu vēsture", icon: History, section: "klientu_vesture" },
       { href: "/admin/standarta-piedavajumi", label: "Standarta piedāvājumi", icon: FileStack, section: "standarta" },
       { href: "/admin/darbnicas", label: "Radošās darbnīcas", icon: Palette, section: "darbnicas" },
+      { href: "/admin/izmaksas", label: "Izmaksu katalogs", icon: Coins, section: "piedavajumi" },
       { href: "/admin/komandas-piekluve", label: "Komandas piekļuve", icon: UserCog, section: "piekluve" },
       { href: "/admin/parole", label: "Mainīt paroli", icon: KeyRound },
     ],
@@ -39,7 +41,11 @@ const groups: Group[] = [
 export default function AdminNav({ role, sections }: { role: TeamRole; sections: Section[] }) {
   const owner = role === "owner";
   const visible = (i: Item) =>
-    i.ownerOnly ? owner : i.href === "/admin/rezervacijas" && owner ? false : !i.section || owner || sections.includes(i.section);
+    i.ownerOnly
+      ? owner
+      : i.href === "/admin/rezervacijas" && owner
+        ? false
+        : owner || ((!i.section || sections.includes(i.section)) && (!i.edit || role === "manager"));
   const pathname = usePathname();
 
   return (

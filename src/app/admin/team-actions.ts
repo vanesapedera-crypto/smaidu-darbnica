@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { canSee, isManagerRole, requireAdmin, requireMember, requireSection } from "@/lib/auth";
 import { isSection, type Section } from "@/lib/team/sections";
 import { parseItems } from "@/lib/team/workshops";
+import { computeOffer, parseCalc, parseSettings } from "@/lib/team/offer-calc";
 import { slugify } from "@/lib/admin/fields";
 import { ACCESS_COOKIE } from "@/lib/auth-cookies";
 import { cookies } from "next/headers";
@@ -253,6 +254,8 @@ export async function saveWorkshop(id: string | null, _: TeamActionState, form: 
   const row = {
     title,
     notes: text(form, "notes", 5000),
+    description: text(form, "description", 5000),
+    image: text(form, "image", 500),
     items: parseItems(items),
     participants: Number.isInteger(participants) && participants > 0 && participants < 100000 ? participants : null,
     updated_at: new Date().toISOString(),
@@ -276,4 +279,136 @@ export async function deleteWorkshop(id: string) {
   await db.from("workshops").delete().eq("id", id);
   revalidatePath("/admin/darbnicas");
   redirect("/admin/darbnicas?dzests=1");
+}
+
+/* ------------------------------ Prezentāciju foto ------------------------------ */
+
+/** Augšupielādes adrese foto prezentācijām (publiskā krātuve media, mape prezentacijas/) — vadībai */
+export async function createPresentationUploadUrl(fileName: string, _folder: string, ext: "webp" | "svg" = "webp") {
+  const member = await requireMember();
+  if (!isManagerRole(member.role) || !(canSee(member, "piedavajumi") || canSee(member, "darbnicas"))) return { error: "Nav tiesību." };
+  const extension = ext === "svg" ? "svg" : "webp";
+  const path = `prezentacijas/${Date.now()}-${slugify(fileName.replace(/\.[^.]+$/, "")) || "foto"}.${extension}`;
+  const { data, error } = await member.db.storage.from("media").createSignedUploadUrl(path);
+  if (error || !data) return { error: error?.message ?? "Neizdevās sagatavot augšupielādi." };
+  const { data: pub } = member.db.storage.from("media").getPublicUrl(path);
+  return { path, token: data.token, publicUrl: pub.publicUrl };
+}
+
+/* ------------------------------ Izmaksu katalogs ------------------------------ */
+
+const UNITS = ["hour", "person", "piece", "fixed"] as const;
+const numField = (form: FormData, key: string) => {
+  const n = Number(String(form.get(key) ?? "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+export async function saveCostItem(id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const { db } = await requireSection("piedavajumi", true);
+  const title = text(form, "title", 200);
+  if (!title) return { error: "Ievadiet nosaukumu." };
+  const unit = String(form.get("unit") ?? "");
+  const row = {
+    title,
+    kind: form.get("kind") === "expense" ? "expense" : "activity",
+    unit: (UNITS as readonly string[]).includes(unit) ? unit : "hour",
+    cost: Math.max(0, numField(form, "cost")),
+    description: text(form, "description", 5000),
+    image: text(form, "image", 500),
+    notes: text(form, "notes", 2000),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = id ? await db.from("cost_items").update(row).eq("id", id) : await db.from("cost_items").insert(row);
+  if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  revalidatePath("/admin/izmaksas");
+  return { ok: id ? "Saglabāts." : "Pievienots." };
+}
+
+/** Dzēst var tikai administratore */
+export async function deleteCostItem(id: string) {
+  const { db } = await requireAdmin();
+  await db.from("cost_items").delete().eq("id", id);
+  revalidatePath("/admin/izmaksas");
+}
+
+/** Likmes (animatori, uzcenojums, PVN) — tikai administratore */
+export async function saveCalcSettings(_: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const { db } = await requireAdmin();
+  const data = {
+    animatorHour: Math.max(0, numField(form, "animatorHour")),
+    animatorFixed: Math.max(0, numField(form, "animatorFixed")),
+    markup: numField(form, "markup"),
+    vat: Math.max(0, numField(form, "vat")),
+  };
+  const { error } = await db.from("calc_settings").upsert({ id: 1, data, updated_at: new Date().toISOString() });
+  if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  revalidatePath("/admin/izmaksas");
+  revalidatePath("/admin/piedavajuma-izveide");
+  return { ok: "Likmes saglabātas." };
+}
+
+/* ------------------------------ Piedāvājuma izveide ------------------------------ */
+
+/**
+ * Saglabā kalkulatora piedāvājumu: offers (kind client) ar aprēķinu offers.calc.
+ * Jaunus izdevumus ar atzīmi "saglabāt katalogā" pievieno izmaksu katalogam.
+ */
+export async function saveCalcOffer(id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const member = await requireSection("piedavajumi", true);
+  const { db, email } = member;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(form.get("calc") ?? "{}"));
+  } catch {
+    return { error: "Neizdevās nolasīt aprēķinu." };
+  }
+  const { data: s } = await db.from("calc_settings").select("data").eq("id", 1).maybeSingle();
+  const calc = parseCalc(raw, parseSettings(s?.data), 0);
+  if (!calc.client.trim()) return { error: "Ievadiet klientu." };
+  if (!calc.workshops.length && !calc.items.length) return { error: "Atzīmējiet vismaz vienu darbnīcu vai aktivitāti." };
+  const result = computeOffer(calc);
+
+  // Jaunie izdevumi katalogā
+  let toCatalog: { title: string; unit: string; unitCost: number; kind: string }[] = [];
+  try {
+    toCatalog = JSON.parse(String(form.get("to_catalog") ?? "[]"));
+  } catch {
+    toCatalog = [];
+  }
+  for (const c of toCatalog.slice(0, 20)) {
+    if (!c?.title) continue;
+    await db.from("cost_items").insert({
+      title: String(c.title).slice(0, 200),
+      kind: c.kind === "activity" ? "activity" : "expense",
+      unit: (UNITS as readonly string[]).includes(c.unit) ? c.unit : "fixed",
+      cost: Math.max(0, Number(c.unitCost) || 0),
+    });
+  }
+
+  const euro = (n: number) => `${n.toLocaleString("lv-LV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  const row = {
+    kind: "client",
+    client_name: calc.client.trim(),
+    contact_person: calc.contactPerson || null,
+    contact_email: calc.contactEmail || null,
+    title: calc.title.trim() || `Piedāvājums: ${calc.client.trim()}`,
+    offer_date: calc.date || new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" }),
+    services: [...calc.workshops.map((w) => w.title), ...calc.items.filter((i) => i.kind === "activity").map((i) => i.title)].join("\n"),
+    price: `${euro(result.net)} + PVN (kopā ${euro(result.total)})`,
+    calc,
+    updated_at: new Date().toISOString(),
+  };
+
+  let savedId = id;
+  if (id) {
+    const { error } = await db.from("offers").update(row).eq("id", id);
+    if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  } else {
+    const { data, error } = await db.from("offers").insert({ ...row, status: "Melnraksts", created_by: email }).select("id").single();
+    if (error || !data) return { error: `Neizdevās saglabāt: ${error?.message ?? ""}` };
+    savedId = data.id;
+  }
+  revalidatePath("/admin/piedavajumi");
+  revalidatePath("/admin/izmaksas");
+  redirect(`/admin/piedavajuma-izveide?id=${savedId}&saglabats=1`);
 }

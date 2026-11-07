@@ -13,6 +13,9 @@ export type WorkshopRow = {
   id: string;
   title: string;
   notes: string | null;
+  /** Prezentācijai */
+  description?: string | null;
+  image?: string | null;
   items: WorkshopItem[];
   participants: number | null;
   created_by: string | null;

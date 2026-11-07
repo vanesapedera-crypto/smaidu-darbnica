@@ -8,6 +8,7 @@ import { parseItems, type WorkshopRow } from "@/lib/team/workshops";
 import PageHeader from "@/components/admin/PageHeader";
 import TeamForm from "@/components/admin/team/TeamForm";
 import WorkshopItems from "@/components/admin/team/WorkshopItems";
+import PhotoField from "@/components/admin/team/PhotoField";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import DeleteButton from "@/components/admin/DeleteButton";
 import { adminInput } from "@/components/admin/styles";
@@ -53,8 +54,22 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
                 <input name="title" required defaultValue={w?.title ?? ""} placeholder="piem. Ziemassvētku rotājumu darbnīca" className={adminInput} />
               </label>
               <WorkshopItems initial={items} participants={w?.participants ?? null} />
+              <div className="grid gap-5 border-t border-line pt-5 md:grid-cols-[1fr_auto]">
+                <label className="block space-y-1.5">
+                  <span className="block text-sm font-bold">Apraksts prezentācijai</span>
+                  <textarea
+                    name="description"
+                    rows={5}
+                    defaultValue={w?.description ?? ""}
+                    placeholder="Ko bērni darīs, ko paņems līdzi uz mājām, cik ilgi ilgst…"
+                    className={adminInput}
+                  />
+                  <span className="block text-xs text-ink-soft">Šis teksts un foto parādās klientam sūtāmajā prezentācijā.</span>
+                </label>
+                <PhotoField value={w?.image ?? null} />
+              </div>
               <label className="block space-y-1.5">
-                <span className="block text-sm font-bold">Piezīmes</span>
+                <span className="block text-sm font-bold">Piezīmes (iekšējās)</span>
                 <textarea name="notes" rows={3} defaultValue={w?.notes ?? ""} placeholder="Kur iepirkts, ilgums, kas jāņem līdzi…" className={adminInput} />
               </label>
             </div>
