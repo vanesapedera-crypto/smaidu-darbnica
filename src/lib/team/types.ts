@@ -39,7 +39,6 @@ export type OfferRow = {
   updated_at: string;
 };
 
-export const SCRIPT_CATEGORIES = ["Ziemassvētku izrāde", "Vasaras izrāde", "Cita izrāde", "Programma / ballīte"];
 export const OFFER_SEASONS = ["Ziemassvētki", "Vasara", "Visu gadu"];
 export const OFFER_STATUSES = ["Melnraksts", "Nosūtīts", "Pieņemts", "Noraidīts"];
 

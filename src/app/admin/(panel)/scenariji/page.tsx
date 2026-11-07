@@ -1,7 +1,7 @@
 import { Download, FileText, Pencil, Plus, Search } from "lucide-react";
 import { isManagerRole, requireMember } from "@/lib/auth";
 import { saveScript, deleteScript } from "@/app/admin/team-actions";
-import { SCRIPT_CATEGORIES, fileSize, type ScriptRow } from "@/lib/team/types";
+import { fileSize, type ScriptRow } from "@/lib/team/types";
 import { missingTable, signedUrls } from "@/lib/team/files";
 import PageHeader from "@/components/admin/PageHeader";
 import TeamForm from "@/components/admin/team/TeamForm";
@@ -12,7 +12,7 @@ import { adminInput, adminSecondary } from "@/components/admin/styles";
 
 export const metadata = { title: "Izrāžu scenāriji" };
 
-type Props = { searchParams: Promise<{ q?: string; k?: string }> };
+type Props = { searchParams: Promise<{ q?: string }> };
 
 /**
  * Izrāžu scenāriju arhīvs: visa komanda var lasīt, lejupielādēt un pievienot jaunus;
@@ -20,12 +20,11 @@ type Props = { searchParams: Promise<{ q?: string; k?: string }> };
  */
 export default async function ScriptsPage({ searchParams }: Props) {
   const { db, role } = await requireMember();
-  const { q = "", k = "" } = await searchParams;
+  const { q = "" } = await searchParams;
   const canEdit = isManagerRole(role);
   const canDelete = role === "owner";
 
   let query = db.from("scripts").select("*").order("year", { ascending: false, nullsFirst: false }).order("title");
-  if (k) query = query.eq("category", k);
   if (q.trim()) {
     const term = q.trim().replace(/[,()%*]/g, " ");
     query = query.or(["title", "notes", "file_name"].map((c) => `${c}.ilike.%${term}%`).join(","));
@@ -56,12 +55,6 @@ export default async function ScriptsPage({ searchParams }: Props) {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" aria-hidden />
           <input name="q" defaultValue={q} placeholder="Meklēt nosaukumā vai piezīmēs" className={`${adminInput} pl-9`} />
         </label>
-        <select name="k" defaultValue={k} className={`${adminInput} w-auto`}>
-          <option value="">Visas kategorijas</option>
-          {SCRIPT_CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
         <button className={adminSecondary}>Meklēt</button>
       </form>
 
@@ -70,7 +63,7 @@ export default async function ScriptsPage({ searchParams }: Props) {
       <ul className="mt-5 space-y-3">
         {scripts.length === 0 && (
           <li className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">
-            {q || k ? "Nekas netika atrasts." : "Arhīvs vēl ir tukšs."}
+            {q ? "Nekas netika atrasts." : "Arhīvs vēl ir tukšs."}
           </li>
         )}
         {scripts.map((s) => {
@@ -84,7 +77,7 @@ export default async function ScriptsPage({ searchParams }: Props) {
                 <div className="min-w-0 flex-1">
                   <p className="font-bold">{s.title}</p>
                   <p className="text-sm text-ink-soft">
-                    {[s.category, s.year, s.file_name && `${s.file_name} ${fileSize(s.file_size)}`].filter(Boolean).join(" · ")}
+                    {[s.year, s.file_name && `${s.file_name} ${fileSize(s.file_size)}`].filter(Boolean).join(" · ")}
                   </p>
                   {s.notes && <p className="mt-1 text-sm whitespace-pre-line">{s.notes}</p>}
                 </div>
@@ -123,14 +116,6 @@ function ScriptFields({ s, current }: { s?: ScriptRow; current?: { name: string 
           Izrādes nosaukums <span className="text-destructive">*</span>
         </span>
         <input name="title" required defaultValue={s?.title ?? ""} className={adminInput} />
-      </label>
-      <label className="space-y-1.5">
-        <span className="block text-sm font-bold">Kategorija</span>
-        <select name="category" defaultValue={s?.category ?? SCRIPT_CATEGORIES[0]} className={adminInput}>
-          {SCRIPT_CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
       </label>
       <label className="space-y-1.5">
         <span className="block text-sm font-bold">Gads</span>

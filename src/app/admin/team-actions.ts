@@ -68,7 +68,6 @@ export async function saveScript(id: string | null, _: TeamActionState, form: Fo
 
   const row: Record<string, unknown> = {
     title,
-    category: text(form, "category", 100),
     year: Number.isInteger(year) && year > 1990 && year < 2200 ? year : null,
     notes: text(form, "notes"),
     updated_at: new Date().toISOString(),

@@ -1,7 +1,8 @@
 import { Eye, Search } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import type { Booking } from "@/lib/bookings";
-import { getServices } from "@/lib/content/queries";
+import { getServices, getSettings } from "@/lib/content/queries";
+import { bookingCosts, bookingPrices } from "@/lib/pricing";
 import BookingCard, { isVenue } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
@@ -23,7 +24,11 @@ export default async function BookingsReadOnlyPage({ searchParams }: Props) {
     const term = q.trim().replace(/[,()%*]/g, " ");
     query = query.or(["parent_name", "company_name", "phone", "email"].map((c) => `${c}.ilike.%${term}%`).join(","));
   }
-  const [{ data, error }, business, programs] = await Promise.all([query, getServices("business"), getServices("private")]);
+  const [{ data, error }, business, programs, settings] = await Promise.all([query, getServices("business"), getServices("private"), getSettings()]);
+  // Izmaksas — tas pats aprēķins, ko klients redz formā un apstiprinājuma e-pastā
+  const prices = bookingPrices(settings);
+  const costsOf = (b: Booking) =>
+    b.inquiry_type === "business" ? null : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
   const titles = new Map([...business, ...programs].map((s) => [s.slug, s.title]));
   const label = (b: Booking) => {
     const slug = b.service_slug || b.program;
@@ -42,7 +47,7 @@ export default async function BookingsReadOnlyPage({ searchParams }: Props) {
   const list = (items: Booking[]) => (
     <ul className="mt-3 space-y-2">
       {items.map((b) => (
-        <BookingCard key={b.id} b={b} label={label(b)} showDate />
+        <BookingCard key={b.id} b={b} label={label(b)} costs={costsOf(b)} showDate />
       ))}
     </ul>
   );

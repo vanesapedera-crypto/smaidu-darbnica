@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import type { Booking } from "@/lib/bookings";
-import { getServices } from "@/lib/content/queries";
-import BookingCard, { isVenue, matches, stateOf, type Filter } from "@/components/admin/team/BookingCard";
+import { getServices, getSettings } from "@/lib/content/queries";
+import { bookingCosts, bookingPrices } from "@/lib/pricing";
+import BookingCard, { isTrip, isVenue, matches, stateOf, type Filter } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
 import { adminSecondary } from "@/components/admin/styles";
 import { cn } from "@/lib/utils";
@@ -55,11 +56,16 @@ export default async function CalendarPage({ searchParams }: Props) {
     return `/admin/kalendars?${p}`;
   };
 
-  const [{ data, error }, business, programs] = await Promise.all([
+  const [{ data, error }, business, programs, settings] = await Promise.all([
     db.from("bookings").select("*").gte("event_date", start).lte("event_date", end).order("event_date").order("event_time", { nullsFirst: true }),
     getServices("business"),
     getServices("private"),
+    getSettings(),
   ]);
+  // Izmaksas — tas pats aprēķins, ko klients redz formā un apstiprinājuma e-pastā
+  const prices = bookingPrices(settings);
+  const costsOf = (b: Booking) =>
+    b.inquiry_type === "business" ? null : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
   const titles = new Map([...business, ...programs].map((s) => [s.slug, s.title]));
   const label = (b: Booking) => {
     const slug = b.service_slug || b.program;
@@ -152,13 +158,23 @@ export default async function CalendarPage({ searchParams }: Props) {
                     {/* Telefonā — punkti, lielākā ekrānā — laiks un nosaukums */}
                     <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
                       {items.map((b) => (
-                        <span key={b.id} className={cn("size-2 rounded-full", stateOf(b).dot)} />
+                        <span key={b.id} className={cn("size-2 rounded-full", stateOf(b).dot, isTrip(b) && "ring-2 ring-purple-500 ring-offset-1")} />
                       ))}
                     </span>
                     <span className="mt-1 hidden space-y-1 sm:block">
                       {items.slice(0, 3).map((b) => (
-                        <span key={b.id} className={cn("block truncate rounded px-1.5 py-0.5 font-semibold ring-1", stateOf(b).tone)}>
-                          {(b.event_time ?? "").slice(0, 5)} {b.company_name || b.parent_name || label(b)}
+                        <span
+                          key={b.id}
+                          className={cn(
+                            "flex items-center gap-1 truncate rounded px-1.5 py-0.5 font-semibold ring-1",
+                            // Izbraukuma ballītes — lillā; statusu rāda punktiņš
+                            isTrip(b) ? "bg-purple-100 text-purple-900 ring-purple-300" : stateOf(b).tone,
+                          )}
+                        >
+                          {isTrip(b) && <span className={cn("size-1.5 shrink-0 rounded-full", stateOf(b).dot)} />}
+                          <span className="truncate">
+                            {(b.event_time ?? "").slice(0, 5)} {b.company_name || b.parent_name || label(b)}
+                          </span>
                         </span>
                       ))}
                       {items.length > 3 && <span className="block px-1 text-ink-soft">+{items.length - 3}</span>}
@@ -176,6 +192,7 @@ export default async function CalendarPage({ searchParams }: Props) {
         <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-strong" /> Gaida klienta apstiprinājumu</span>
         <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" /> Klients nav apstiprinājis 3+ dienas</span>
         <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" /> Apstiprināta</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm bg-purple-100 ring-1 ring-purple-300" /> Izbraukuma ballīte</span>
       </div>
 
       {/* Saraksts pa dienām */}
@@ -190,7 +207,7 @@ export default async function CalendarPage({ searchParams }: Props) {
               </h3>
               <ul className="mt-2 space-y-2">
                 {items.map((b) => (
-                  <BookingCard key={b.id} b={b} label={label(b)} />
+                  <BookingCard key={b.id} b={b} label={label(b)} costs={costsOf(b)} />
                 ))}
               </ul>
             </div>
