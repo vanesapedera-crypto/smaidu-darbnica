@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Building2, Paperclip, Plus, Search } from "lucide-react";
+import { History, Paperclip, Plus, Search } from "lucide-react";
 import { requireMember } from "@/lib/auth";
-import { OFFER_SEASONS, clientKey, type OfferRow } from "@/lib/team/types";
+import { OFFER_SEASONS, type OfferRow } from "@/lib/team/types";
 import { missingTable } from "@/lib/team/files";
 import PageHeader from "@/components/admin/PageHeader";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
@@ -14,8 +14,8 @@ export const metadata = { title: "Piedāvājumi klientiem" };
 type Props = { searchParams: Promise<{ q?: string; s?: string; dzests?: string }> };
 
 /**
- * Visi piedāvājumi, sagrupēti pa klientiem: pirms jauna piedāvājuma uzreiz redzams,
- * kas šim klientam piedāvāts iepriekšējos gados.
+ * Visi piedāvājumi klientiem — jaunākie augšā. Vēsture pa klientiem ir atsevišķā sadaļā "Klientu vēsture";
+ * rediģējot piedāvājumu, sānā redzams, kas šim klientam piedāvāts iepriekš.
  */
 export default async function OffersPage({ searchParams }: Props) {
   const { db } = await requireMember(["owner", "manager"]);
@@ -31,23 +31,17 @@ export default async function OffersPage({ searchParams }: Props) {
   if (missingTable(error)) return <MigrationNotice title="Piedāvājumi klientiem" />;
   const offers = (data ?? []) as OfferRow[];
 
-  // Grupas pa klientiem; klients ar jaunāko piedāvājumu — augšā
-  const groups = new Map<string, { name: string; items: OfferRow[] }>();
-  for (const o of offers) {
-    const key = clientKey(o.client_name) || "—";
-    const g = groups.get(key) ?? { name: o.client_name ?? "—", items: [] };
-    g.items.push(o);
-    groups.set(key, g);
-  }
-
   return (
     <>
       <PageHeader
         title="Piedāvājumi klientiem"
-        description="Kas, kad un par kādu cenu piedāvāts katram klientam — lai nākamajos gados nepiedāvātu to pašu."
+        description="Visi piedāvājumi klientiem. Kas kuram klientam bijis iepriekš — sadaļā “Klientu vēsture”."
         notice={dzests ? "Piedāvājums izdzēsts." : undefined}
         actions={
           <>
+            <Link href="/admin/klientu-vesture" className={adminSecondary}>
+              <History className="size-4" aria-hidden /> Klientu vēsture
+            </Link>
             <Link href="/admin/standarta-piedavajumi" className={adminSecondary}>Standarta piedāvājumi</Link>
             <Link href="/admin/piedavajumi/jauns" className={adminPrimary}>
               <Plus className="size-4" aria-hidden /> Jauns piedāvājums
@@ -72,45 +66,31 @@ export default async function OffersPage({ searchParams }: Props) {
 
       {error && <p className="mt-4 text-sm font-semibold text-destructive">{error.message}</p>}
 
-      <div className="mt-6 space-y-5">
-        {groups.size === 0 && (
-          <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">{q || s ? "Nekas netika atrasts." : "Piedāvājumu vēl nav."}</p>
+      <ul className="mt-6 divide-y divide-line rounded-2xl bg-white ring-1 ring-line">
+        {offers.length === 0 && (
+          <li className="p-6 text-sm text-ink-soft">{q || s ? "Nekas netika atrasts." : "Piedāvājumu vēl nav."}</li>
         )}
-        {[...groups.values()].map((g) => (
-          <section key={g.name} className="rounded-2xl bg-white ring-1 ring-line">
-            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-              <h2 className="flex items-center gap-3 font-extrabold">
-                <span className="grid size-9 place-items-center rounded-lg bg-ink text-brand">
-                  <Building2 className="size-4" aria-hidden />
-                </span>
-                {g.name}
-                <span className="text-sm font-semibold text-ink-soft">{g.items.length}</span>
-              </h2>
-              <Link href={`/admin/piedavajumi/jauns?klients=${encodeURIComponent(g.name)}`} className="inline-flex items-center gap-1.5 text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
-                <Plus className="size-3.5" aria-hidden /> Jauns šim klientam
-              </Link>
-            </header>
-            <ul className="divide-y divide-line">
-              {g.items.map((o) => (
-                <li key={o.id}>
-                  <Link href={`/admin/piedavajumi/${o.id}`} className="grid gap-x-6 gap-y-1 px-5 py-3 hover:bg-surface/60 md:grid-cols-[110px_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
-                    <span className="text-sm text-ink-soft">{lvDate(o.offer_date) || "—"}</span>
-                    <span className="min-w-0 font-semibold">
-                      {o.title}
-                      {o.file_name && <Paperclip className="ml-1.5 inline size-3.5 text-ink-soft" aria-label="Pievienots fails" />}
-                    </span>
-                    <span className="line-clamp-2 text-sm text-ink-soft">{o.services}</span>
-                    <span className="flex items-center gap-2 text-sm">
-                      {o.price && <span className="font-semibold">{o.price}</span>}
-                      {o.status && <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", statusTone(o.status))}>{o.status}</span>}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
+        {offers.map((o) => (
+          <li key={o.id}>
+            <Link
+              href={`/admin/piedavajumi/${o.id}`}
+              className="grid gap-x-6 gap-y-1 px-5 py-3 hover:bg-surface/60 md:grid-cols-[100px_minmax(0,1fr)_minmax(0,1.4fr)_auto]"
+            >
+              <span className="text-sm text-ink-soft">{lvDate(o.offer_date) || "—"}</span>
+              <span className="min-w-0 font-bold">{o.client_name}</span>
+              <span className="min-w-0 text-sm">
+                <span className="font-semibold">{o.title}</span>
+                {o.file_name && <Paperclip className="ml-1.5 inline size-3.5 text-ink-soft" aria-label="Pievienots fails" />}
+                {o.services && <span className="line-clamp-1 text-ink-soft">{o.services}</span>}
+              </span>
+              <span className="flex items-center gap-2 text-sm">
+                {o.price && <span className="font-semibold">{o.price}</span>}
+                {o.status && <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", statusTone(o.status))}>{o.status}</span>}
+              </span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </>
   );
 }

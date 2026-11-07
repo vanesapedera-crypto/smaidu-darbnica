@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, FileStack, FileText, Handshake, Inbox, KeyRound, UserCog } from "lucide-react";
+import { CalendarDays, FileStack, FileText, Handshake, History, Inbox, KeyRound, UserCog } from "lucide-react";
 import type { TeamRole } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,8 @@ const groups: Group[] = [
     title: "Komanda",
     items: [
       { href: "/admin/scenariji", label: "Izrāžu scenāriji", icon: FileText },
-      { href: "/admin/piedavajumi", label: "Piedāvājumi un klientu vēsture", icon: Handshake, roles: MANAGERS },
+      { href: "/admin/piedavajumi", label: "Piedāvājumi", icon: Handshake, roles: MANAGERS },
+      { href: "/admin/klientu-vesture", label: "Klientu vēsture", icon: History, roles: MANAGERS },
       { href: "/admin/standarta-piedavajumi", label: "Standarta piedāvājumi", icon: FileStack },
       { href: "/admin/komandas-piekluve", label: "Komandas piekļuve", icon: UserCog, roles: OWNER },
       { href: "/admin/parole", label: "Mainīt paroli", icon: KeyRound },
