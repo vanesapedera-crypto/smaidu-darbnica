@@ -4,7 +4,7 @@ import { saveCalcOffer } from "@/app/admin/team-actions";
 import { getSettings } from "@/lib/content/queries";
 import { missingTable } from "@/lib/team/files";
 import { emptyCalc, parseCalc, parseSettings, type CostItemRow } from "@/lib/team/offer-calc";
-import { costPerPerson, parseItems } from "@/lib/team/workshops";
+import { costPerPerson, materialMap, parseItems, type Material } from "@/lib/team/workshops";
 import PageHeader from "@/components/admin/PageHeader";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import OfferBuilder from "@/components/admin/team/OfferBuilder";
@@ -18,14 +18,16 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
   const { id, saglabats, klients } = await searchParams;
   const offerId = id && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 
-  const [{ data: ws, error }, { data: items }, { data: s }, { data: names }, site, existing] = await Promise.all([
+  const [{ data: ws, error }, { data: items }, { data: s }, { data: names }, site, existing, { data: materials }] = await Promise.all([
     db.from("workshops").select("id, title, items, description").order("title"),
     db.from("cost_items").select("*").order("sort").order("title"),
     db.from("calc_settings").select("data").eq("id", 1).maybeSingle(),
     db.from("offers").select("client_name").eq("kind", "client"),
     getSettings(),
     offerId ? db.from("offers").select("calc, client_name, title").eq("id", offerId).maybeSingle() : Promise.resolve({ data: null }),
+    db.from("materials").select("id, name, price, pack"),
   ]);
+  const mats = materialMap(materials as Material[] | null);
   if (missingTable(error) || items === null) return <MigrationNotice title="Piedāvājuma izveide" file="20261108090000_offer_builder.sql" />;
 
   const settings = parseSettings(s?.data);
@@ -59,7 +61,7 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
           workshops={(ws ?? []).map((w) => ({
             id: w.id as string,
             title: w.title as string,
-            costPerPerson: costPerPerson(parseItems(w.items)),
+            costPerPerson: costPerPerson(parseItems(w.items), mats),
             hasDescription: Boolean((w.description as string | null)?.trim()),
           }))}
           catalog={((items ?? []) as CostItemRow[]).map((i) => ({ id: i.id, kind: i.kind, title: i.title, unit: i.unit, cost: Number(i.cost) }))}

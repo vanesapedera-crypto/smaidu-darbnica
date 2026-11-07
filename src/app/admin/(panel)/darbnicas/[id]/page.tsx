@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { isManagerRole, requireSection } from "@/lib/auth";
 import { deleteWorkshop, saveWorkshop } from "@/app/admin/team-actions";
 import { missingTable } from "@/lib/team/files";
-import { parseItems, type WorkshopRow } from "@/lib/team/workshops";
+import { parseItems, type Material, type WorkshopRow } from "@/lib/team/workshops";
 import PageHeader from "@/components/admin/PageHeader";
 import TeamForm from "@/components/admin/team/TeamForm";
 import WorkshopItems from "@/components/admin/team/WorkshopItems";
@@ -33,6 +33,8 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
     w = data as WorkshopRow;
   }
   const items = parseItems(w?.items);
+  const { data: materials } = await db.from("materials").select("id, name, price, pack").order("name");
+  const mats = ((materials ?? []) as Material[]).map((m) => ({ ...m, price: Number(m.price) || 0 }));
 
   return (
     <>
@@ -53,7 +55,7 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
                 </span>
                 <input name="title" required defaultValue={w?.title ?? ""} placeholder="piem. Ziemassvētku rotājumu darbnīca" className={adminInput} />
               </label>
-              <WorkshopItems initial={items} participants={w?.participants ?? null} />
+              <WorkshopItems initial={items} materials={mats} participants={w?.participants ?? null} />
               <div className="grid gap-5 border-t border-line pt-5 md:grid-cols-[1fr_auto]">
                 <label className="block space-y-1.5">
                   <span className="block text-sm font-bold">Apraksts prezentācijai</span>
@@ -72,7 +74,7 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
           </TeamForm>
         ) : (
           <div className="space-y-5">
-            <WorkshopItems initial={items} participants={w?.participants ?? null} readOnly />
+            <WorkshopItems initial={items} materials={mats} participants={w?.participants ?? null} readOnly />
           </div>
         )}
         {!isNew && role === "owner" && (

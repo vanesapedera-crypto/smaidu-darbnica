@@ -23,6 +23,7 @@ supabase/migrations/20261107090000_team_access.sql
 supabase/migrations/20261107120000_team_sections.sql
 supabase/migrations/20261107130000_workshops.sql
 supabase/migrations/20261108090000_offer_builder.sql
+supabase/migrations/20261108100000_materials.sql
 ```
 
 Tas:
