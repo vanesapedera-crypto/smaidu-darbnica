@@ -431,3 +431,32 @@ export async function deleteMaterial(id: string) {
   await db.from("materials").delete().eq("id", id);
   revalidatePath("/admin/izejmateriali");
 }
+
+/* ------------------------------ Klientu vēsture ------------------------------ */
+
+export async function saveHistory(id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const { db, email } = await requireSection("klientu_vesture", true);
+  const client = text(form, "client_name", 300);
+  if (!client) return { error: "Ievadiet klientu." };
+  const year = Number(form.get("year"));
+  const amountRaw = String(form.get("amount") ?? "").trim();
+  const row = {
+    client_name: client,
+    year: Number.isInteger(year) && year > 1990 && year < 2200 ? year : null,
+    services: text(form, "services", 2000),
+    amount: amountRaw ? Math.max(0, numField(form, "amount")) : null,
+    notes: text(form, "notes", 2000),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = id ? await db.from("client_history").update(row).eq("id", id) : await db.from("client_history").insert({ ...row, created_by: email });
+  if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  revalidatePath("/admin/klientu-vesture");
+  return { ok: id ? "Saglabāts." : `Pievienots: ${client}` };
+}
+
+/** Dzēst var tikai administratore */
+export async function deleteHistory(id: string) {
+  const { db } = await requireAdmin();
+  await db.from("client_history").delete().eq("id", id);
+  revalidatePath("/admin/klientu-vesture");
+}

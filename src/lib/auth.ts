@@ -59,7 +59,7 @@ export const canSee = (m: Pick<MemberContext, "role" | "sections">, section: Sec
 /** Kur pēc pieteikšanās nonāk lietotājs: administratore — pieteikumi; pārējie — pirmā sadaļa, ko redz */
 export function homeFor(m: Pick<MemberContext, "role" | "sections">): string {
   if (m.role === "owner") return "/admin";
-  return SECTIONS.find((s) => m.sections.includes(s.key))?.href ?? "/admin/parole";
+  return SECTIONS.find((s) => !s.hidden && m.sections.includes(s.key))?.href ?? "/admin/parole";
 }
 
 /**

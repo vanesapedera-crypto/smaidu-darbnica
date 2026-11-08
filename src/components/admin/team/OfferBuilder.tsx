@@ -168,7 +168,7 @@ export default function OfferBuilder({
           </ul>
         </Card>
 
-        <Card title="4. Papildu aktivitātes" hint="Cena atkarīga no daudzuma — stundas, personas vai gabali (sk. “Izmaksu katalogs”).">
+        <Card title="4. Papildu aktivitātes" hint="Cena atkarīga no daudzuma — stundas, personas vai gabali (cenas — lapas apakšā “Cenas un likmes”).">
           <CatalogList items={activities} selected={c.items} onToggle={toggleItem} onQty={setItemQty} />
         </Card>
 

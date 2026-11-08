@@ -1,8 +1,8 @@
-import { ShieldCheck, UserCog } from "lucide-react";
+import { ChevronDown, UserCog } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import { grantAccess, revokeAccess } from "@/app/admin/team-actions";
 import { missingTable } from "@/lib/team/files";
-import { SECTIONS } from "@/lib/team/sections";
+import { VISIBLE_SECTIONS } from "@/lib/team/sections";
 import PageHeader from "@/components/admin/PageHeader";
 import TeamForm from "@/components/admin/team/TeamForm";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
@@ -37,29 +37,31 @@ export default async function TeamAccessPage() {
       )}
 
       <ul className="mt-6 space-y-3">
-        <li className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 ring-1 ring-line">
-          <ShieldCheck className="size-5 text-ink-soft" aria-hidden />
-          <p className="text-sm">
-            <b>Vanesa — administratore.</b> <span className="text-ink-soft">Redz, maina un dzēš visu; vienīgā maina cenas un mājaslapu.</span>
-          </p>
-        </li>
         {members.map((m) => (
           <li key={m.user_id} className="rounded-2xl bg-white ring-1 ring-line">
-            <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
-              <UserCog className="size-5 text-ink-soft" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="font-bold">{m.name || m.email}</p>
-                {m.name && <p className="text-sm text-ink-soft">{m.email}</p>}
+            {/* Sākumā aizvērts — uzspiežot uz vārda atveras ķeksīši */}
+            <details className="group">
+              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+                <UserCog className="size-5 text-ink-soft" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold">{m.name || m.email}</span>
+                  <span className="block text-sm text-ink-soft">
+                    {m.name ? `${m.email} · ` : ""}
+                    {m.role === "manager" ? "var labot" : "tikai skatīt"} ·{" "}
+                    {(m.sections ?? []).map((k) => VISIBLE_SECTIONS.find((x) => x.key === k)?.label).filter(Boolean).join(", ") || "nav sadaļu"}
+                  </span>
+                </span>
+                <ChevronDown className="size-5 text-ink-soft transition-transform group-open:rotate-180" aria-hidden />
+              </summary>
+              <div className="space-y-5 border-t border-line p-5">
+                <TeamForm action={grantAccess}>
+                  <input type="hidden" name="email" value={m.email} />
+                  <input type="hidden" name="current_role" value={m.role} />
+                  <AccessFields name={m.name} sections={m.sections ?? []} canEdit={m.role === "manager"} />
+                </TeamForm>
+                <DeleteButton action={revokeAccess.bind(null, m.user_id)} label="Noņemt piekļuvi" />
               </div>
-              <DeleteButton action={revokeAccess.bind(null, m.user_id)} label="Noņemt piekļuvi" />
-            </div>
-            <div className="p-5">
-              <TeamForm action={grantAccess}>
-                <input type="hidden" name="email" value={m.email} />
-                <input type="hidden" name="current_role" value={m.role} />
-                <AccessFields name={m.name} sections={m.sections ?? []} canEdit={m.role === "manager"} />
-              </TeamForm>
-            </div>
+            </details>
           </li>
         ))}
       </ul>
@@ -105,7 +107,7 @@ function AccessFields({ name, sections, canEdit }: { name: string | null; sectio
       <fieldset>
         <legend className="text-sm font-bold">Redz sadaļas</legend>
         <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {SECTIONS.map((s) => (
+          {VISIBLE_SECTIONS.map((s) => (
             <label key={s.key} className="flex items-start gap-3 rounded-xl p-3 ring-1 ring-line has-checked:bg-brand-soft has-checked:ring-ink">
               <input type="checkbox" name="sections" value={s.key} defaultChecked={sections.includes(s.key)} className="mt-0.5 size-4 shrink-0 accent-ink" />
               <span>
@@ -116,6 +118,10 @@ function AccessFields({ name, sections, canEdit }: { name: string | null; sectio
           ))}
         </div>
       </fieldset>
+      {/* Paslēptās sadaļas (piem. standarta piedāvājumi), kas jau ir atzīmētas, saglabājas */}
+      {sections.filter((x) => !VISIBLE_SECTIONS.some((s) => s.key === x)).map((x) => (
+        <input key={x} type="hidden" name="sections" value={x} />
+      ))}
       <label className="flex items-start gap-3 rounded-xl p-3 ring-1 ring-line has-checked:bg-brand-soft has-checked:ring-ink sm:max-w-xl">
         <input type="checkbox" name="can_edit" value="1" defaultChecked={canEdit} className="mt-0.5 size-4 shrink-0 accent-ink" />
         <span>

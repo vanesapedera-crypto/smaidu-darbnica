@@ -46,3 +46,34 @@ set items = coalesce((
   where i ? 'materialId' or m.id is not null
 ), '[]'::jsonb)
 where exists (select 1 from jsonb_array_elements(w.items) i where not (i ? 'materialId'));
+
+-- =====================================================================
+-- Klientu vēsture (uzņēmumi): nosaukums, gads, kas ņemts (izrāde / radošās darbnīcas), samaksa.
+-- =====================================================================
+create table if not exists public.client_history (
+  id           uuid primary key default gen_random_uuid(),
+  client_name  text not null,
+  year         int,
+  services     text,
+  amount       numeric,
+  notes        text,
+  created_by   text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists client_history_client_idx on public.client_history (lower(client_name));
+alter table public.client_history enable row level security;
+drop policy if exists "client_history_read" on public.client_history;
+create policy "client_history_read" on public.client_history
+  for select to authenticated using (public.has_section('klientu_vesture'));
+drop policy if exists "client_history_insert" on public.client_history;
+create policy "client_history_insert" on public.client_history
+  for insert to authenticated with check (public.is_manager() and public.has_section('klientu_vesture'));
+drop policy if exists "client_history_update" on public.client_history;
+create policy "client_history_update" on public.client_history
+  for update to authenticated
+  using (public.is_manager() and public.has_section('klientu_vesture'))
+  with check (public.is_manager() and public.has_section('klientu_vesture'));
+drop policy if exists "client_history_admin_delete" on public.client_history;
+create policy "client_history_admin_delete" on public.client_history
+  for delete to authenticated using (public.is_admin());
