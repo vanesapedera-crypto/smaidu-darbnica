@@ -26,7 +26,7 @@ const groups: Group[] = [
   {
     title: "Komanda",
     items: [
-      { href: "/admin/scenariji", label: "Izrāžu scenāriji", icon: FileText, section: "scenariji" },
+      { href: "/admin/scenariji", label: "Scenāriji", icon: FileText, section: "scenariji" },
       { href: "/admin/piedavajuma-izveide", label: "Piedāvājuma izveide", icon: Calculator, section: "piedavajumi", edit: true },
       { href: "/admin/piedavajumi", label: "Piedāvājumi", icon: Handshake, section: "piedavajumi" },
       { href: "/admin/klientu-vesture", label: "Klientu vēsture", icon: History, section: "klientu_vesture" },

@@ -180,3 +180,69 @@ export async function cancelGoogleEvent(db: AdminContext["db"], bookingId: strin
     return "failed";
   }
 }
+
+export type GoogleEvent = {
+  id: string;
+  title: string;
+  /** YYYY-MM-DD */
+  date: string;
+  /** "14:00" vai "" (visas dienas notikums) */
+  time: string;
+  endTime: string;
+  location: string;
+  description: string;
+  organizer: string;
+  link: string;
+};
+
+/**
+ * Savienotā Google kalendāra notikumi laika posmā (arī tie, kuros jūs ielūdza citi, piem. Kristīne).
+ * Notikumi, ko izveidoja pati mājaslapa no pieteikumiem (ID sākas ar "sd"), netiek atgriezti — tie jau ir kalendārā kā rezervācijas.
+ * null — nav savienojuma vai kļūda.
+ */
+export async function listGoogleEvents(db: AdminContext["db"], from: string, to: string): Promise<GoogleEvent[] | null> {
+  const conn = await googleConnection(db);
+  if (!conn) return null;
+  const token = await accessToken(conn.refreshToken);
+  if (!token) return null;
+  const params = new URLSearchParams({
+    timeMin: `${from}T00:00:00+02:00`,
+    timeMax: `${to}T23:59:59+03:00`,
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: "250",
+    timeZone: "Europe/Riga",
+  });
+  try {
+    const res = await fetch(`${API}?${params}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000), cache: "no-store" });
+    if (!res.ok) {
+      console.error("[google] list", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { items?: Record<string, unknown>[] };
+    const rigaTime = (iso: string) => new Date(iso).toLocaleTimeString("lv-LV", { timeZone: "Europe/Riga", hour: "2-digit", minute: "2-digit" });
+    const rigaDate = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
+    return (data.items ?? [])
+      .filter((e) => e.status !== "cancelled" && !String(e.id ?? "").startsWith("sd"))
+      .map((e) => {
+        const start = (e.start ?? {}) as { date?: string; dateTime?: string };
+        const end = (e.end ?? {}) as { date?: string; dateTime?: string };
+        const organizer = (e.organizer ?? {}) as { email?: string; displayName?: string };
+        return {
+          id: String(e.id),
+          title: String(e.summary ?? "(bez nosaukuma)"),
+          date: start.dateTime ? rigaDate(start.dateTime) : (start.date ?? ""),
+          time: start.dateTime ? rigaTime(start.dateTime) : "",
+          endTime: end.dateTime ? rigaTime(end.dateTime) : "",
+          location: String(e.location ?? ""),
+          description: String(e.description ?? "").replace(/<[^>]+>/g, " ").slice(0, 2000),
+          organizer: organizer.displayName || organizer.email || "",
+          link: String(e.htmlLink ?? ""),
+        };
+      })
+      .filter((e) => e.date >= from && e.date <= to);
+  } catch (e) {
+    console.error("[google] list failed", e);
+    return null;
+  }
+}

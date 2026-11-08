@@ -5,6 +5,7 @@ import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import { timeLabel } from "@/lib/dates";
+import { listGoogleEvents, type GoogleEvent } from "@/lib/google-calendar";
 import BookingCard, { isTrip, isVenue, matches, stateOf, type Filter } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
 import { adminSecondary } from "@/components/admin/styles";
@@ -66,6 +67,10 @@ export default async function CalendarPage({ searchParams }: Props) {
     getServices("private"),
     getSettings(),
   ]);
+  // Google kalendāra notikumi (arī tie, kuros ielūdza Kristīne) — redz tikai administratore, jo tas ir personīgais kalendārs
+  const google: GoogleEvent[] | null = role === "owner" && filter === "visi" ? await listGoogleEvents(db, start, end) : null;
+  const googleByDay = new Map<string, GoogleEvent[]>();
+  for (const g of google ?? []) googleByDay.set(g.date, [...(googleByDay.get(g.date) ?? []), g]);
   // Izmaksas — tas pats aprēķins, ko klients redz formā un apstiprinājuma e-pastā
   const prices = bookingPrices(settings);
   const costsOf = (b: Booking) =>
@@ -87,6 +92,7 @@ export default async function CalendarPage({ searchParams }: Props) {
 
   // Atvērtā rezervācija (r) vai diena (d)
   const selected = sp.r ? bookings.filter((b) => b.id === sp.r) : sp.d ? (byDay.get(sp.d) ?? []) : [];
+  const selectedGoogle = !sp.r && sp.d ? (googleByDay.get(sp.d) ?? []) : [];
   const dayTitle = (day: string) => {
     const d = new Date(`${day}T12:00:00Z`);
     return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()].toLowerCase()}, ${WEEKDAY_NAMES[d.getUTCDay()]}`;
@@ -161,14 +167,15 @@ export default async function CalendarPage({ searchParams }: Props) {
           {cells.map((d, i) => {
             const day = d ? iso(year, month, d) : "";
             const items = d ? (byDay.get(day) ?? []) : [];
+            const gItems = d ? (googleByDay.get(day) ?? []) : [];
             return (
               <div key={i} className={cn("min-h-16 border-b border-r border-line p-1 text-xs sm:min-h-24 sm:p-1.5", (i + 1) % 7 === 0 && "border-r-0", !d && "bg-surface/50")}>
                 {d && (
                   <>
                     <Link
-                      href={items.length ? href({ d: day }) : "#"}
-                      aria-disabled={!items.length || undefined}
-                      className={cn("block", !items.length && "pointer-events-none")}
+                      href={items.length || gItems.length ? href({ d: day }) : "#"}
+                      aria-disabled={!(items.length || gItems.length) || undefined}
+                      className={cn("block", !(items.length || gItems.length) && "pointer-events-none")}
                     >
                       <span className={cn("inline-grid size-6 place-items-center rounded-full font-bold", day === today && "bg-brand text-ink", day === sp.d && "ring-2 ring-ink")}>
                         {d}
@@ -177,6 +184,9 @@ export default async function CalendarPage({ searchParams }: Props) {
                       <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
                         {items.map((b) => (
                           <span key={b.id} className={cn("size-2 rounded-full", stateOf(b).dot, isTrip(b) && "ring-2 ring-purple-500 ring-offset-1")} />
+                        ))}
+                        {gItems.map((g) => (
+                          <span key={g.id} className="size-2 rounded-full bg-ink/40" />
                         ))}
                       </span>
                     </Link>
@@ -199,9 +209,16 @@ export default async function CalendarPage({ searchParams }: Props) {
                           </span>
                         </Link>
                       ))}
-                      {items.length > 3 && (
+                      {gItems.slice(0, Math.max(0, 3 - Math.min(items.length, 3))).map((g) => (
+                        <Link key={g.id} href={href({ d: day })} className="flex items-center gap-1 truncate rounded bg-surface px-1.5 py-0.5 font-semibold text-ink-soft ring-1 ring-line hover:ring-2">
+                          <span className="truncate">
+                            {g.time} {g.title}
+                          </span>
+                        </Link>
+                      ))}
+                      {items.length + gItems.length > 3 && (
                         <Link href={href({ d: day })} className="block px-1 text-ink-soft hover:text-ink">
-                          +{items.length - 3}
+                          +{items.length + gItems.length - 3}
                         </Link>
                       )}
                     </span>
@@ -222,10 +239,10 @@ export default async function CalendarPage({ searchParams }: Props) {
       </div>
 
       {/* Atvērtā rezervācija vai diena — tikai tā */}
-      {selected.length > 0 && (
+      {(selected.length > 0 || selectedGoogle.length > 0) && (
         <section id="izvele" className="mt-8 scroll-mt-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-extrabold">{dayTitle(selected[0].event_date!.slice(0, 10))}</h3>
+            <h3 className="text-sm font-extrabold">{dayTitle(selected[0]?.event_date?.slice(0, 10) ?? sp.d!)}</h3>
             <Link href={href({})} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
               <X className="size-4" aria-hidden /> Aizvērt
             </Link>
@@ -234,14 +251,17 @@ export default async function CalendarPage({ searchParams }: Props) {
             {selected.map((b) => (
               <BookingCard key={b.id} b={b} label={label(b)} costs={costsOf(b)} />
             ))}
+            {selectedGoogle.map((g) => (
+              <GoogleCard key={g.id} g={g} />
+            ))}
           </ul>
         </section>
       )}
 
       {/* Visa mēneša saraksts — īsi; uzspiežot atveras tikai attiecīgā rezervācija */}
       <section className="mt-8 space-y-5">
-        {byDay.size === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā mēnesī rezervāciju nav.</p>}
-        {[...byDay.entries()].map(([day, items]) => (
+        {byDay.size === 0 && googleByDay.size === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā mēnesī rezervāciju nav.</p>}
+        {[...new Set([...byDay.keys(), ...googleByDay.keys()])].sort().map((day) => [day, byDay.get(day) ?? []] as const).map(([day, items]) => (
           <div key={day}>
             <h3 className="text-sm font-extrabold">{dayTitle(day)}</h3>
             <ul className="mt-2 divide-y divide-line rounded-2xl bg-white ring-1 ring-line">
@@ -268,10 +288,51 @@ export default async function CalendarPage({ searchParams }: Props) {
                   </li>
                 );
               })}
+              {(googleByDay.get(day) ?? []).map((g) => (
+                <li key={g.id}>
+                  <Link
+                    href={href({ d: day })}
+                    className="grid items-center gap-x-4 gap-y-1 px-4 py-3 text-ink-soft hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto]"
+                  >
+                    <span className="text-sm font-semibold">{g.time ? `${g.time}${g.endTime ? `–${g.endTime}` : ""}` : "Visu dienu"}</span>
+                    <span className="min-w-0 truncate text-sm">
+                      <b className="text-ink">{g.title}</b>
+                      {g.location && ` · ${g.location}`}
+                    </span>
+                    <span className="w-fit rounded-full bg-surface px-2.5 py-1 text-xs font-bold ring-1 ring-line">Google kalendārs</span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
       </section>
+      {role === "owner" && filter === "visi" && google === null && (
+        <p className="mt-6 text-sm text-ink-soft">Google kalendārs nav savienots vai nav pieejams — tā notikumi šeit netiek rādīti.</p>
+      )}
     </>
+  );
+}
+
+/** Notikums no Google kalendāra (nav pieteikums mājaslapā) */
+function GoogleCard({ g }: { g: GoogleEvent }) {
+  return (
+    <li className="rounded-2xl bg-white p-4 ring-1 ring-line sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-bold">
+            {g.time ? `${g.time}${g.endTime ? `–${g.endTime}` : ""}` : "Visu dienu"} · {g.title}
+          </p>
+          <p className="text-sm text-ink-soft">{[g.location, g.organizer && `Organizators: ${g.organizer}`].filter(Boolean).join(" · ")}</p>
+        </div>
+        <span className="inline-flex rounded-full bg-surface px-2.5 py-1 text-xs font-bold ring-1 ring-line">Google kalendārs</span>
+      </div>
+      {g.description.trim() && <p className="mt-3 rounded-xl bg-surface p-3 text-sm whitespace-pre-line">{g.description.trim()}</p>}
+      {g.link && (
+        <a href={g.link} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
+          Atvērt Google kalendārā
+        </a>
+      )}
+    </li>
   );
 }

@@ -10,12 +10,12 @@ import DeleteButton from "@/components/admin/DeleteButton";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 
-export const metadata = { title: "Izrāžu scenāriji" };
+export const metadata = { title: "Scenāriji" };
 
 type Props = { searchParams: Promise<{ q?: string }> };
 
 /**
- * Izrāžu scenāriju arhīvs: visa komanda var lasīt, lejupielādēt un pievienot jaunus;
+ * Scenāriju arhīvs: visa komanda var lasīt, lejupielādēt un pievienot jaunus;
  * labot — administratore un vadība; dzēst — tikai administratore.
  */
 export default async function ScriptsPage({ searchParams }: Props) {
@@ -30,13 +30,13 @@ export default async function ScriptsPage({ searchParams }: Props) {
     query = query.or(["title", "notes", "file_name"].map((c) => `${c}.ilike.%${term}%`).join(","));
   }
   const { data, error } = await query;
-  if (missingTable(error)) return <MigrationNotice title="Izrāžu scenāriji" />;
+  if (missingTable(error)) return <MigrationNotice title="Scenāriji" />;
   const scripts = (data ?? []) as ScriptRow[];
   const urls = await signedUrls(db, scripts.map((s) => s.file_path));
 
   return (
     <>
-      <PageHeader title="Izrāžu scenāriji" description="Arhīvs ar visu izrāžu scenārijiem — lai nākamreiz nav jāmeklē pa e-pastiem un datoriem." />
+      <PageHeader title="Scenāriji" description="Visu scenāriju arhīvs — lai nākamreiz nav jāmeklē pa e-pastiem un datoriem." />
 
       {/* Pievienot var visa komanda */}
       <details className="mt-6 rounded-2xl bg-white ring-1 ring-line">
@@ -113,7 +113,7 @@ function ScriptFields({ s, current }: { s?: ScriptRow; current?: { name: string 
     <div className="grid gap-x-6 gap-y-4 md:grid-cols-2">
       <label className="space-y-1.5 md:col-span-2">
         <span className="block text-sm font-bold">
-          Izrādes nosaukums <span className="text-destructive">*</span>
+          Nosaukums <span className="text-destructive">*</span>
         </span>
         <input name="title" required defaultValue={s?.title ?? ""} className={adminInput} />
       </label>

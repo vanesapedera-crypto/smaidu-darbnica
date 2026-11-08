@@ -6,7 +6,7 @@ export const SECTIONS = [
   { key: "piedavajumi", label: "Piedāvājumi", hint: "piedāvājumi klientiem", href: "/admin/piedavajumi", hidden: false },
   { key: "klientu_vesture", label: "Klientu vēsture", hint: "uzņēmumi: gads, kas ņemts, samaksa", href: "/admin/klientu-vesture", hidden: false },
   { key: "standarta", label: "Standarta piedāvājumi", hint: "gatavu piedāvājumu veidnes", href: "/admin/standarta-piedavajumi", hidden: true },
-  { key: "scenariji", label: "Izrāžu scenāriji", hint: "skatīt un pievienot jaunus", href: "/admin/scenariji", hidden: false },
+  { key: "scenariji", label: "Scenāriji", hint: "skatīt un pievienot jaunus", href: "/admin/scenariji", hidden: false },
   { key: "darbnicas", label: "Radošās darbnīcas", hint: "materiālu pašizmaksa vienai personai", href: "/admin/darbnicas", hidden: false },
   { key: "piekluve", label: "Komandas piekļuve", hint: "var mainīt, kurš ko redz", href: "/admin/komandas-piekluve", hidden: false },
 ] as const;
