@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FileDown, Plus, Presentation, Trash2 } from "lucide-react";
 import { setCostItemPrice, type TeamActionState } from "@/app/admin/team-actions";
-import { UNIT_LABEL, UNIT_SHORT, computeOffer, type CalcInput, type CalcItem, type CalcSettings, type Unit } from "@/lib/team/offer-calc";
+import { UNIT_LABEL, UNIT_SHORT, computeOffer, type CalcInput, type CalcItem, type CalcSettings, type StaffRow, type Unit } from "@/lib/team/offer-calc";
 import { money } from "@/lib/team/workshops";
 import TeamForm from "./TeamForm";
 import { adminInput, adminSecondary } from "../styles";
@@ -89,7 +89,7 @@ export default function OfferBuilder({
       ...x,
       hours: v,
       items: x.items.map((i) => (i.unit === "hour" && i.qty === x.hours ? { ...i, qty: v } : i)),
-      animators: x.animators.hours === x.hours ? { ...x.animators, hours: v } : x.animators,
+      staff: x.staff.map((a) => (a.hours === x.hours ? { ...a, hours: v } : a)),
     }));
   };
 
@@ -187,33 +187,56 @@ export default function OfferBuilder({
           {priceError && <p className="mt-2 text-sm font-semibold text-destructive">{priceError}</p>}
         </Card>
 
-        <Card title="5. Animatori / vadītāji">
-          <div className="grid gap-4 sm:grid-cols-4">
-            {field(
-              "Skaits",
-              <input inputMode="numeric" value={fmt(c.animators.count)} onChange={(e) => update({ animators: { ...c.animators, count: Math.round(num(e.target.value)) } })} className={adminInput} />,
-            )}
-            {field(
-              "Aprēķins",
-              <select
-                value={c.animators.mode}
-                onChange={(e) => {
-                  const mode = e.target.value === "fixed" ? "fixed" : "hour";
-                  update({ animators: { ...c.animators, mode, rate: mode === "fixed" ? settings.animatorFixed : settings.animatorHour } });
-                }}
-                className={adminInput}
-              >
-                <option value="hour">Pa stundām</option>
-                <option value="fixed">Par pasākumu</option>
-              </select>,
-            )}
-            {c.animators.mode === "hour" &&
-              field("Stundas", <input inputMode="decimal" value={fmt(c.animators.hours)} onChange={(e) => update({ animators: { ...c.animators, hours: num(e.target.value) } })} className={adminInput} />)}
-            {field(
-              c.animators.mode === "hour" ? "Likme €/h" : "€ vienam",
-              <input inputMode="decimal" value={fmt(c.animators.rate)} onChange={(e) => update({ animators: { ...c.animators, rate: num(e.target.value) } })} className={adminInput} />,
-            )}
-          </div>
+        <Card title="5. Personāls" hint="Katrai lomai savs skaits, likme un pienākumi — piem. vadītājs, animators, aktieris, palīgs.">
+          <ul className="space-y-3">
+            {c.staff.map((a, n) => {
+              const set = (patch: Partial<StaffRow>) => update({ staff: c.staff.map((x, i) => (i === n ? { ...x, ...patch } : x)) });
+              const cost = a.mode === "hour" ? a.count * a.hours * a.rate : a.count * a.rate;
+              return (
+                <li key={n} className="rounded-xl p-3 ring-1 ring-line">
+                  <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1.4fr)_80px_140px_90px_100px_auto]">
+                    {field("Loma", <input value={a.role} onChange={(e) => set({ role: e.target.value })} placeholder="piem. Vadītājs" className={adminInput} />)}
+                    {field("Skaits", <input inputMode="numeric" value={fmt(a.count)} onChange={(e) => set({ count: Math.round(num(e.target.value)) })} className={adminInput} />)}
+                    {field(
+                      "Aprēķins",
+                      <select
+                        value={a.mode}
+                        onChange={(e) => {
+                          const mode = e.target.value === "fixed" ? "fixed" : "hour";
+                          set({ mode, rate: a.rate || (mode === "fixed" ? settings.animatorFixed : settings.animatorHour) });
+                        }}
+                        className={adminInput}
+                      >
+                        <option value="hour">Pa stundām</option>
+                        <option value="fixed">Par pasākumu</option>
+                      </select>,
+                    )}
+                    {a.mode === "hour" ? field("Stundas", <input inputMode="decimal" value={fmt(a.hours)} onChange={(e) => set({ hours: num(e.target.value) })} className={adminInput} />) : <span />}
+                    {field(a.mode === "hour" ? "€/h vienam" : "€ vienam", <input inputMode="decimal" value={fmt(a.rate)} onChange={(e) => set({ rate: num(e.target.value) })} className={adminInput} />)}
+                    <button
+                      type="button"
+                      onClick={() => update({ staff: c.staff.filter((_, i) => i !== n) })}
+                      className="mb-1 grid size-9 place-items-center rounded-lg text-ink-soft hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Noņemt lomu"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                  <div className="mt-2 grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <input value={a.duties} onChange={(e) => set({ duties: e.target.value })} placeholder="Pienākumi (iekšēji) — piem. vada programmu, sejas apgleznošana" className={cn(adminInput, "py-1.5")} />
+                    <span className="text-sm font-semibold whitespace-nowrap">{money(cost)}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <button
+            type="button"
+            onClick={() => update({ staff: [...c.staff, { role: "", count: 1, mode: "hour", hours: c.hours, rate: settings.animatorHour, duties: "" }] })}
+            className={cn(adminSecondary, "mt-3")}
+          >
+            <Plus className="size-4" aria-hidden /> Pievienot lomu
+          </button>
         </Card>
 
         <Card title="6. Ceļa izdevumi">

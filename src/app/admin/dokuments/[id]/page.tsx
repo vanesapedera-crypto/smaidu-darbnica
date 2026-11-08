@@ -120,14 +120,17 @@ export default async function DocumentPage({ params, searchParams }: Props) {
                   </span>
                 </li>
               ))}
-              {calc.animators.count > 0 && (
-                <li className="flex items-baseline gap-4">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-ink font-display text-sm font-extrabold text-brand">+</span>
-                  <span className="block text-lg font-extrabold">
-                    {calc.animators.count} {calc.animators.count === 1 ? "animators / vadītājs" : "animatori / vadītāji"}
-                  </span>
-                </li>
-              )}
+              {calc.staff
+                .filter((a) => a.count > 0)
+                .map((a, i) => (
+                  <li key={`staff-${i}`} className="flex items-baseline gap-4">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-ink font-display text-sm font-extrabold text-brand">+</span>
+                    <span className="block text-lg font-extrabold">
+                      {a.role || "Animators"}
+                      {a.count > 1 ? ` × ${a.count}` : ""}
+                    </span>
+                  </li>
+                ))}
             </ol>
           </section>
 

@@ -38,6 +38,9 @@ export type CalcSettings = {
 export const DEFAULT_CALC_SETTINGS: CalcSettings = { animatorHour: 0, animatorFixed: 0, markup: 0, vat: 21 };
 
 export type CalcWorkshop = { id: string; title: string; costPerPerson: number; persons: number };
+/** Viena personāla rinda: loma (vadītājs, animators, aktieris…), skaits, aprēķins un likme */
+export type StaffRow = { role: string; count: number; mode: "hour" | "fixed"; hours: number; rate: number; duties: string };
+
 export type CalcItem = { id?: string; kind: "activity" | "expense"; title: string; unit: Unit; unitCost: number; qty: number };
 
 export type CalcInput = {
@@ -51,7 +54,7 @@ export type CalcInput = {
   hours: number;
   workshops: CalcWorkshop[];
   items: CalcItem[];
-  animators: { count: number; mode: "hour" | "fixed"; hours: number; rate: number };
+  staff: StaffRow[];
   travel: { km: number; rate: number };
   markup: number;
   vat: number;
@@ -92,12 +95,12 @@ export function computeOffer(c: CalcInput): CalcResult {
       cost: i.unitCost * qty,
     });
   }
-  const a = c.animators;
-  if (a.count > 0) {
+  for (const a of c.staff) {
+    if (a.count <= 0) continue;
     lines.push({
       group: "animators",
-      label: a.count === 1 ? "Animators / vadītājs" : "Animatori / vadītāji",
-      detail: a.mode === "hour" ? `${a.count} × ${a.hours} h` : `${a.count}`,
+      label: a.role.trim() || "Animators",
+      detail: a.mode === "hour" ? `${a.count} × ${String(a.hours).replace(".", ",")} h` : `${a.count}`,
       cost: a.mode === "hour" ? a.count * a.hours * a.rate : a.count * a.rate,
     });
   }
@@ -127,7 +130,7 @@ export function emptyCalc(settings: CalcSettings, travelRate: number): CalcInput
     hours: 2,
     workshops: [],
     items: [],
-    animators: { count: 1, mode: "hour", hours: 2, rate: settings.animatorHour },
+    staff: [{ role: "Animators", count: 1, mode: "hour", hours: 2, rate: settings.animatorHour, duties: "" }],
     travel: { km: 0, rate: travelRate },
     markup: settings.markup,
     vat: settings.vat,
@@ -145,8 +148,21 @@ export function parseCalc(raw: unknown, settings: CalcSettings, travelRate: numb
   const arr = (v: unknown) => (Array.isArray(v) ? v.slice(0, 100) : []);
   const obj = (v: unknown) => (v && typeof v === "object" ? (v as Record<string, unknown>) : {});
   const unit = (v: unknown): Unit => (v === "person" || v === "piece" || v === "fixed" ? v : "hour");
-  const an = obj(r.animators);
   const tr = obj(r.travel);
+  const staffRow = (o: Record<string, unknown>, role: string): StaffRow => ({
+    role: str(o.role ?? role, 100),
+    count: Math.max(0, Math.round(n(o.count))),
+    mode: o.mode === "fixed" ? "fixed" : "hour",
+    hours: Math.max(0, n(o.hours)),
+    rate: n(o.rate),
+    duties: str(o.duties, 500),
+  });
+  // Vecie piedāvājumi: viena rinda "animators"
+  const staff = Array.isArray(r.staff)
+    ? arr(r.staff).map((x) => staffRow(obj(x), "Animators"))
+    : r.animators
+      ? [staffRow(obj(r.animators), "Animatori / vadītāji")]
+      : base.staff;
   return {
     client: str(r.client),
     contactPerson: str(r.contactPerson),
@@ -171,12 +187,7 @@ export function parseCalc(raw: unknown, settings: CalcSettings, travelRate: numb
         qty: Math.max(0, n(o.qty)),
       };
     }),
-    animators: {
-      count: Math.max(0, Math.round(n(an.count))),
-      mode: an.mode === "fixed" ? "fixed" : "hour",
-      hours: Math.max(0, n(an.hours)),
-      rate: n(an.rate),
-    },
+    staff,
     travel: { km: Math.max(0, n(tr.km)), rate: n(tr.rate) },
     markup: n(r.markup),
     vat: r.vat === undefined ? base.vat : n(r.vat),
