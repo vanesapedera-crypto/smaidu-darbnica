@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, FileText, Handshake, History, Inbox, KeyRound, Palette, UserCog, Calculator, Package, Presentation, Archive } from "lucide-react";
+import { CalendarDays, FileText, Handshake, History, Inbox, KeyRound, Palette, UserCog, Calculator, Package, Presentation, Archive, Coins } from "lucide-react";
 import type { TeamRole } from "@/lib/auth";
 import type { Section } from "@/lib/team/sections";
 import { cn } from "@/lib/utils";
@@ -26,16 +26,23 @@ const groups: Group[] = [
   {
     title: "Komanda",
     items: [
-      { href: "/admin/scenariji", label: "Scenāriji", icon: FileText, section: "scenariji" },
       { href: "/admin/prezentacijas-izveide", label: "Prezentācijas izveide", icon: Presentation, section: "piedavajumi", edit: true },
       { href: "/admin/prezentacijas", label: "Prezentācijas (arhīvs)", icon: Archive, section: "piedavajumi" },
       { href: "/admin/piedavajuma-izveide", label: "Piedāvājuma izveide", icon: Calculator, section: "piedavajumi", edit: true },
       { href: "/admin/piedavajumi", label: "Piedāvājumi (arhīvs)", icon: Handshake, section: "piedavajumi" },
       { href: "/admin/klientu-vesture", label: "Klientu vēsture", icon: History, section: "klientu_vesture" },
-      { href: "/admin/darbnicas", label: "Radošās darbnīcas", icon: Palette, section: "darbnicas" },
-      { href: "/admin/izejmateriali", label: "Izejmateriāli", icon: Package, section: "darbnicas" },
+      { href: "/admin/scenariji", label: "Scenāriji", icon: FileText, section: "scenariji" },
       { href: "/admin/komandas-piekluve", label: "Komandas piekļuve", icon: UserCog, section: "piekluve" },
       { href: "/admin/parole", label: "Mainīt paroli", icon: KeyRound },
+    ],
+  },
+  {
+    // Visas fiksētās cenas vienuviet — šeit raksta ciparus
+    title: "💰 Cenas",
+    items: [
+      { href: "/admin/darbnicas", label: "Radošās darbnīcas", icon: Palette, section: "darbnicas" },
+      { href: "/admin/izejmateriali", label: "Izejmateriāli", icon: Package, section: "darbnicas" },
+      { href: "/admin/izmaksas", label: "Pakalpojumi", icon: Coins, section: "piedavajumi" },
     ],
   },
 ];

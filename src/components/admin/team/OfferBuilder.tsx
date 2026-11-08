@@ -168,7 +168,7 @@ export default function OfferBuilder({
           </ul>
         </Card>
 
-        <Card title="4. Papildu aktivitātes" hint="Cenas ir fiksētas (lapas apakšā “Cenas un likmes”) — atzīmējiet un ierakstiet, cik stundas notiks (spēlēm — cik gabalu).">
+        <Card title="4. Papildu aktivitātes" hint="Cenas ir fiksētas (sadaļā “💰 Cenas → Pakalpojumi”) — atzīmējiet un ierakstiet, cik stundas notiks (spēlēm — cik gabalu).">
           <CatalogList items={activities} selected={c.items} onToggle={toggleItem} onQty={setItemQty} />
         </Card>
 
@@ -375,7 +375,7 @@ function CatalogList({
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold">{i.title}</span>
                 <span className={cn("block text-xs", i.cost ? "text-ink-soft" : "font-semibold text-destructive")}>
-                  {i.cost ? `${money(i.cost)} ${UNIT_LABEL[i.unit]}` : "cena nav ievadīta — lapas apakšā “Cenas un likmes”"}
+                  {i.cost ? `${money(i.cost)} ${UNIT_LABEL[i.unit]}` : "cena nav ievadīta — sadaļā “💰 Cenas → Pakalpojumi”"}
                 </span>
               </span>
             </label>

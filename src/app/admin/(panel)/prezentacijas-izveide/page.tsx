@@ -135,7 +135,7 @@ export default async function PresentationBuilderPage({ searchParams }: Props) {
             </label>
           </div>
         </TeamForm>
-        <p className="mt-4 text-xs text-ink-soft">Aprakstus un foto maina sadaļā “Radošās darbnīcas” un Piedāvājuma izveides lapā (“Cenas un likmes”).</p>
+        <p className="mt-4 text-xs text-ink-soft">Aprakstus un foto maina sadaļā “Radošās darbnīcas” un “Pakalpojumi”.</p>
         {pres && role === "owner" && (
           <div className="mt-6 border-t border-line pt-5">
             <DeleteButton action={deletePresentation.bind(null, pres.id)} label="Dzēst prezentāciju" />

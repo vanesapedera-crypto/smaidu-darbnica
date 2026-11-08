@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSection } from "@/lib/auth";
 import { saveCalcOffer } from "@/app/admin/team-actions";
 import { getSettings } from "@/lib/content/queries";
@@ -7,14 +8,13 @@ import { costPerPerson, materialMap, parseItems, type Material } from "@/lib/tea
 import PageHeader from "@/components/admin/PageHeader";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import OfferBuilder from "@/components/admin/team/OfferBuilder";
-import CostCatalog from "@/components/admin/team/CostCatalog";
 
 export const metadata = { title: "Piedāvājuma izveide" };
 
 type Props = { searchParams: Promise<{ id?: string; saglabats?: string; klients?: string; prezentacija?: string }> };
 
 export default async function OfferBuilderPage({ searchParams }: Props) {
-  const { db, role } = await requireSection("piedavajumi", true);
+  const { db } = await requireSection("piedavajumi", true);
   const { id, saglabats, klients, prezentacija } = await searchParams;
   const offerId = id && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 
@@ -81,9 +81,9 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
         description="Atzīmējiet, ko piedāvāt — cena saskaitās pati. Pēc saglabāšanas var lejupielādēt prezentāciju un piedāvājumu PDF formātā."
         notice={saglabats ? "Saglabāts. Tagad var veidot PDF." : undefined}
         actions={
-          <a href="#cenas" className="text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
-            Cenas un likmes
-          </a>
+          <Link href="/admin/izmaksas" className="text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
+            💰 Pakalpojumu cenas
+          </Link>
         }
       />
       {offerId && !existing.data?.calc && existing.data && (
@@ -107,13 +107,6 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
         />
       </div>
 
-      {/* Aktivitāšu un izdevumu cenas, likmes — rediģē šeit pat */}
-      <details id="cenas" className="mt-10 scroll-mt-6 rounded-2xl bg-surface p-1 ring-1 ring-line">
-        <summary className="cursor-pointer rounded-xl bg-white px-5 py-4 text-base font-extrabold">Cenas un likmes — aktivitātes, citi izdevumi, animatori, uzcenojums</summary>
-        <div className="p-4">
-          <CostCatalog db={db} role={role} />
-        </div>
-      </details>
     </>
   );
 }
