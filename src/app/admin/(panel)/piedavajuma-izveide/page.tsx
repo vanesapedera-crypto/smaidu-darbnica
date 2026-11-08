@@ -11,11 +11,11 @@ import CostCatalog from "@/components/admin/team/CostCatalog";
 
 export const metadata = { title: "Piedāvājuma izveide" };
 
-type Props = { searchParams: Promise<{ id?: string; saglabats?: string; klients?: string }> };
+type Props = { searchParams: Promise<{ id?: string; saglabats?: string; klients?: string; prezentacija?: string }> };
 
 export default async function OfferBuilderPage({ searchParams }: Props) {
   const { db, role } = await requireSection("piedavajumi", true);
-  const { id, saglabats, klients } = await searchParams;
+  const { id, saglabats, klients, prezentacija } = await searchParams;
   const offerId = id && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 
   const [{ data: ws, error }, { data: items }, { data: s }, { data: names }, site, existing, { data: materials }] = await Promise.all([
@@ -32,9 +32,44 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
 
   const settings = parseSettings(s?.data);
   const travelRate = site.programs.travelRate;
-  const initial = existing.data?.calc
+  let initial = existing.data?.calc
     ? parseCalc(existing.data.calc, settings, travelRate)
     : { ...emptyCalc(settings, travelRate), client: klients ?? existing.data?.client_name ?? "" };
+
+  // No prezentācijas: tie paši klients, datums, bērni un atzīmētās darbnīcas/aktivitātes
+  if (!offerId && prezentacija && /^[0-9a-f-]{36}$/i.test(prezentacija)) {
+    const { data: pr } = await db.from("presentations").select("*").eq("id", prezentacija).maybeSingle();
+    if (pr) {
+      const children = (pr.children as number | null) ?? initial.children;
+      const hours = Number(pr.hours) || initial.hours;
+      initial = {
+        ...initial,
+        client: pr.client_name as string,
+        title: (pr.title as string | null) ?? "",
+        date: (pr.event_date as string | null) ?? "",
+        place: (pr.place as string | null) ?? "",
+        children,
+        hours,
+        note: (pr.intro as string | null) ?? "",
+        staff: initial.staff.map((x) => ({ ...x, hours })),
+        workshops: ((pr.workshop_ids as string[]) ?? [])
+          .map((wid) => (ws ?? []).find((w) => w.id === wid))
+          .filter(Boolean)
+          .map((w) => ({ id: w!.id as string, title: w!.title as string, costPerPerson: costPerPerson(parseItems(w!.items), mats), persons: children })),
+        items: ((pr.activity_ids as string[]) ?? [])
+          .map((aid) => ((items ?? []) as CostItemRow[]).find((i) => i.id === aid))
+          .filter(Boolean)
+          .map((i) => ({
+            id: i!.id,
+            kind: i!.kind,
+            title: i!.title,
+            unit: i!.unit,
+            unitCost: Number(i!.cost),
+            qty: i!.unit === "hour" ? hours : i!.unit === "person" ? children : 1,
+          })),
+      };
+    }
+  }
   const clientNames = [...new Set(((names ?? []) as { client_name: string | null }[]).map((n) => n.client_name).filter(Boolean) as string[])].sort((a, b) =>
     a.localeCompare(b, "lv"),
   );
@@ -56,7 +91,7 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
       )}
       <div className="mt-6">
         <OfferBuilder
-          key={offerId ?? "jauns"}
+          key={offerId ?? prezentacija ?? "jauns"}
           initial={initial}
           workshops={(ws ?? []).map((w) => ({
             id: w.id as string,

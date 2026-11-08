@@ -469,3 +469,49 @@ export async function setCostItemPrice(id: string, cost: number): Promise<{ erro
   if (error) return { error: error.message };
   return {};
 }
+
+/* ------------------------------ Prezentācijas ------------------------------ */
+
+export async function savePresentation(id: string | null, _: TeamActionState, form: FormData): Promise<TeamActionState> {
+  const { db, email } = await requireSection("piedavajumi", true);
+  const client = text(form, "client_name", 300);
+  if (!client) return { error: "Ievadiet klientu." };
+  const uuid = (v: FormDataEntryValue) => (typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v) ? v : null);
+  const workshopIds = form.getAll("workshop_ids").map(uuid).filter(Boolean) as string[];
+  const activityIds = form.getAll("activity_ids").map(uuid).filter(Boolean) as string[];
+  if (!workshopIds.length && !activityIds.length) return { error: "Atzīmējiet vismaz vienu darbnīcu vai aktivitāti." };
+  const date = text(form, "event_date", 10);
+  const children = Number(form.get("children"));
+  const hours = numField(form, "hours");
+  const row = {
+    client_name: client,
+    title: text(form, "title", 300),
+    event_date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
+    place: text(form, "place", 300),
+    children: Number.isInteger(children) && children > 0 ? children : null,
+    hours: hours > 0 ? hours : null,
+    workshop_ids: workshopIds,
+    activity_ids: activityIds,
+    intro: text(form, "intro", 5000),
+    updated_at: new Date().toISOString(),
+  };
+  let savedId = id;
+  if (id) {
+    const { error } = await db.from("presentations").update(row).eq("id", id);
+    if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  } else {
+    const { data, error } = await db.from("presentations").insert({ ...row, created_by: email }).select("id").single();
+    if (error || !data) return { error: `Neizdevās saglabāt: ${error?.message ?? ""}` };
+    savedId = data.id;
+  }
+  revalidatePath("/admin/prezentacijas");
+  redirect(`/admin/prezentacijas-izveide?id=${savedId}&saglabats=1`);
+}
+
+/** Dzēst var tikai administratore */
+export async function deletePresentation(id: string) {
+  const { db } = await requireAdmin();
+  await db.from("presentations").delete().eq("id", id);
+  revalidatePath("/admin/prezentacijas");
+  redirect("/admin/prezentacijas?dzests=1");
+}

@@ -9,7 +9,7 @@ import { lvDate, statusTone } from "@/components/admin/team/offer-utils";
 import { adminInput, adminPrimary, adminSecondary } from "@/components/admin/styles";
 import { cn } from "@/lib/utils";
 
-export const metadata = { title: "Piedāvājumi klientiem" };
+export const metadata = { title: "Piedāvājumi (arhīvs)" };
 
 type Props = { searchParams: Promise<{ q?: string; s?: string; dzests?: string }> };
 
@@ -29,13 +29,13 @@ export default async function OffersPage({ searchParams }: Props) {
     query = query.or(["client_name", "title", "services", "contact_person"].map((c) => `${c}.ilike.%${term}%`).join(","));
   }
   const { data, error } = await query;
-  if (missingTable(error)) return <MigrationNotice title="Piedāvājumi klientiem" />;
+  if (missingTable(error)) return <MigrationNotice title="Piedāvājumi (arhīvs)" />;
   const offers = (data ?? []) as OfferRow[];
 
   return (
     <>
       <PageHeader
-        title="Piedāvājumi klientiem"
+        title="Piedāvājumi (arhīvs)"
         description="Visi piedāvājumi klientiem. Kas kuram klientam bijis iepriekš — sadaļā “Klientu vēsture”."
         notice={dzests ? "Piedāvājums izdzēsts." : undefined}
         actions={
