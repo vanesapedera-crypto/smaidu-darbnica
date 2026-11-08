@@ -460,3 +460,12 @@ export async function deleteHistory(id: string) {
   await db.from("client_history").delete().eq("id", id);
   revalidatePath("/admin/klientu-vesture");
 }
+
+/** Aktivitātes/izdevuma cena tieši no piedāvājuma izveides saraksta (saglabājas katalogā) */
+export async function setCostItemPrice(id: string, cost: number): Promise<{ error?: string }> {
+  const { db } = await requireSection("piedavajumi", true);
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !Number.isFinite(cost) || cost < 0) return { error: "Nepareiza cena." };
+  const { error } = await db.from("cost_items").update({ cost, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) return { error: error.message };
+  return {};
+}
