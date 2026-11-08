@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileDown, Plus, Presentation, Trash2 } from "lucide-react";
-import { setCostItemPrice, type TeamActionState } from "@/app/admin/team-actions";
+import type { TeamActionState } from "@/app/admin/team-actions";
 import { UNIT_LABEL, UNIT_SHORT, computeOffer, type CalcInput, type CalcItem, type CalcSettings, type StaffRow, type Unit } from "@/lib/team/offer-calc";
 import { money } from "@/lib/team/workshops";
 import TeamForm from "./TeamForm";
@@ -46,20 +46,6 @@ export default function OfferBuilder({
     initial.items.filter((i) => !i.id).map((i, n) => ({ ...i, key: n, save: false })),
   );
   const [dirty, setDirty] = useState(false);
-  // Cenas katalogā — var labot tieši sarakstā (saglabājas katalogā, kad atstāj lauku)
-  const [prices, setPrices] = useState<Record<string, number>>(() => Object.fromEntries(catalog.map((i) => [i.id, i.cost])));
-  const [priceError, setPriceError] = useState<string | null>(null);
-  const priced = catalog.map((i) => ({ ...i, cost: prices[i.id] ?? i.cost }));
-  const setPrice = (id: string, cost: number) => {
-    setPrices((p) => ({ ...p, [id]: cost }));
-    // Ja aktivitāte jau atzīmēta — šajā piedāvājumā arī jaunā cena
-    setC((x) => ({ ...x, items: x.items.map((i) => (i.id === id ? { ...i, unitCost: cost } : i)) }));
-    setDirty(true);
-  };
-  const savePrice = async (id: string) => {
-    const res = await setCostItemPrice(id, prices[id] ?? 0);
-    setPriceError(res.error ? `Cenu neizdevās saglabāt: ${res.error}` : null);
-  };
 
   const update = (patch: Partial<CalcInput>) => {
     setDirty(true);
@@ -114,8 +100,8 @@ export default function OfferBuilder({
     </label>
   );
 
-  const activities = priced.filter((i) => i.kind === "activity");
-  const expenses = priced.filter((i) => i.kind === "expense");
+  const activities = catalog.filter((i) => i.kind === "activity");
+  const expenses = catalog.filter((i) => i.kind === "expense");
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -182,9 +168,8 @@ export default function OfferBuilder({
           </ul>
         </Card>
 
-        <Card title="4. Papildu aktivitātes" hint="Ierakstiet likmi (pašizmaksu) — tā saglabājas arī nākamajiem piedāvājumiem. Daudzums: stundas, personas vai gabali.">
-          <CatalogList items={activities} selected={c.items} onToggle={toggleItem} onQty={setItemQty} onPrice={setPrice} onPriceDone={savePrice} />
-          {priceError && <p className="mt-2 text-sm font-semibold text-destructive">{priceError}</p>}
+        <Card title="4. Papildu aktivitātes" hint="Cenas ir fiksētas (lapas apakšā “Cenas un likmes”) — atzīmējiet un ierakstiet, cik stundas notiks (spēlēm — cik gabalu).">
+          <CatalogList items={activities} selected={c.items} onToggle={toggleItem} onQty={setItemQty} />
         </Card>
 
         <Card title="5. Personāls" hint="Katrai lomai savs skaits, likme un pienākumi — piem. vadītājs, animators, aktieris, palīgs.">
@@ -247,7 +232,7 @@ export default function OfferBuilder({
         </Card>
 
         <Card title="7. Citi izdevumi" hint="Atzīmējiet jau aprēķinātos vai pievienojiet jaunu.">
-          {expenses.length > 0 && <CatalogList items={expenses} selected={c.items} onToggle={toggleItem} onQty={setItemQty} onPrice={setPrice} onPriceDone={savePrice} />}
+          {expenses.length > 0 && <CatalogList items={expenses} selected={c.items} onToggle={toggleItem} onQty={setItemQty} />}
           <ul className="mt-3 space-y-2">
             {custom.map((x) => (
               <li key={x.key} className="grid items-end gap-2 rounded-xl p-3 ring-1 ring-line sm:grid-cols-[minmax(0,1fr)_120px_150px_auto]">
@@ -372,15 +357,11 @@ function CatalogList({
   selected,
   onToggle,
   onQty,
-  onPrice,
-  onPriceDone,
 }: {
   items: BuilderCostItem[];
   selected: CalcItem[];
   onToggle: (i: BuilderCostItem, on: boolean) => void;
   onQty: (id: string, qty: number) => void;
-  onPrice: (id: string, cost: number) => void;
-  onPriceDone: (id: string) => void;
 }) {
   if (!items.length) return <p className="text-sm text-ink-soft">Katalogā vēl nav ierakstu.</p>;
   return (
@@ -391,24 +372,16 @@ function CatalogList({
           <li key={i.id} className={cn("rounded-xl p-3 ring-1", sel ? "bg-brand-soft ring-ink" : "ring-line")}>
             <label className="flex cursor-pointer items-start gap-3">
               <input type="checkbox" checked={Boolean(sel)} onChange={(e) => onToggle(i, e.target.checked)} className="mt-0.5 size-4 accent-ink" />
-              <span className="min-w-0 flex-1 text-sm font-bold">{i.title}</span>
-            </label>
-            {/* Likme — ierakstāma uzreiz šeit */}
-            <label className="mt-2 flex items-center gap-2 pl-7 text-sm text-ink-soft">
-              <input
-                inputMode="decimal"
-                defaultValue={fmt(i.cost)}
-                onChange={(e) => onPrice(i.id, num(e.target.value))}
-                onBlur={() => onPriceDone(i.id)}
-                placeholder="0,00"
-                aria-label={`${i.title} — cena`}
-                className={cn(adminInput, "w-24 py-1.5", !i.cost && "border-destructive")}
-              />
-              € {UNIT_LABEL[i.unit]}
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold">{i.title}</span>
+                <span className={cn("block text-xs", i.cost ? "text-ink-soft" : "font-semibold text-destructive")}>
+                  {i.cost ? `${money(i.cost)} ${UNIT_LABEL[i.unit]}` : "cena nav ievadīta — lapas apakšā “Cenas un likmes”"}
+                </span>
+              </span>
             </label>
             {sel && i.unit !== "fixed" && (
               <label className="mt-2 flex items-center gap-2 pl-7 text-sm">
-                Daudzums
+                {i.unit === "hour" ? "Cik stundas" : i.unit === "person" ? "Cik personām" : "Cik gab. tiks izmantoti"}
                 <input
                   inputMode="decimal"
                   value={fmt(sel.qty)}
