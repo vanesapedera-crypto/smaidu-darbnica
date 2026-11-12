@@ -22,6 +22,12 @@ const FAR_RATE = 0.5;
 /** Izrāde — aktivitāte, kuras nosaukumā ir "izrāde" (tai jānorāda, vai telpa ir klienta vai mūsu) */
 const isShow = (a: Activity) => /izrād/i.test(a.title);
 
+/** Izrāde no lapas "Izrādes" (panelī: Iestatījumi → Izrādes) */
+export type ShowInfo = { title: string; src: string; poster: string; duration?: string; audience?: string; description?: string };
+const norm = (t: string) => t.toLowerCase().replace(/[„”“"'«»]/g, "").replace(/\s+/g, " ").trim();
+const ytId = (src: string) => src.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/)?.[1];
+const showPoster = (v: ShowInfo) => v.poster || (ytId(v.src) ? `https://i.ytimg.com/vi/${ytId(v.src)}/hqdefault.jpg` : "");
+
 const eur = (n: number) => `${n.toLocaleString("lv-LV", { maximumFractionDigits: 0 })} €`;
 /** Aptuvenā summa — noapaļota līdz 10 € */
 const approx = (n: number) => Math.round(n / 10) * 10;
@@ -31,7 +37,14 @@ const approx = (n: number) => Math.round(n / 10) * 10;
  * Darbnīcām: materiāli × dalībnieki + animatori (vismaz 1 katrai darbnīcai un 1 uz `perAnimator` dalībniekiem) × stundas.
  * Aktivitātēm: par stundu × ilgums, par gabalu × skaits, par personu × dalībnieki, fiksēta summa.
  */
-export default function OfferConfigurator({ prices }: { prices: ConfiguratorPrices }) {
+export default function OfferConfigurator({ prices, shows = [] }: { prices: ConfiguratorPrices; shows?: ShowInfo[] }) {
+  // Izrādes cena — no aktivitātes "Pakalpojumos", kuras nosaukumā ir izrādes nosaukums (piem. "Izrāde „Dāvanu recepte”")
+  const showItems = shows
+    .filter((v) => v.title.trim())
+    .map((v) => ({ show: v, price: prices.activities.find((a) => isShow(a) && norm(a.title).includes(norm(v.title))) }));
+  const matched = new Set(showItems.map((x) => x.price?.id).filter(Boolean));
+  const otherActivities = prices.activities.filter((a) => !matched.has(a.id));
+  const [pickedShows, setPickedShows] = useState<string[]>([]);
   const [participants, setParticipants] = useState(30);
   const [hours, setHours] = useState(2);
   const [workshops, setWorkshops] = useState<string[]>([]);
@@ -48,8 +61,11 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
 
   const people = Math.max(0, participants || 0);
   const chosenWorkshops = prices.workshops.filter((w) => workshops.includes(w.id));
-  const chosenActivities = prices.activities.filter((a) => activities[a.id] !== undefined);
-  const showChosen = chosenActivities.some(isShow);
+  const chosenActivities = otherActivities.filter((a) => activities[a.id] !== undefined);
+  const chosenShows = showItems.filter((x) => pickedShows.includes(x.show.title));
+  const showChosen = chosenShows.length > 0 || chosenActivities.some(isShow);
+  // Izrāde bez cenas panelī — cenu precizēsim
+  const showPriceUnknown = chosenShows.some((x) => !x.price);
 
   const workshopAnimators = chosenWorkshops.length ? Math.max(chosenWorkshops.length, Math.ceil(people / Math.max(1, prices.perAnimator))) : 0;
   const workshopsSum = chosenWorkshops.reduce((s, w) => s + w.perPerson * people, 0) + workshopAnimators * hours * prices.animatorHour;
@@ -57,8 +73,10 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
     a.unit === "hour" ? a.price * hours : a.unit === "piece" ? a.price * (activities[a.id] || 1) : a.unit === "person" ? a.price * people : a.price;
   const activitiesSum = chosenActivities.reduce((s, a) => s + activityPrice(a), 0);
   const travelSum = travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) : 0;
-  const total = workshopsSum + activitiesSum + travelSum;
-  const anything = chosenWorkshops.length + chosenActivities.length > 0;
+  const showsSum = chosenShows.reduce((s, x) => s + (x.price ? activityPrice(x.price) : 0), 0);
+  const total = workshopsSum + activitiesSum + showsSum + travelSum;
+  const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length > 0;
+  const extras = [showChosen && ownVenue === "no" && "telpas īre", showPriceUnknown && "izrādes cena"].filter(Boolean).join(" + ");
 
   const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
   const toggleActivity = (id: string) =>
@@ -92,7 +110,7 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const missing: Record<string, string> = {};
-    if (!anything) missing.choice = "Atzīmējiet vismaz vienu darbnīcu vai aktivitāti.";
+    if (!anything) missing.choice = "Atzīmējiet vismaz vienu izrādi, darbnīcu vai aktivitāti.";
     if (showChosen && !ownVenue) missing.venue = "Norādiet, vai izrādei ir sava telpa.";
     if (!form.companyName.trim()) missing.companyName = "Norādiet uzņēmumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet kontaktpersonu.";
@@ -105,8 +123,9 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
     }
 
     const lines = [
-      `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${showChosen && ownVenue === "no" ? " + telpas īre" : ""}`,
+      `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${extras ? ` + ${extras}` : ""}`,
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
+      chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
       chosenWorkshops.length > 0 && `Radošās darbnīcas: ${chosenWorkshops.map((w) => w.title).join(", ")}`,
       chosenActivities.length > 0 &&
         `Aktivitātes: ${chosenActivities.map((a) => (a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title)).join(", ")}`,
@@ -191,6 +210,51 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
           </Field>
         </section>
 
+        {/* Izrādes — ar video, ilgumu un aprakstu no lapas "Izrādes" */}
+        {showItems.length > 0 && (
+          <section>
+            <h2 className="display text-2xl">Izrādes</h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {showItems.map(({ show: v }) => {
+                const active = pickedShows.includes(v.title);
+                const poster = showPoster(v);
+                return (
+                  <li key={v.title}>
+                    <div className={card(active)}>
+                      <label className="flex flex-1 cursor-pointer flex-col">
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={() => setPickedShows((ps) => (ps.includes(v.title) ? ps.filter((x) => x !== v.title) : [...ps, v.title]))}
+                          className="sr-only"
+                        />
+                        {picture(poster || null, v.title)}
+                        <span className="flex flex-1 items-start gap-3 p-4">
+                          <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
+                            {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
+                          </span>
+                          <span>
+                            <span className="block font-extrabold">{v.title}</span>
+                            {(v.duration || v.audience) && (
+                              <span className="block text-xs font-semibold text-ink-soft">{[v.duration, v.audience].filter(Boolean).join(" · ")}</span>
+                            )}
+                            {v.description && <span className="mt-1 block text-sm whitespace-pre-line text-ink-soft">{v.description.replace(/\*\*/g, "")}</span>}
+                          </span>
+                        </span>
+                      </label>
+                      {v.src && (
+                        <a href={v.src} target="_blank" rel="noreferrer" className="border-t border-line px-4 py-3 text-sm font-bold underline decoration-brand decoration-2 underline-offset-4">
+                          Skatīties video
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
         {/* 2. Radošās darbnīcas */}
         {prices.workshops.length > 0 && (
           <section>
@@ -222,11 +286,11 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
         )}
 
         {/* 3. Aktivitātes un izrādes */}
-        {prices.activities.length > 0 && (
+        {otherActivities.length > 0 && (
           <section>
-            <h2 className="display text-2xl">Aktivitātes un izrādes</h2>
+            <h2 className="display text-2xl">Aktivitātes</h2>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {prices.activities.map((a) => {
+              {otherActivities.map((a) => {
                 const active = activities[a.id] !== undefined;
                 return (
                   <li key={a.id}>
@@ -263,31 +327,32 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
               })}
             </ul>
 
-            {/* Izrādei — vai klientam ir sava telpa */}
-            {showChosen && (
-              <fieldset className="mt-5 rounded-2xl bg-surface p-5">
-                <legend className="sr-only">Telpa izrādei</legend>
-                <p className="font-bold">
-                  Telpa izrādei<span className="ml-0.5 text-destructive" aria-hidden> *</span>
-                </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {(
-                    [
-                      ["yes", "Mums ir sava telpa"],
-                      ["no", "Telpu jānodrošina jums"],
-                    ] as const
-                  ).map(([v, l]) => (
-                    <label key={v} className={cn("flex cursor-pointer items-center gap-3 rounded-xl border-2 bg-white p-3 text-sm font-bold", ownVenue === v ? "border-ink" : "border-line")}>
-                      <input type="radio" name="venue" checked={ownVenue === v} onChange={() => setOwnVenue(v)} className="size-5 accent-ink" />
-                      {l}
-                    </label>
-                  ))}
-                </div>
-                {ownVenue === "no" && <p className="mt-3 text-sm text-ink-soft">Telpas īres cena atkarīga no konkrētās telpas — to precizēsim un pieskaitīsim piedāvājumā.</p>}
-                {errors.venue && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{errors.venue}</p>}
-              </fieldset>
-            )}
           </section>
+        )}
+
+        {/* Izrādei — vai klientam ir sava telpa */}
+        {showChosen && (
+          <fieldset className="mt-5 rounded-2xl bg-surface p-5">
+            <legend className="sr-only">Telpa izrādei</legend>
+            <p className="font-bold">
+              Telpa izrādei<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  ["yes", "Mums ir sava telpa"],
+                  ["no", "Telpu jānodrošina jums"],
+                ] as const
+              ).map(([v, l]) => (
+                <label key={v} className={cn("flex cursor-pointer items-center gap-3 rounded-xl border-2 bg-white p-3 text-sm font-bold", ownVenue === v ? "border-ink" : "border-line")}>
+                  <input type="radio" name="venue" checked={ownVenue === v} onChange={() => setOwnVenue(v)} className="size-5 accent-ink" />
+                  {l}
+                </label>
+              ))}
+            </div>
+            {ownVenue === "no" && <p className="mt-3 text-sm text-ink-soft">Telpas īres cena atkarīga no konkrētās telpas — to precizēsim un pieskaitīsim piedāvājumā.</p>}
+            {errors.venue && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{errors.venue}</p>}
+          </fieldset>
         )}
 
         {/* 4. Norises vieta — ceļa izdevumi */}
@@ -362,9 +427,12 @@ export default function OfferConfigurator({ prices }: { prices: ConfiguratorPric
         <div className="rounded-3xl bg-ink p-6 text-white">
           <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Aptuvenā cena</p>
           <p className="mt-2 font-display text-5xl font-extrabold">{anything ? eur(approx(total)) : "—"}</p>
-          <p className="mt-1 text-sm text-white/70">ar PVN{showChosen && ownVenue === "no" ? " + telpas īre" : ""}</p>
+          <p className="mt-1 text-sm text-white/70">ar PVN{extras ? ` + ${extras}` : ""}</p>
           {anything && (
             <ul className="mt-5 space-y-1.5 border-t border-white/15 pt-4 text-sm">
+              {chosenShows.map((x) => (
+                <li key={x.show.title}>✓ {x.show.title}</li>
+              ))}
               {chosenWorkshops.map((w) => (
                 <li key={w.id}>✓ {w.title}</li>
               ))}

@@ -26,7 +26,8 @@ export function generateMetadata() {
 export default async function ConfiguratorPage() {
   const [{ data, error }, settings] = await Promise.all([supabase.rpc("configurator_prices"), getSettings()]);
   const prices = !error && data ? (data as ConfiguratorPrices) : null;
-  const ready = prices && (prices.workshops.length > 0 || prices.activities.length > 0);
+  const shows = settings.shows.videos ?? [];
+  const ready = prices && (prices.workshops.length > 0 || prices.activities.length > 0 || shows.length > 0);
 
   return (
     <>
@@ -44,7 +45,7 @@ export default async function ConfiguratorPage() {
       <Section>
         <Container className="max-w-6xl">
           {ready ? (
-            <OfferConfigurator prices={prices} />
+            <OfferConfigurator prices={prices} shows={shows} />
           ) : (
             <div className="rounded-3xl bg-surface p-8 text-center">
               <p className="text-lg font-bold">Piedāvājuma salikšana šobrīd nav pieejama.</p>
