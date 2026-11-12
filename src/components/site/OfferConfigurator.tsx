@@ -51,6 +51,15 @@ const SEASON_IMAGE = { summer: "/media/salikt/burbuli.webp", xmas: "/media/salik
 type Season = "summer" | "xmas";
 const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas: "Ziemas pasākums" };
 const SEASON_SHORT: Record<Season, string> = { summer: "Vasara", xmas: "Ziema" };
+/** "Kā tas notiek" — īsa info katrā solī (teksts — šeit) */
+const HOW: Record<string, string> = {
+  pasakums: "Pēc šīs informācijas aprēķinām aptuveno cenu. Ceturtdienās un piektdienās cenai pieskaita piemaksu. Ja datums vēl nav zināms, to var atstāt tukšu.",
+  izrades: "Izrāde ilgst ~45 minūtes, aktieri ierodas ar savu skaņu un gaismu. Ja jums nav piemērotas telpas, to varam sarunāt mēs.",
+  darbnicas: "Darbnīcas notiek pie galdiem vienlaikus — bērni pienāk, izveido savu darbiņu un paņem to līdzi. Katru darbnīcu vada animatore, galda noformējums ir iekļauts.",
+  aktivitates: "Aktivitātes notiek visu pasākuma laiku paralēli darbnīcām. Lielformāta spēles atvedam, uzstādām un pieskatām. Pārsteiguma tēls ierodas uz pasākumu, satiekas ar bērniem un fotografējas.",
+  kontakti: "Pēc nosūtīšanas sagatavosim prezentāciju ar aprakstiem un bildēm un sazināsimies, lai precizētu detaļas un galīgo cenu.",
+};
+
 /** Soļi (secība lapā) */
 const STEPS = ["Pasākums", "Izrādes", "Darbnīcas", "Aktivitātes", "Kontakti"] as const;
 /** Vai darbnīca / aktivitāte / izrāde der izvēlētajai sezonai (bez sezonas — visu gadu) */
@@ -111,7 +120,7 @@ export default function OfferConfigurator({
   const [pickedGames, setPickedGames] = useState<string[]>([]);
   const [pickedShows, setPickedShows] = useState<string[]>([]);
   const [participants, setParticipants] = useState(30);
-  const [hours, setHours] = useState(2);
+  const [hoursInput, setHours] = useState(2);
   const [workshops, setWorkshops] = useState<string[]>([]);
   // aktivitātes id → daudzums (gabaliem); pārējām — 1
   const [activities, setActivities] = useState<Record<string, number>>({});
@@ -134,6 +143,10 @@ export default function OfferConfigurator({
   const showChosen = chosenShows.length > 0 || chosenActivities.some(isShow);
   // Izrāde bez cenas panelī — cenu precizēsim
   const showPriceUnknown = chosenShows.some((x) => !x.price || !x.price.price);
+  // Minimālais ilgums: katrai izrādei ~1 h, radošajām darbnīcām vēl vismaz 1 h (izrāde + darbnīca — vismaz 2 h)
+  const minHours = Math.max(1, chosenShows.length + (chosenWorkshops.length ? 1 : 0));
+  const hours = Math.max(hoursInput, minHours);
+  const hoursRaised = hoursInput < minHours;
 
   const workshopAnimators = chosenWorkshops.length ? Math.max(chosenWorkshops.length, Math.ceil(people / Math.max(1, prices.perAnimator))) : 0;
   const workshopsSum =
@@ -430,7 +443,8 @@ export default function OfferConfigurator({
         </ul>
       )}
       <p className="mt-3 text-xs leading-5 text-white/40">
-        {people} dalībnieki · {String(hours).replace(".", ",")} h{form.eventDate ? ` · ${form.eventDate.split("-").reverse().join(".")}` : ""}
+        {people} dalībnieki · {String(hours).replace(".", ",")} h{hoursRaised ? " (minimālais ilgums)" : ""}{form.eventDate ? ` · ${form.eventDate.split("-").reverse().join(".")}` : ""}
+        {hoursRaised && <><br />Izrādei un radošajām darbnīcām vajag vismaz {minHours} h — ilgums palielināts.</>}
         {peak > 0 && <><br />Iekļauta piemaksa ceturtdienai/piektdienai (+{prices.peakPercent} %).</>}
         {anything && atMinimum && <><br />Minimālā pasūtījuma summa — {eur(prices.minTotal ?? 0)}.</>}
         <br />Cena ir aptuvena — galīgo apstiprināsim pēc sarunas.
@@ -438,6 +452,7 @@ export default function OfferConfigurator({
     </div>
   );
 
+  const howKey = ["pasakums", "izrades", "darbnicas", "aktivitates", "kontakti"][step];
   const heading = (title: string, lead?: string) => (
     <div className="mb-5">
       <p className={eye}>
@@ -445,6 +460,12 @@ export default function OfferConfigurator({
       </p>
       <h2 className="display mt-1.5 text-2xl sm:text-3xl">{title}</h2>
       {lead && <p className="mt-1.5 text-white/60">{lead}</p>}
+      {HOW[howKey] && (
+        <p className="mt-3 border-l-2 border-brand pl-3 text-sm leading-6 text-white/70">
+          <span className="font-extrabold text-white">Kā tas notiek. </span>
+          {HOW[howKey]}
+        </p>
+      )}
     </div>
   );
   const grid = "grid grid-cols-3 gap-2.5 sm:grid-cols-4";
@@ -526,7 +547,7 @@ export default function OfferConfigurator({
                     Ilgums
                     <select value={hours} onChange={(e) => setHours(Number(e.target.value))} className={field}>
                       {[1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
-                        <option key={h} value={h} className="text-ink">
+                        <option key={h} value={h} disabled={h < minHours} className="text-ink">
                           {String(h).replace(".", ",")} h
                         </option>
                       ))}
@@ -534,6 +555,7 @@ export default function OfferConfigurator({
                   </label>
                 </div>
                 {peak > 0 && <p className="mt-3 text-sm text-white/60">Ceturtdienās un piektdienās — piemaksa {prices.peakPercent} %.</p>}
+                {minHours > 1 && <p className="mt-3 text-sm text-white/60">Ar izvēlēto programmu pasākumam vajag vismaz {minHours} h.</p>}
               </>
             )}
 
