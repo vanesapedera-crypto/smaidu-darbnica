@@ -60,6 +60,9 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       { source: "/:old(kazu-vadisana|kazu-varti|bernu-raidijums-kas-tas-ir|kosimu-noma|cart)", destination: "/", permanent: true },
+      // Klientu piedāvājuma saite — tagad atsevišķa lapa bez mājaslapas izvēlnes
+      { source: "/uznemumiem/salikt", destination: "/piedavajums", permanent: false },
+      { source: "/uznemumiem/salikt/info/:id", destination: "/piedavajums/info/:id", permanent: false },
       // Webnode bloga ieraksti
       { source: "/l/:path*", destination: "/", permanent: true },
     ];

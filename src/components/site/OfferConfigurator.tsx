@@ -71,11 +71,14 @@ export default function OfferConfigurator({
   prices: allPrices,
   shows: allShows = [],
   games = [],
+  clientName = "",
 }: {
   prices: ConfiguratorPrices;
   shows?: ShowInfo[];
   /** Lielformāta spēles ar bildēm (panelī: Uzņēmumiem → spēles) — klients izvēlas konkrētas */
   games?: { name: string; image: string }[];
+  /** No saites ?klients=… — uzņēmuma lauks jau aizpildīts */
+  clientName?: string;
 }) {
   // Vispirms klients izvēlas sezonu — sarakstos paliek tikai tās sezonas (un visu gadu) iespējas
   const [season, setSeason] = useState<Season | "">("");
@@ -104,7 +107,7 @@ export default function OfferConfigurator({
   const [ownVenue, setOwnVenue] = useState<"" | "yes" | "no">("");
   const [address, setAddress] = useState("");
   const [travel, setTravel] = useState<TravelState>({ status: "idle" });
-  const [form, setForm] = useState({ companyName: "", parentName: "", phone: "", email: "", eventDate: "", message: "", consent: false });
+  const [form, setForm] = useState({ companyName: clientName, parentName: "", phone: "", email: "", eventDate: "", message: "", consent: false });
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -286,7 +289,7 @@ export default function OfferConfigurator({
   // "Vairāk informācijas" — apraksts un bilde (tie paši, kas prezentācijā) jaunā cilnē, lai izvēle šeit nepazūd
   const moreInfo = (id: string, query = "") => (
     <a
-      href={`/uznemumiem/salikt/info/${id}${query}`}
+      href={`/piedavajums/info/${id}${query}`}
       target="_blank"
       rel="noopener"
       className="border-t border-line px-4 py-2.5 text-sm font-bold underline decoration-brand decoration-2 underline-offset-4 hover:bg-surface"

@@ -540,6 +540,6 @@ export async function saveShowPrice(form: FormData) {
   else await db.from("cost_items").insert({ ...row, kind: "activity", unit: "fixed", title: `Izrāde „${show}”`, sort: 5 });
   revalidatePath("/admin/izrades-cenas");
   revalidatePath("/admin/izmaksas");
-  revalidatePath("/uznemumiem/salikt");
+  revalidatePath("/piedavajums");
   redirect(`/admin/izrades-cenas?saglabats=${encodeURIComponent(show)}`);
 }

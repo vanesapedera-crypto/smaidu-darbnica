@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import type { ConfiguratorPrices } from "@/components/site/OfferConfigurator";
-import { Container, Section } from "@/components/site/ui";
 import { fallbackImage } from "@/lib/salikt-images";
 import { supabase } from "@/lib/supabase";
 import { getSettings } from "@/lib/content/queries";
@@ -29,8 +28,7 @@ export default async function ConfiguratorInfoPage({ params, searchParams }: Pro
   const isWorkshop = prices?.workshops.some((w) => w.id === id);
 
   return (
-    <Section>
-      <Container className="max-w-3xl">
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
         <p className="text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase">{game ? "Lielformāta spēle" : isWorkshop ? "Radošā darbnīca" : "Papildu aktivitāte"}</p>
         <h1 className="display mt-2 text-4xl sm:text-5xl">{title}</h1>
         {image && (
@@ -43,7 +41,6 @@ export default async function ConfiguratorInfoPage({ params, searchParams }: Pro
           <p className="mt-8 text-ink-soft">Apraksts vēl tiek gatavots — sīkāku informāciju sniegsim prezentācijā.</p>
         )}
         <p className="mt-10 text-sm text-ink-soft">Lai turpinātu salikt piedāvājumu, aizveriet šo cilni.</p>
-      </Container>
-    </Section>
+    </div>
   );
 }
