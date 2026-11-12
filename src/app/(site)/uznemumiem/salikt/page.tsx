@@ -13,6 +13,8 @@ export function generateMetadata() {
     path: "/uznemumiem/salikt",
     title: "Salikt pasākuma piedāvājumu",
     description: "Atzīmējiet radošās darbnīcas, aktivitātes un izrādi — uzreiz redzēsiet aptuveno cenu un varēsiet nosūtīt pieteikumu.",
+    // Saite tikai klientiem, kuriem to nosūta — meklētājos nerāda
+    noindex: true,
   });
 }
 
