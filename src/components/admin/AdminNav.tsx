@@ -19,7 +19,6 @@ const groups: Group[] = [
     title: "Pieteikumi",
     items: [
       { href: "/admin", label: "Pieteikumi", icon: Inbox, exact: true, ownerOnly: true },
-      { href: "/admin/rezervacijas", label: "Pieteikumi", icon: Inbox, section: "rezervacijas" },
       { href: "/admin/kalendars", label: "Kalendārs", icon: CalendarDays, section: "kalendars" },
     ],
   },

@@ -6,7 +6,9 @@ import { Star } from "lucide-react";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import { timeLabel } from "@/lib/dates";
-import { listGoogleEvents, type GoogleEvent } from "@/lib/google-calendar";
+import { Suspense } from "react";
+import { listGoogleEvents } from "@/lib/google-calendar";
+import type { MemberContext } from "@/lib/auth";
 import BookingCard, { isTrip, isVenue, stateOf } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
 import { cn } from "@/lib/utils";
@@ -37,8 +39,6 @@ export default async function CalendarPage() {
     getServices("private"),
     getSettings(),
   ]);
-  // Google kalendāra notikumi (arī tie, kuros ielūdza Kristīne) — redz tikai administratore
-  const google: GoogleEvent[] = role === "owner" ? ((await listGoogleEvents(db, today, addDays(today, 120))) ?? []) : [];
 
   const prices = bookingPrices(settings);
   const costsOf = (b: Booking) =>
@@ -68,9 +68,7 @@ export default async function CalendarPage() {
   const upcoming = group(all.filter((b) => b.event_date!.slice(0, 10) >= today));
   // Arhīvs — jaunākās dienas augšā
   const archive = group(all.filter((b) => b.event_date!.slice(0, 10) < today).reverse());
-  const googleByDay = new Map<string, GoogleEvent[]>();
-  for (const g of google) googleByDay.set(g.date, [...(googleByDay.get(g.date) ?? []), g]);
-  const upcomingDays = [...new Set([...upcoming.keys(), ...googleByDay.keys()])].sort();
+  const upcomingDays = [...upcoming.keys()].sort();
 
   const dayTitle = (day: string) => {
     const d = new Date(`${day}T12:00:00Z`);
@@ -78,7 +76,7 @@ export default async function CalendarPage() {
     return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${year}, ${WEEKDAY_NAMES[d.getUTCDay()]}`;
   };
 
-  const renderDay = (day: string, items: Booking[], gItems: GoogleEvent[] = []) => (
+  const renderDay = (day: string, items: Booking[]) => (
     <div key={day}>
       <h3 className={cn("text-sm font-extrabold", day === today && "text-ink")}>
         {day === today ? "Šodien · " : ""}
@@ -135,23 +133,6 @@ export default async function CalendarPage() {
             </li>
           );
         })}
-        {gItems.map((g) => (
-          <li key={g.id}>
-            <a
-              href={g.link || undefined}
-              target="_blank"
-              rel="noreferrer"
-              className="grid items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 text-ink-soft ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto]"
-            >
-              <span className="text-sm font-semibold">{g.time ? `${g.time}${g.endTime ? `–${g.endTime}` : ""}` : "Visu dienu"}</span>
-              <span className="min-w-0 truncate text-sm">
-                <b className="text-ink">{g.title}</b>
-                {g.location && ` · ${g.location}`}
-              </span>
-              <span className="w-fit rounded-full bg-surface px-2.5 py-1 text-xs font-bold ring-1 ring-line">Google kalendārs</span>
-            </a>
-          </li>
-        ))}
       </ul>
     </div>
   );
@@ -169,8 +150,15 @@ export default async function CalendarPage() {
 
       <section className="mt-6 space-y-6">
         {upcomingDays.length === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Gaidāmu rezervāciju nav.</p>}
-        {upcomingDays.map((day) => renderDay(day, upcoming.get(day) ?? [], googleByDay.get(day) ?? []))}
+        {upcomingDays.map((day) => renderDay(day, upcoming.get(day) ?? []))}
       </section>
+
+      {/* Google kalendāra notikumi, kas nav no mājaslapas (piem. Kristīnes) — tikai administratorei; ielādējas atsevišķi, lai lapa nav jāgaida */}
+      {role === "owner" && (
+        <Suspense fallback={<p className="mt-8 text-sm text-ink-soft">Ielādē Google kalendāru…</p>}>
+          <GoogleEvents db={db} from={today} to={addDays(today, 120)} dayTitle={dayTitle} />
+        </Suspense>
+      )}
 
       {archive.size > 0 && (
         <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
@@ -179,5 +167,44 @@ export default async function CalendarPage() {
         </details>
       )}
     </>
+  );
+}
+
+/** Notikumi no Google kalendāra (nav pieteikumi mājaslapā), sakārtoti pa dienām */
+async function GoogleEvents({ db, from, to, dayTitle }: { db: MemberContext["db"]; from: string; to: string; dayTitle: (d: string) => string }) {
+  const events = await listGoogleEvents(db, from, to);
+  if (!events?.length) return null;
+  const days = [...new Set(events.map((g) => g.date))].sort();
+  return (
+    <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
+      <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Citi notikumi Google kalendārā ({events.length})</summary>
+      <div className="mt-4 space-y-6">
+        {days.map((day) => (
+          <div key={day}>
+            <h3 className="text-sm font-extrabold">{dayTitle(day)}</h3>
+            <ul className="mt-2 space-y-2">
+              {events
+                .filter((g) => g.date === day)
+                .map((g) => (
+                  <li key={g.id}>
+                    <a
+                      href={g.link || undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="grid items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 text-ink-soft ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)]"
+                    >
+                      <span className="text-sm font-semibold">{g.time ? `${g.time}${g.endTime ? `–${g.endTime}` : ""}` : "Visu dienu"}</span>
+                      <span className="min-w-0 truncate text-sm">
+                        <b className="text-ink">{g.title}</b>
+                        {g.location && ` · ${g.location}`}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }

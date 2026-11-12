@@ -1,5 +1,5 @@
 import { Eye, Search } from "lucide-react";
-import { requireSection } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices } from "@/lib/pricing";
@@ -16,7 +16,8 @@ type Props = { searchParams: Promise<{ q?: string }> };
  * Labot un apstiprināt var tikai administratore sadaļā /admin (to nosaka arī datubāzes RLS).
  */
 export default async function BookingsReadOnlyPage({ searchParams }: Props) {
-  const { db } = await requireSection("rezervacijas");
+  // Pieteikumus redz tikai administratore (komandai — sadaļa "Kalendārs")
+  const { db } = await requireAdmin();
   const { q = "" } = await searchParams;
 
   let query = db.from("bookings").select("*").order("event_date", { ascending: true, nullsFirst: false });

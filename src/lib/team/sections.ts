@@ -1,7 +1,7 @@
 /** Paneļa sadaļas, kuras komandas loceklim var ieslēgt ar ķeksīti (sk. migrāciju 20261107120000). */
 
 export const SECTIONS = [
-  { key: "rezervacijas", label: "Pieteikumi", hint: "visi pieteikumi — tikai skatīt", href: "/admin/rezervacijas", hidden: false },
+  { key: "rezervacijas", label: "Pieteikumi", hint: "visi pieteikumi — tikai skatīt", href: "/admin/rezervacijas", hidden: true },
   { key: "kalendars", label: "Kalendārs", hint: "rezervācijas pa dienām, arī telpu noma — tikai skatīt", href: "/admin/kalendars", hidden: false },
   { key: "piedavajumi", label: "Piedāvājumi", hint: "piedāvājumi klientiem", href: "/admin/piedavajumi", hidden: false },
   { key: "klientu_vesture", label: "Klientu vēsture", hint: "uzņēmumi: gads, kas ņemts, samaksa", href: "/admin/klientu-vesture", hidden: false },
