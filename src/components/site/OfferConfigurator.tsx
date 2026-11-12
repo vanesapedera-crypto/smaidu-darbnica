@@ -46,6 +46,39 @@ const isShow = (a: Activity) => /izrād/i.test(a.title);
 /** Izrāde no lapas "Izrādes" (panelī: Iestatījumi → Izrādes) */
 export type ShowInfo = { title: string; src: string; poster: string; duration?: string; audience?: string; season?: string; description?: string };
 
+/**
+ * Bildes no public/media/salikt — ja darbnīcai, aktivitātei vai izrādei panelī nav savas bildes,
+ * to izvēlas pēc nosaukuma (piem. "Sejas apgleznošana" → sejas-apgleznosana.webp).
+ */
+const KEYWORD_IMAGES: [RegExp, string][] = [
+  [/piparkūk/i, "piparkukas"],
+  [/sejas|sejiņ/i, "sejas-apgleznosana"],
+  [/glit/i, "glitera-tetovejumi"],
+  [/mirdz/i, "mirdzumins"],
+  [/burbu/i, "burbuli"],
+  [/putu/i, "putu-ballite"],
+  [/slaim/i, "slaims"],
+  [/eksperiment|pētniek/i, "eksperimenti"],
+  [/virtu|donut/i, "virtuli"],
+  [/cepum/i, "cepumu-apgleznosana"],
+  [/keks|kēks|kūciņ/i, "keksini"],
+  [/zobeni/i, "kroni-zils"],
+  [/kroņ|kroni/i, "kroni"],
+  [/piesprau/i, "piespraudes"],
+  [/olaf/i, "olafs"],
+  [/balon/i, "tels-baloni"],
+  [/tēl/i, "tels-suns"],
+  [/vadīt|vadītāj|organiz/i, "pasakuma-vaditaja"],
+  [/lent|deju|kustīb/i, "lentes"],
+  [/apglezno|krāso|tekstil|maisiņ/i, "apgleznosana"],
+  [/egl|ziemassvētk/i, "egles-iedegsana"],
+];
+const fallbackImage = (title: string) => {
+  const hit = KEYWORD_IMAGES.find(([re]) => re.test(title));
+  return hit ? `/media/salikt/${hit[1]}.webp` : null;
+};
+const SEASON_IMAGE = { summer: "/media/salikt/burbuli.webp", xmas: "/media/salikt/egles-iedegsana.webp" } as const;
+
 type Season = "summer" | "xmas";
 const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas: "Ziemassvētku pasākums" };
 /** Vai darbnīca / aktivitāte / izrāde der izvēlētajai sezonai (bez sezonas — visu gadu) */
@@ -271,8 +304,8 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
               <label
                 key={v}
                 className={cn(
-                  "flex cursor-pointer items-center gap-3 rounded-2xl border-2 bg-white p-5 text-lg font-extrabold transition-colors",
-                  season === v ? "border-ink bg-brand" : "border-line hover:border-ink",
+                  "relative flex aspect-[16/9] cursor-pointer items-end overflow-hidden rounded-2xl border-2 bg-ink p-5 text-lg font-extrabold text-white transition-colors",
+                  season === v ? "border-ink ring-4 ring-brand" : "border-line hover:border-ink",
                 )}
               >
                 <input
@@ -287,10 +320,15 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                     setPickedShows([]);
                     setOwnVenue("");
                   }}
-                  className="size-5 accent-ink"
+                  className="sr-only"
                 />
+                {/* eslint-disable-next-line @next/next/no-img-element -- sezonas bilde */}
+                <img src={SEASON_IMAGE[v]} alt="" className={cn("absolute inset-0 size-full object-cover transition-opacity", season && season !== v ? "opacity-40" : "opacity-80")} />
+                <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <span className="relative">
                 {v === "summer" ? "☀️ " : "🎄 "}
                 {SEASON_LABEL[v]}
+                </span>
               </label>
             ))}
           </div>
@@ -336,7 +374,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                           onChange={() => setPickedShows((ps) => (ps.includes(v.title) ? ps.filter((x) => x !== v.title) : [...ps, v.title]))}
                           className="sr-only"
                         />
-                        {picture(poster || null, v.title)}
+                        {picture(poster || fallbackImage(v.title), v.title)}
                         <span className="flex flex-1 items-start gap-3 p-4">
                           <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
                             {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
@@ -375,7 +413,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                   <li key={w.id}>
                     <label className={card(active)}>
                       <input type="checkbox" checked={active} onChange={() => toggleWorkshop(w.id)} className="sr-only" />
-                      {picture(w.image, w.title)}
+                      {picture(w.image || fallbackImage(w.title), w.title)}
                       <span className="flex flex-1 items-start gap-3 p-4">
                         <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
                           {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
@@ -405,7 +443,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                     <div className={card(active)}>
                       <label className="flex flex-1 cursor-pointer flex-col">
                         <input type="checkbox" checked={active} onChange={() => toggleActivity(a.id)} className="sr-only" />
-                        {picture(a.image, a.title)}
+                        {picture(a.image || fallbackImage(a.title), a.title)}
                         <span className="flex flex-1 items-start gap-3 p-4">
                           <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
                             {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
