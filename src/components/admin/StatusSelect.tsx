@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { BOOKING_STATUSES } from "@/lib/bookings";
 import HostPicker from "./HostPicker";
+import { CALENDAR_INVITES } from "@/lib/calendar";
 import { adminSecondary } from "./styles";
 
 type Props = {
@@ -65,7 +66,7 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
             : data.clientEmail === "not-configured"
               ? "E-pasta sūtīšana nav ieslēgta — nekas nav nosūtīts."
               : "",
-        data.calendar === "sent" ? "Ielūgums nosūtīts kalendāram." : data.calendar === "no-date" ? "Nav datuma — kalendārā nav ielikts." : "",
+        data.calendar === "sent" ? "Ielikts Google kalendārā." : data.calendar === "no-date" ? "Nav datuma — kalendārā nav ielikts." : "",
       ]
         .filter(Boolean)
         .join(" "),
@@ -116,15 +117,15 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
                 "Klients nav norādījis e-pastu — apstiprinājums viņam netiks nosūtīts."
               )}
             </li>
-            <li>{guests ? "Notikums tiks ielikts Google kalendārā." : "Pieteikumam nav datuma — kalendārā netiks ielikts."}</li>
+            <li>{guests ? "Rezervācija tiks ielikta jūsu Google kalendārā (rezerves kopija)." : "Pieteikumam nav datuma — kalendārā netiks ielikta."}</li>
           </ul>
-          {guests && withHost && (
+          {guests && withHost && CALENDAR_INVITES && (
             <div className="space-y-1.5">
               <span className="block font-semibold">Programmu vada (var atzīmēt vairākas)</span>
               <HostPicker value={hosts} onChange={setHosts} />
             </div>
           )}
-          {guests && <p className="text-xs break-words text-ink-soft">Ielūgumu saņems: {recipients.join(", ")}</p>}
+          {recipients.length > 0 && <p className="text-xs break-words text-ink-soft">Ielūgumu saņems: {recipients.join(", ")}</p>}
           <div className="flex gap-2">
             <button
               type="button"

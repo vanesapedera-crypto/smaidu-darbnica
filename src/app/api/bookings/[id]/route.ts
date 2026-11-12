@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdmin, type AdminContext } from "@/lib/auth";
 import { BOOKING_STATUSES, atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
-import { calendarEvent, pickHosts } from "@/lib/calendar";
+import { CALENDAR_INVITES, calendarEvent, pickHosts } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
@@ -64,10 +64,12 @@ async function onConfirmed(b: Booking, hosts: string[], db: AdminContext["db"]) 
 
   // Kalendāra ielūgumā ir tā pati informācija, ko saņem klients (laiks, izmaksas), plus klienta kontakti
   const event = calendarEvent(b, title || (inVenue ? "Telpu noma" : "Pieteikums"), costs);
-  const guests = event ? [...new Set([...event.guests, ...hosts])] : [];
+  const guests = event && CALENDAR_INVITES ? [...new Set([...event.guests, ...hosts])] : [];
+  // Ja Google kalendārs nestrādā — .ics ielūgums: komandai (ja ielūgumi ieslēgti) vai tikai administratorei kā rezerves kopija
+  const fallback = CALENDAR_INVITES ? guests : [process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"];
   // Vispirms — savienotajā Google kalendārā (labojams); ja savienojuma nav vai neizdodas — .ics ielūgums
   const calendar = event
-    ? upsertGoogleEvent(db, b.id, event, guests).then((ok) => (ok ? undefined : sendCalendarInvite(event, guests, `rezervacija-${b.id}@smaidudarbnica.lv`)))
+    ? upsertGoogleEvent(db, b.id, event, guests).then((ok) => (ok ? undefined : sendCalendarInvite(event, fallback, `rezervacija-${b.id}@smaidudarbnica.lv`)))
     : null;
 
   await Promise.all([client, calendar]);

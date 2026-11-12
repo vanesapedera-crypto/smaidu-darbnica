@@ -13,6 +13,14 @@ import { costLinesText, type BookingCosts } from "./pricing";
  */
 
 /** Saņem visus kalendāra notikumus (Vanesa un Kristīne) */
+/**
+ * Vai komandai (Kristīne, animatores, telpu kopēja) sūtīt kalendāra ielūgumus.
+ * false — Google kalendārs ir tikai administratores rezerves kopija: apstiprinātās rezervācijas tiek ieliktas
+ * savienotajā Google kalendārā bez viesiem, komanda rezervācijas redz paneļa sadaļā "Kalendārs".
+ * Lai ielūgumus atkal sūtītu — true.
+ */
+export const CALENDAR_INVITES = true;
+
 export const CALENDAR_ALWAYS = ["smaidu.darbniica@gmail.com", "smaidu.darbnica@gmail.com"];
 /** Saņem notikumus, kas notiek mūsu telpās (telpu noma) — telpu uzkopšanai */
 export const CALENDAR_VENUE = ["keitaplavina3@gmail.com"];
@@ -99,7 +107,7 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
     dates,
     details,
     location: inVenue ? VENUE_ADDRESS : (fixedVenueAddress(b.location) ?? [b.address, b.event_city].filter(Boolean).join(", ")),
-    guests: [...CALENDAR_ALWAYS, ...(inVenue ? CALENDAR_VENUE : [])],
+    guests: CALENDAR_INVITES ? [...CALENDAR_ALWAYS, ...(inVenue ? CALENDAR_VENUE : [])] : [],
   };
 }
 

@@ -10,7 +10,7 @@ import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyReviewRequest } from "@/lib/notify";
-import { calendarEvent, pickHosts } from "@/lib/calendar";
+import { CALENDAR_INVITES, calendarEvent, pickHosts } from "@/lib/calendar";
 import { atStudio } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
@@ -403,7 +403,7 @@ async function pushToGoogle(db: Awaited<ReturnType<typeof requireAdmin>>["db"], 
   const costs = isBusiness ? null : bookingCosts(b, service, bookingPrices(settings));
   const event = calendarEvent(b, service?.title ?? (slug || (inVenue ? "Telpu noma" : "Pieteikums")), costs);
   if (!event) return false;
-  return upsertGoogleEvent(db, b.id, event, [...event.guests, ...hosts]);
+  return upsertGoogleEvent(db, b.id, event, CALENDAR_INVITES ? [...event.guests, ...hosts] : []);
 }
 
 /**

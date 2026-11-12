@@ -16,17 +16,17 @@ export default function ResendInvites() {
         type="button"
         disabled={pending}
         onClick={() => {
-          if (!confirm("Visas nākamās apstiprinātās rezervācijas tiks ieliktas Google kalendārā vēlreiz, un visi viesi (Kristīne u. c.) saņems ielūgumu. Klientiem nekas netiek sūtīts. Turpināt?")) return;
+          if (!confirm("Visas nākamās apstiprinātās rezervācijas tiks ieliktas (vai atjaunotas) jūsu Google kalendārā. Klientiem un komandai nekas netiek sūtīts. Turpināt?")) return;
           setResult("");
           start(async () => {
             const r = await resendAllToGoogle();
-            setResult(r.error ? `Kļūda: ${r.error}` : `Nosūtīti: ${r.done}${r.failed ? `, neizdevās: ${r.failed}` : ""}.`);
+            setResult(r.error ? `Kļūda: ${r.error}` : `Ielikti: ${r.done}${r.failed ? `, neizdevās: ${r.failed}` : ""}.`);
           });
         }}
         className={adminSecondary}
       >
         {pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-        {pending ? "Sūta…" : "Nosūtīt ielūgumus vēlreiz"}
+        {pending ? "Ieliek…" : "Ielikt visas Google kalendārā"}
       </button>
       {result && <p className="text-sm font-semibold">{result}</p>}
     </div>
