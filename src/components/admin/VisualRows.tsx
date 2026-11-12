@@ -37,6 +37,7 @@ export function visualColumns(field: FieldDef): Col[] | null {
       { key: "poster", label: "Vāciņa bilde", kind: "image" },
       { key: "duration", label: "Ilgums", kind: "text" },
       { key: "audience", label: "Auditorija", kind: "text" },
+      { key: "season", label: "Sezona (vasara / Ziemassvētki / tukšs — visu gadu)", kind: "text" },
       { key: "description", label: "Apraksts", kind: "long" },
     ];
   if (field.type === "table" && field.columns?.includes("image"))

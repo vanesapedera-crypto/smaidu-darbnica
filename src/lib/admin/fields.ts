@@ -1,3 +1,5 @@
+import { toSeason } from "@/lib/team/season";
+
 /**
  * Administrēšanas paneļa formu lauku apraksti un pārveidošana starp
  * formas tekstu un datubāzes vērtībām.
@@ -100,10 +102,11 @@ export function serialize(type: FieldType, value: unknown, columns: string[] = [
         .map((p) => (p.caption ? `${p.src}${SEP}${p.caption}` : p.src))
         .join("\n");
     case "videos":
-      return ((value as { title: string; src: string; poster: string; duration?: string; audience?: string; description?: string }[]) ?? [])
+      return ((value as { title: string; src: string; poster: string; duration?: string; audience?: string; season?: string; description?: string }[]) ?? [])
         .map((v) => {
           // Aprakstā rindu pārnesumus panelī rāda kā " ¶ " (viens video = viena rinda)
-          const cols = [v.title, v.src, v.poster, v.duration ?? "", v.audience ?? "", (v.description ?? "").replace(/\n/g, " ¶ ")];
+          const season = v.season === "summer" ? "vasara" : v.season === "xmas" ? "Ziemassvētki" : "";
+          const cols = [v.title, v.src, v.poster, v.duration ?? "", v.audience ?? "", season, (v.description ?? "").replace(/\n/g, " ¶ ")];
           while (cols.length > 2 && !cols[cols.length - 1]) cols.pop(); // tukšās beigu kolonnas nerāda
           return cols.join(SEP);
         })
@@ -171,8 +174,8 @@ export function parse(field: FieldDef, form: FormData): unknown {
     case "videos":
       return splitLines(text)
         .map((l) => {
-          const [title, src = "", poster = "", duration = "", audience = "", ...rest] = l.split("|").map((x) => x.trim());
-          return { title, src, poster, duration, audience, description: rest.join(" ").replace(/\s*¶\s*/g, "\n") };
+          const [title, src = "", poster = "", duration = "", audience = "", season = "", ...rest] = l.split("|").map((x) => x.trim());
+          return { title, src, poster, duration, audience, season: toSeason(season), description: rest.join(" ").replace(/\s*¶\s*/g, "\n") };
         })
         .filter((v) => v.src);
     case "pricing": {

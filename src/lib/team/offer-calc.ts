@@ -22,6 +22,10 @@ export type CostItemRow = {
   cost: number;
   notes: string | null;
   sort: number;
+  description?: string | null;
+  image?: string | null;
+  /** Sezona lapā "Salikt piedāvājumu" (sk. lib/team/season.ts) */
+  season?: string | null;
 };
 
 export type CalcSettings = {

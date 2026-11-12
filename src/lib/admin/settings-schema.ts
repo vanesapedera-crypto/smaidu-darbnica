@@ -116,7 +116,7 @@ export const settingsSchemas: Record<SettingsKey, { title: string; description: 
         type: "videos",
         rows: 6,
         wide: true,
-        help: "Katrā rindā: Izrādes nosaukums | YouTube saite | vāciņa attēls (var atstāt tukšu) | ilgums | auditorija | apraksts. Piem.: Dāvanu prieks | https://youtu.be/… |  | 45 min | Visai ģimenei | Apraksts. Aprakstā ¶ = jauna rinda, ¶ ¶ = jauna rindkopa, \"- \" rindas sākumā = saraksta punkts, **teksts** = treknraksts.",
+        help: "Katrā rindā: Izrādes nosaukums | YouTube saite | vāciņa attēls (var atstāt tukšu) | ilgums | auditorija | sezona (vasara / Ziemassvētki / tukšs) | apraksts. Aprakstā ¶ = jauna rinda, ¶ ¶ = jauna rindkopa, \"- \" rindas sākumā = saraksta punkts, **teksts** = treknraksts.",
       },
 
       { name: "h-photos", label: "Bilžu karuselis lapas apakšā", type: "heading" },

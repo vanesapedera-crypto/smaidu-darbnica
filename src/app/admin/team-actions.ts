@@ -1,5 +1,7 @@
 "use server";
 
+import { toSeason } from "@/lib/team/season";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { canSee, isManagerRole, requireAdmin, requireMember, requireSection } from "@/lib/auth";
@@ -255,6 +257,7 @@ export async function saveWorkshop(id: string | null, _: TeamActionState, form: 
     title,
     description: text(form, "description", 5000),
     image: text(form, "image", 500),
+    season: toSeason(form.get("season")),
     items: parseItems(items),
     participants: Number.isInteger(participants) && participants > 0 && participants < 100000 ? participants : null,
     updated_at: new Date().toISOString(),
@@ -314,6 +317,7 @@ export async function saveCostItem(id: string | null, _: TeamActionState, form: 
     cost: Math.max(0, numField(form, "cost")),
     description: text(form, "description", 5000),
     image: text(form, "image", 500),
+    season: toSeason(form.get("season")),
     updated_at: new Date().toISOString(),
   };
   const { error } = id ? await db.from("cost_items").update(row).eq("id", id) : await db.from("cost_items").insert(row);

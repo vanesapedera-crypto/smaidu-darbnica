@@ -203,6 +203,8 @@ export type Video = {
   duration?: string;
   /** Izrādēm: kam paredzēta, piem. "Visai ģimenei" */
   audience?: string;
+  /** Izrādēm: sezona lapā "Salikt piedāvājumu" ("summer" | "xmas"; nav — visu gadu) */
+  season?: string;
   /** Izrādēm: īss apraksts (rāda blakus video) */
   description?: string;
 };

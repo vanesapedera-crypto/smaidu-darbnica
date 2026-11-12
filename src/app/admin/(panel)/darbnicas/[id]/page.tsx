@@ -9,6 +9,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import TeamForm from "@/components/admin/team/TeamForm";
 import WorkshopItems from "@/components/admin/team/WorkshopItems";
 import PhotoField from "@/components/admin/team/PhotoField";
+import { SEASONS } from "@/lib/team/season";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import DeleteButton from "@/components/admin/DeleteButton";
 import { adminInput } from "@/components/admin/styles";
@@ -54,6 +55,16 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
                   Darbnīcas nosaukums <span className="text-destructive">*</span>
                 </span>
                 <input name="title" required defaultValue={w?.title ?? ""} placeholder="piem. Ziemassvētku rotājumu darbnīca" className={adminInput} />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="block text-sm font-bold">Sezona (lapā “Salikt piedāvājumu”)</span>
+                <select name="season" defaultValue={(w as { season?: string } | null)?.season ?? "all"} className={adminInput}>
+                  {SEASONS.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
               </label>
               <WorkshopItems initial={items} materials={mats} participants={w?.participants ?? null} />
               <div className="grid gap-5 border-t border-line pt-5 md:grid-cols-[1fr_auto]">

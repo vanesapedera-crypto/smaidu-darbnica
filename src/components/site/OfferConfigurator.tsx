@@ -8,8 +8,8 @@ import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
 
 type Unit = "hour" | "person" | "piece" | "fixed";
-type Workshop = { id: string; title: string; description: string | null; image: string | null; perPerson: number };
-type Activity = { id: string; title: string; description: string | null; image: string | null; unit: Unit; price: number };
+type Workshop = { id: string; title: string; description: string | null; image: string | null; season?: string | null; perPerson: number };
+type Activity = { id: string; title: string; description: string | null; image: string | null; season?: string | null; unit: Unit; price: number };
 /** Cenas klientam ar uzcenojumu un PVN (funkcija configurator_prices) */
 export type ConfiguratorPrices = { factor: number; animatorHour: number; perAnimator: number; workshops: Workshop[]; activities: Activity[] };
 
@@ -23,7 +23,13 @@ const FAR_RATE = 0.5;
 const isShow = (a: Activity) => /izrād/i.test(a.title);
 
 /** Izrāde no lapas "Izrādes" (panelī: Iestatījumi → Izrādes) */
-export type ShowInfo = { title: string; src: string; poster: string; duration?: string; audience?: string; description?: string };
+export type ShowInfo = { title: string; src: string; poster: string; duration?: string; audience?: string; season?: string; description?: string };
+
+type Season = "summer" | "xmas";
+const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas: "Ziemassvētku pasākums" };
+/** Vai darbnīca / aktivitāte / izrāde der izvēlētajai sezonai (bez sezonas — visu gadu) */
+const fits = (itemSeason: string | null | undefined, season: Season | "") =>
+  Boolean(season) && (!itemSeason || itemSeason === "all" || itemSeason === season);
 const norm = (t: string) => t.toLowerCase().replace(/[„”“"'«»]/g, "").replace(/\s+/g, " ").trim();
 const ytId = (src: string) => src.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/)?.[1];
 const showPoster = (v: ShowInfo) => v.poster || (ytId(v.src) ? `https://i.ytimg.com/vi/${ytId(v.src)}/hqdefault.jpg` : "");
@@ -37,7 +43,15 @@ const approx = (n: number) => Math.round(n / 10) * 10;
  * Darbnīcām: materiāli × dalībnieki + animatori (vismaz 1 katrai darbnīcai un 1 uz `perAnimator` dalībniekiem) × stundas.
  * Aktivitātēm: par stundu × ilgums, par gabalu × skaits, par personu × dalībnieki, fiksēta summa.
  */
-export default function OfferConfigurator({ prices, shows = [] }: { prices: ConfiguratorPrices; shows?: ShowInfo[] }) {
+export default function OfferConfigurator({ prices: allPrices, shows: allShows = [] }: { prices: ConfiguratorPrices; shows?: ShowInfo[] }) {
+  // Vispirms klients izvēlas sezonu — sarakstos paliek tikai tās sezonas (un visu gadu) iespējas
+  const [season, setSeason] = useState<Season | "">("");
+  const prices = {
+    ...allPrices,
+    workshops: allPrices.workshops.filter((w) => fits(w.season, season)),
+    activities: allPrices.activities.filter((a) => fits(a.season, season)),
+  };
+  const shows = allShows.filter((v) => fits(v.season, season));
   // Izrādes cena — no aktivitātes "Pakalpojumos", kuras nosaukumā ir izrādes nosaukums (piem. "Izrāde „Dāvanu recepte”")
   const showItems = shows
     .filter((v) => v.title.trim())
@@ -110,7 +124,8 @@ export default function OfferConfigurator({ prices, shows = [] }: { prices: Conf
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const missing: Record<string, string> = {};
-    if (!anything) missing.choice = "Atzīmējiet vismaz vienu izrādi, darbnīcu vai aktivitāti.";
+    if (!season) missing.choice = "Izvēlieties, vai tas ir vasaras vai Ziemassvētku pasākums.";
+    else if (!anything) missing.choice = "Atzīmējiet vismaz vienu izrādi, darbnīcu vai aktivitāti.";
     if (showChosen && !ownVenue) missing.venue = "Norādiet, vai izrādei ir sava telpa.";
     if (!form.companyName.trim()) missing.companyName = "Norādiet uzņēmumu.";
     if (!form.parentName.trim()) missing.parentName = "Norādiet kontaktpersonu.";
@@ -123,6 +138,7 @@ export default function OfferConfigurator({ prices, shows = [] }: { prices: Conf
     }
 
     const lines = [
+      season && SEASON_LABEL[season],
       `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${extras ? ` + ${extras}` : ""}`,
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
       chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
@@ -194,6 +210,41 @@ export default function OfferConfigurator({ prices, shows = [] }: { prices: Conf
     <form onSubmit={submit} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
       <Honeypot value={website} onChange={setWebsite} />
       <div className="space-y-10">
+        {/* Sezona — no tās atkarīgs, kas parādās sarakstos */}
+        <section>
+          <h2 className="display text-2xl">Kāds pasākums?</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {(Object.keys(SEASON_LABEL) as Season[]).map((v) => (
+              <label
+                key={v}
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-2xl border-2 bg-white p-5 text-lg font-extrabold transition-colors",
+                  season === v ? "border-ink bg-brand" : "border-line hover:border-ink",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="season"
+                  checked={season === v}
+                  onChange={() => {
+                    setSeason(v);
+                    // Mainot sezonu, citas sezonas izvēles notīra
+                    setWorkshops([]);
+                    setActivities({});
+                    setPickedShows([]);
+                    setOwnVenue("");
+                  }}
+                  className="size-5 accent-ink"
+                />
+                {v === "summer" ? "☀️ " : "🎄 "}
+                {SEASON_LABEL[v]}
+              </label>
+            ))}
+          </div>
+        </section>
+
+        {season && (
+        <>
         {/* 1. Pamatinformācija */}
         <section className="grid gap-4 sm:grid-cols-2">
           <Field id="participants" label="Dalībnieku skaits">
@@ -353,6 +404,9 @@ export default function OfferConfigurator({ prices, shows = [] }: { prices: Conf
             {ownVenue === "no" && <p className="mt-3 text-sm text-ink-soft">Telpas īres cena atkarīga no konkrētās telpas — to precizēsim un pieskaitīsim piedāvājumā.</p>}
             {errors.venue && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{errors.venue}</p>}
           </fieldset>
+        )}
+
+        </>
         )}
 
         {/* 4. Norises vieta — ceļa izdevumi */}

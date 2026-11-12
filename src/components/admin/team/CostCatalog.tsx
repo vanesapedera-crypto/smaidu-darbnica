@@ -7,6 +7,7 @@ import { money } from "@/lib/team/workshops";
 import { getSettings } from "@/lib/content/queries";
 import TeamForm from "./TeamForm";
 import PhotoField from "./PhotoField";
+import { SEASONS } from "@/lib/team/season";
 import DeleteButton from "../DeleteButton";
 import { adminInput, adminSecondary } from "../styles";
 
@@ -146,6 +147,16 @@ function ItemFields({ item }: { item?: CostItemRow & { description: string | nul
           </select>
         </label>
       </div>
+      <label className="block space-y-1.5 md:col-span-3">
+        <span className="block text-sm font-bold">Sezona (lapā “Salikt piedāvājumu”)</span>
+        <select name="season" defaultValue={item?.season ?? "all"} className={adminInput}>
+          {SEASONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="block space-y-1.5 md:col-span-3">
         <span className="block text-sm font-bold">Apraksts prezentācijai</span>
         <textarea name="description" rows={4} defaultValue={item?.description ?? ""} className={adminInput} />
