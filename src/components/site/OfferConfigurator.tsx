@@ -97,7 +97,16 @@ const approx = (n: number) => Math.round(n / 10) * 10;
  * Darbnīcām: materiāli × dalībnieki + animatori (vismaz 1 katrai darbnīcai un 1 uz `perAnimator` dalībniekiem) × stundas.
  * Aktivitātēm: par stundu × ilgums, par gabalu × skaits, par personu × dalībnieki, fiksēta summa.
  */
-export default function OfferConfigurator({ prices: allPrices, shows: allShows = [] }: { prices: ConfiguratorPrices; shows?: ShowInfo[] }) {
+export default function OfferConfigurator({
+  prices: allPrices,
+  shows: allShows = [],
+  games = [],
+}: {
+  prices: ConfiguratorPrices;
+  shows?: ShowInfo[];
+  /** Lielformāta spēles ar bildēm (panelī: Uzņēmumiem → spēles) — klients izvēlas konkrētas */
+  games?: { name: string; image: string }[];
+}) {
   // Vispirms klients izvēlas sezonu — sarakstos paliek tikai tās sezonas (un visu gadu) iespējas
   const [season, setSeason] = useState<Season | "">("");
   const prices = {
@@ -111,7 +120,11 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
     .map((v) => ({ show: v, price: allPrices.activities.find((a) => isShow(a) && norm(a.title).includes(norm(v.title))) }));
   const showItems = allShowItems.filter((x) => fits(x.price ? x.price.season : x.show.season, season));
   const matched = new Set(allShowItems.map((x) => x.price?.id).filter(Boolean));
-  const otherActivities = prices.activities.filter((a) => !matched.has(a.id));
+  // Lielformāta spēles — atsevišķa sadaļa ar bildēm; cena — aktivitāte "Lielformāta spēles" (par gabalu) × izvēlēto spēļu skaits
+  const isGames = (a: Activity) => /lielformāt/i.test(a.title);
+  const gamesItem = games.length ? prices.activities.find(isGames) : undefined;
+  const otherActivities = prices.activities.filter((a) => !matched.has(a.id) && !(games.length && isGames(a)));
+  const [pickedGames, setPickedGames] = useState<string[]>([]);
   const [pickedShows, setPickedShows] = useState<string[]>([]);
   const [participants, setParticipants] = useState(30);
   const [hours, setHours] = useState(2);
@@ -152,17 +165,19 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
   const travelSum =
     travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) + Math.max(1, travellers) * travelHours * (prices.travelHour ?? 0) : 0;
   const showsSum = chosenShows.reduce((s, x) => s + (x.price ? activityPrice(x.price) : 0), 0);
+  const gamesSum = gamesItem ? gamesItem.price * pickedGames.length : 0;
   const venueSum = showChosen && ownVenue === "no" ? (prices.venueMin ?? 0) : 0;
   // Ceturtdienās un piektdienās — piemaksa programmai (darbnīcām, aktivitātēm, izrādēm); ceļam un telpas nomai — nav
   const weekday = form.eventDate ? new Date(`${form.eventDate}T12:00:00`).getDay() : -1;
   const peak = weekday === 4 || weekday === 5 ? (prices.peakPercent ?? 0) / 100 : 0;
-  const sum = (workshopsSum + activitiesSum + showsSum) * (1 + peak) + travelSum + venueSum;
+  const sum = (workshopsSum + activitiesSum + showsSum + gamesSum) * (1 + peak) + travelSum + venueSum;
   // Mazāk par minimālo pasūtījumu nerēķinām
   const atMinimum = sum > 0 && sum < (prices.minTotal ?? 0);
   const total = atMinimum ? (prices.minTotal ?? 0) : sum;
-  const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length > 0;
+  const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length + pickedGames.length > 0;
   // Darbnīcas un aktivitātes bez cenas panelī — rāda, bet cenu precizēsim
-  const otherUnknown = chosenWorkshops.some((w) => !w.perPerson) || chosenActivities.some((a) => !a.price);
+  const otherUnknown =
+    chosenWorkshops.some((w) => !w.perPerson) || chosenActivities.some((a) => !a.price) || (pickedGames.length > 0 && !gamesItem?.price);
   const extras = [showPriceUnknown && "izrādes cena", otherUnknown && "dažu pozīciju cena"].filter(Boolean).join(" + ");
 
   const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
@@ -219,6 +234,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
       chosenWorkshops.length > 0 && `Radošās darbnīcas: ${chosenWorkshops.map((w) => w.title).join(", ")}`,
       chosenActivities.length > 0 &&
         `Aktivitātes: ${chosenActivities.map((a) => (a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title)).join(", ")}`,
+      pickedGames.length > 0 && `Lielformāta spēles (${pickedGames.length}): ${pickedGames.join(", ")}`,
       showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : `jānodrošina Smaidu Darbnīcai (aprēķinā telpas noma no ${eur(prices.venueMin ?? 0)} — jāprecizē)`}`,
       address.trim() && `Adrese: ${address.trim()}${travel.status === "ok" ? ` (${travel.km} km turp un atpakaļ)` : ""}`,
       form.message.trim() && `\n${form.message.trim()}`,
@@ -246,9 +262,14 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
             title: season ? SEASON_LABEL[season] : "",
             hours,
             workshopIds: chosenWorkshops.map((w) => w.id),
-            activityIds: [...chosenActivities.map((a) => a.id), ...chosenShows.map((x) => x.price?.id).filter(Boolean)],
+            activityIds: [
+              ...chosenActivities.map((a) => a.id),
+              ...chosenShows.map((x) => x.price?.id).filter(Boolean),
+              ...(pickedGames.length && gamesItem ? [gamesItem.id] : []),
+            ],
             intro: [
               chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
+              pickedGames.length > 0 && `Lielformāta spēles: ${pickedGames.join(", ")}`,
               showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : "jānodrošina Smaidu Darbnīcai"}`,
               form.message.trim(),
             ]
@@ -320,6 +341,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                     setWorkshops([]);
                     setActivities({});
                     setPickedShows([]);
+                    setPickedGames([]);
                     setOwnVenue("");
                   }}
                   className="sr-only"
@@ -476,6 +498,41 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
           </section>
         )}
 
+        {/* Lielformāta spēles — izvēlas konkrētas pēc bildēm */}
+        {games.length > 0 && (
+          <section>
+            <h2 className="display text-2xl">Lielformāta spēles</h2>
+            <p className="mt-1 text-ink-soft">Atzīmējiet spēles, kuras vēlaties.</p>
+            <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {games.map((g) => {
+                const active = pickedGames.includes(g.name);
+                return (
+                  <li key={g.name}>
+                    <label className={card(active)}>
+                      <input
+                        type="checkbox"
+                        checked={active}
+                        onChange={() => setPickedGames((gs) => (gs.includes(g.name) ? gs.filter((x) => x !== g.name) : [...gs, g.name]))}
+                        className="sr-only"
+                      />
+                      {g.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- spēles bilde no paneļa
+                        <img src={g.image} alt={g.name} className="aspect-square w-full bg-white object-contain p-2" />
+                      ) : null}
+                      <span className="flex flex-1 items-center gap-2 p-3">
+                        <span className={cn("grid size-5 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
+                          {active && <Check className="size-3.5" strokeWidth={3} aria-hidden />}
+                        </span>
+                        <span className="text-sm font-extrabold">{g.name}</span>
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
         {/* Izrādei — vai klientam ir sava telpa */}
         {showChosen && (
           <fieldset className="mt-5 rounded-2xl bg-surface p-5">
@@ -594,6 +651,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                   {a.unit === "piece" && ` × ${activities[a.id] || 1}`}
                 </li>
               ))}
+              {pickedGames.length > 0 && <li>✓ Lielformāta spēles × {pickedGames.length}</li>}
               {travel.status === "ok" && travel.cost ? <li>✓ Ceļa izdevumi</li> : null}
             </ul>
           )}

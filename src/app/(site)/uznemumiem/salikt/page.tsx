@@ -45,7 +45,7 @@ export default async function ConfiguratorPage() {
       <Section>
         <Container className="max-w-6xl">
           {ready ? (
-            <OfferConfigurator prices={prices} shows={shows} />
+            <OfferConfigurator prices={prices} shows={shows} games={(settings.business.games ?? []).filter((g) => g.name.trim())} />
           ) : (
             <div className="rounded-3xl bg-surface p-8 text-center">
               <p className="text-lg font-bold">Piedāvājuma salikšana šobrīd nav pieejama.</p>
