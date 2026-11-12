@@ -54,14 +54,14 @@ const SEASON_SHORT: Record<Season, string> = { summer: "Vasara", xmas: "Ziema" }
 /** "Kā tas notiek" — īsa info katrā solī (teksts — šeit) */
 const HOW: Record<string, string> = {
   rotaluzvedums: "Vasarā piedāvājam rotaļuzvedumus — tos veidojam pēc jūsu pasākuma tematikas. Ierakstiet tematiku, un sagatavosim piemērotu uzvedumu.",
-  izrades: "Izrāde ilgst ~45 minūtes, aktieri ierodas ar savu skaņu un gaismu. Ja jums nav piemērotas telpas, to varam sarunāt mēs.",
+  izrades: "Izrādes ilgst ~45 minūtes, aktieri ierodas ar savu skaņu un gaismu. Ja jums nav piemērotas telpas, to varam sarunāt mēs. Var izvēlēties arī egles iedegšanas pasākumu.",
   darbnicas: "Galdus darbnīcām nodrošina pasūtītājs. Mēs atvedam visus materiālus un standarta galda dekorācijas — tās ir iekļautas cenā. Bērni pienāk pie galdiem, izveido savu darbiņu un paņem to līdzi. Animatoru skaits atkarīgs no bērnu skaita un darbnīcu daudzuma.",
   aktivitates: "Aktivitātes notiek visu pasākuma laiku paralēli darbnīcām. Lielformāta spēles atvedam, uzstādām un pieskatām. Pārsteiguma tēls ierodas uz pasākumu, satiekas ar bērniem un fotografējas.",
   kontakti: "Pēc nosūtīšanas sagatavosim prezentāciju ar aprakstiem un bildēm un sazināsimies, lai precizētu detaļas un galīgo cenu.",
 };
 
 /** Soļi (secība lapā) */
-const STEPS = ["Pasākums", "Izrādes", "Darbnīcas", "Aktivitātes", "Kontakti"] as const;
+const STEPS = ["Pasākums", "Programma", "Darbnīcas", "Aktivitātes", "Kontakti"] as const;
 /** Vai darbnīca / aktivitāte / izrāde der izvēlētajai sezonai (bez sezonas — visu gadu) */
 const fits = (itemSeason: string | null | undefined, season: Season | "") =>
   Boolean(season) && (!itemSeason || itemSeason === "all" || itemSeason === season);
@@ -519,9 +519,9 @@ export default function OfferConfigurator({
         <ol className="flex gap-1.5 pt-4">
           {STEPS.map((s, i) => (
             <li key={s} className="flex-1">
-              <button type="button" disabled={!season && i > 0} onClick={() => setStep(i)} title={i === 1 && season === "summer" ? "Rotaļuzvedums" : s} className="block w-full text-left disabled:cursor-not-allowed">
+              <button type="button" disabled={!season && i > 0} onClick={() => setStep(i)} title={s} className="block w-full text-left disabled:cursor-not-allowed">
                 <span className={cn("block h-1.5 rounded-full", i <= step ? "bg-brand" : "bg-white/15")} />
-                <span className={cn("mt-1.5 hidden text-[11px] font-bold sm:block", i === step ? "text-brand" : "text-white/50")}>{i === 1 && season === "summer" ? "Rotaļuzvedums" : s}</span>
+                <span className={cn("mt-1.5 hidden text-[11px] font-bold sm:block", i === step ? "text-brand" : "text-white/50")}>{s}</span>
               </button>
             </li>
           ))}
@@ -617,7 +617,7 @@ export default function OfferConfigurator({
 
             {step === 1 && season !== "summer" && (
               <>
-                {heading("Izrādes")}
+                {heading("Svētku programma")}
                 {showItems.length === 0
                   ? empty
                   : showItems.map(({ show: v }) => {
