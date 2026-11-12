@@ -21,7 +21,10 @@ export default async function OfferPage({ searchParams }: Props) {
   const shows = settings.shows.videos ?? [];
 
   return prices ? (
-    <OfferConfigurator prices={prices} shows={shows} games={(settings.business.games ?? []).filter((g) => g.name.trim())} clientName={client} />
+    <OfferConfigurator prices={prices} shows={shows} games={(settings.business.games ?? []).filter((g) => g.name.trim())}
+      characters={(settings.programs.characters ?? []).filter((c) => c.name.trim())}
+      clientName={client}
+    />
   ) : (
     <div className="mx-auto max-w-2xl px-4 py-20 text-center">
       <p className="display text-2xl">Piedāvājuma salikšana šobrīd nav pieejama.</p>
