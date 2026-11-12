@@ -860,17 +860,14 @@ export default function OfferConfigurator({
                   {errors.consent && <p className="text-sm font-semibold text-brand sm:col-span-2">{errors.consent}</p>}
                 </div>
 
-                {/* Biļete — kopsavilkums un nosūtīšana */}
-                <div className="relative mt-7 rounded-2xl bg-brand p-6 text-ink before:absolute before:top-1/2 before:-left-3 before:size-6 before:-translate-y-1/2 before:rounded-full before:bg-[#121110] after:absolute after:top-1/2 after:-right-3 after:size-6 after:-translate-y-1/2 after:rounded-full after:bg-[#121110]">
-                  <p className="text-[11px] font-extrabold tracking-[0.22em] uppercase">Jūsu izvēle · aptuvenā cena ar PVN</p>
-                  <p className="display mt-1 text-4xl">{anything ? eur(approx(total)) : "—"}</p>
-                  {summaryItems.length > 0 && <p className="mt-2 font-bold">{summaryItems.map(([t]) => t).join(" · ")}</p>}
-                  {errors.choice && <p className="mt-2 font-bold">{errors.choice}</p>}
-                  <button type="submit" disabled={state === "sending"} className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-extrabold text-white disabled:opacity-60">
+                {/* Nosūtīšana (kopsavilkums ar cenu — labajā pusē / telefonā apakšā) */}
+                <div className="mt-7">
+                  {errors.choice && <p className="mb-2 text-sm font-bold text-brand">{errors.choice}</p>}
+                  <button type="submit" disabled={state === "sending"} className="inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3 font-extrabold text-ink disabled:opacity-60">
                     {state === "sending" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
                     Nosūtīt izvēli
                   </button>
-                  {state === "error" && <p className="mt-2 text-sm font-bold">Neizdevās nosūtīt — pārbaudiet laukus vai zvaniet mums.</p>}
+                  {state === "error" && <p className="mt-2 text-sm font-bold text-brand">Neizdevās nosūtīt — pārbaudiet laukus vai zvaniet mums.</p>}
                 </div>
               </>
             )}
