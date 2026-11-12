@@ -1,6 +1,8 @@
 import { ChevronDown } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import { hostsOf, type Booking } from "@/lib/bookings";
+import { CALENDAR_HOSTS } from "@/lib/calendar";
+import { Star } from "lucide-react";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import { timeLabel } from "@/lib/dates";
@@ -23,7 +25,10 @@ const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) 
  * Uzspiežot uz rezervācijas, zem tās uzreiz atveras visa informācija (bez lapas pārlādes).
  */
 export default async function CalendarPage() {
-  const { db, role } = await requireSection("kalendars");
+  const { db, role, email } = await requireSection("kalendars");
+  // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu vadi"
+  const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
+  const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me));
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
   const [{ data, error }, business, programs, settings] = await Promise.all([
@@ -91,12 +96,18 @@ export default async function CalendarPage() {
                   "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
                   isTrip(b) && "border-l-4 border-purple-400",
                   isVenue(b) && "border-l-4 border-brand-strong",
+                  isMine(b) && "bg-amber-50 ring-2 ring-amber-400",
                   "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
                 )}
               >
                 <span className="text-sm font-semibold">{timeLabel(b.event_time, b.location) || "—"}</span>
                 <span className="min-w-0 text-sm">
                   <span className="block truncate">
+                    {isMine(b) && (
+                      <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-xs font-extrabold text-ink">
+                        <Star className="size-3 fill-current" aria-hidden /> Tu vadi
+                      </span>
+                    )}
                     <b>{isVenue(b) ? "Telpu noma" : label(b)}</b> · {b.company_name || b.parent_name || "—"}
                     {c?.exact && (
                       <span className="text-ink-soft">
