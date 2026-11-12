@@ -133,7 +133,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
   const chosenShows = showItems.filter((x) => pickedShows.includes(x.show.title));
   const showChosen = chosenShows.length > 0 || chosenActivities.some(isShow);
   // Izrāde bez cenas panelī — cenu precizēsim
-  const showPriceUnknown = chosenShows.some((x) => !x.price);
+  const showPriceUnknown = chosenShows.some((x) => !x.price || !x.price.price);
 
   const workshopAnimators = chosenWorkshops.length ? Math.max(chosenWorkshops.length, Math.ceil(people / Math.max(1, prices.perAnimator))) : 0;
   const workshopsSum =
@@ -161,7 +161,9 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
   const atMinimum = sum > 0 && sum < (prices.minTotal ?? 0);
   const total = atMinimum ? (prices.minTotal ?? 0) : sum;
   const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length > 0;
-  const extras = [showPriceUnknown && "izrādes cena"].filter(Boolean).join(" + ");
+  // Darbnīcas un aktivitātes bez cenas panelī — rāda, bet cenu precizēsim
+  const otherUnknown = chosenWorkshops.some((w) => !w.perPerson) || chosenActivities.some((a) => !a.price);
+  const extras = [showPriceUnknown && "izrādes cena", otherUnknown && "dažu pozīciju cena"].filter(Boolean).join(" + ");
 
   const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
   const toggleActivity = (id: string) =>

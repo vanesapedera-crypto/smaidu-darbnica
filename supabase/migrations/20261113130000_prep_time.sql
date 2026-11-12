@@ -51,14 +51,13 @@ as $$
     'workshops', coalesce((
       select jsonb_agg(jsonb_build_object('id', ws.id, 'title', ws.title, 'description', ws.description, 'image', ws.image, 'season', ws.season,
         'perPerson', round(ws.cost * (select k from s), 2)) order by ws.title)
-      from ws where ws.cost > 0
-        and not exists (select 1 from public.cost_items c where c.kind = 'activity' and lower(c.title) = lower(ws.title))), '[]'::jsonb),
+      from ws where not exists (select 1 from public.cost_items c where c.kind = 'activity' and lower(c.title) = lower(ws.title))), '[]'::jsonb),
     'activities', coalesce((
       select jsonb_agg(jsonb_build_object('id', c.id, 'title', c.title, 'description', c.description, 'image', c.image, 'season', c.season,
         'unit', c.unit,
         -- Izrādēm ievada cenu klientam bez PVN (bez uzcenojuma), pārējiem — izmaksas (ar uzcenojumu)
         'price', round(c.cost * (select case when c.title ilike '%izrād%' then vat_k else k end from s), 2)) order by c.sort, c.title)
-      from public.cost_items c where c.kind = 'activity' and c.cost > 0), '[]'::jsonb)
+      from public.cost_items c where c.kind = 'activity'), '[]'::jsonb)
   );
 $$;
 
