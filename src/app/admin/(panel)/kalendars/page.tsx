@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import type { Booking } from "@/lib/bookings";
+import { calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import { timeLabel } from "@/lib/dates";
@@ -27,7 +28,14 @@ const FILTERS: { value: Filter; label: string }[] = [
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 
-type Props = { searchParams: Promise<{ m?: string; f?: string; atceltie?: string; r?: string; d?: string }> };
+type Props = { searchParams: Promise<{ m?: string; f?: string; atceltie?: string; r?: string; d?: string; v?: string; w?: string }> };
+type View = "nedela" | "menesis";
+
+const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+/** Nedēļas skata stundas (ja kāds notikums ir ārpus tām — skats paplašinās) */
+const DAY_FROM = 8;
+const DAY_TO = 21;
+const HOUR_PX = 52;
 
 /**
  * Rezervāciju kalendārs visai komandai — tikai skatīšanai.
@@ -44,16 +52,24 @@ export default async function CalendarPage({ searchParams }: Props) {
   const month = match ? Math.min(11, Math.max(0, Number(match[2]) - 1)) : Number(today.slice(5, 7)) - 1;
   const filter: Filter = FILTERS.some((f) => f.value === sp.f) ? (sp.f as Filter) : role === "viewer" ? "telpas" : "visi";
   const showCancelled = sp.atceltie === "1";
+  // Skats: nedēļa (kā Google kalendārā — laiki pa stundām) vai mēnesis
+  const view: View = sp.v === "menesis" ? "menesis" : "nedela";
+  const anchor = /^\d{4}-\d{2}-\d{2}$/.test(sp.w ?? "") ? sp.w! : today;
+  const weekStart = addDays(anchor, -((new Date(`${anchor}T12:00:00Z`).getUTCDay() + 6) % 7));
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  const start = iso(year, month, 1);
-  const end = iso(year, month, daysInMonth);
+  const start = view === "nedela" ? weekStart : iso(year, month, 1);
+  const end = view === "nedela" ? weekDays[6] : iso(year, month, daysInMonth);
   const prev = month === 0 ? `${year - 1}-12` : `${year}-${pad(month)}`;
   const next = month === 11 ? `${year + 1}-01` : `${year}-${pad(month + 2)}`;
   // r — atvērtā rezervācija, d — atvērtā diena (rāda tikai to)
-  const href = (o: { m?: string; f?: Filter; atceltie?: boolean; r?: string; d?: string }) => {
+  const href = (o: { m?: string; f?: Filter; atceltie?: boolean; r?: string; d?: string; v?: View; w?: string }) => {
     const p = new URLSearchParams();
-    p.set("m", o.m ?? `${year}-${pad(month + 1)}`);
+    const v = o.v ?? view;
+    if (v === "menesis") p.set("v", "menesis");
+    if (v === "nedela") p.set("w", o.w ?? weekStart);
+    else p.set("m", o.m ?? `${year}-${pad(month + 1)}`);
     p.set("f", o.f ?? filter);
     if (o.atceltie ?? showCancelled) p.set("atceltie", "1");
     if (o.r) p.set("r", o.r);
@@ -120,19 +136,46 @@ export default async function CalendarPage({ searchParams }: Props) {
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Link href={href({ m: prev })} className={adminSecondary} aria-label="Iepriekšējais mēnesis">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={view === "nedela" ? href({ w: addDays(weekStart, -7) }) : href({ m: prev })}
+            className={adminSecondary}
+            aria-label={view === "nedela" ? "Iepriekšējā nedēļa" : "Iepriekšējais mēnesis"}
+          >
             <ChevronLeft className="size-4" aria-hidden />
           </Link>
-          <h2 className="min-w-44 text-center text-lg font-extrabold">
-            {MONTHS[month]} {year}
-          </h2>
-          <Link href={href({ m: next })} className={adminSecondary} aria-label="Nākamais mēnesis">
+          <h2 className="min-w-44 text-center text-lg font-extrabold">{view === "nedela" ? weekTitle(weekDays) : `${MONTHS[month]} ${year}`}</h2>
+          <Link
+            href={view === "nedela" ? href({ w: addDays(weekStart, 7) }) : href({ m: next })}
+            className={adminSecondary}
+            aria-label={view === "nedela" ? "Nākamā nedēļa" : "Nākamais mēnesis"}
+          >
             <ChevronRight className="size-4" aria-hidden />
           </Link>
-          <Link href={href({ m: today.slice(0, 7) })} className="ml-1 text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
+          <Link
+            href={view === "nedela" ? href({ w: today }) : href({ m: today.slice(0, 7) })}
+            className="ml-1 text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4"
+          >
             Šodien
           </Link>
+          {/* Skats: nedēļa vai mēnesis */}
+          <span className="ml-2 inline-flex rounded-full bg-white p-0.5 ring-1 ring-line">
+            {(
+              [
+                ["nedela", "Nedēļa"],
+                ["menesis", "Mēnesis"],
+              ] as const
+            ).map(([v, l]) => (
+              <Link
+                key={v}
+                href={v === "menesis" ? href({ v, m: (view === "nedela" ? weekStart : iso(year, month, 1)).slice(0, 7) }) : href({ v, w: view === "menesis" ? (today.slice(0, 7) === `${year}-${pad(month + 1)}` ? today : iso(year, month, 1)) : weekStart })}
+                aria-current={view === v ? "page" : undefined}
+                className={cn("rounded-full px-3 py-1 text-sm font-semibold", view === v ? "bg-ink text-white" : "text-ink-soft hover:text-ink")}
+              >
+                {l}
+              </Link>
+            ))}
+          </span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {FILTERS.map((f) => (
@@ -156,7 +199,21 @@ export default async function CalendarPage({ searchParams }: Props) {
 
       {error && <p className="mt-4 text-sm font-semibold text-destructive">Neizdevās ielādēt rezervācijas: {error.message}</p>}
 
+      {view === "nedela" && (
+        <WeekGrid
+          days={weekDays}
+          today={today}
+          bookings={bookings}
+          google={google ?? []}
+          label={label}
+          bookingHref={(id) => href({ r: id })}
+          dayHref={(d) => href({ d })}
+          selectedId={sp.r}
+        />
+      )}
+
       {/* Mēneša režģis */}
+      {view === "menesis" && (
       <div className="mt-5 overflow-hidden rounded-2xl bg-white ring-1 ring-line">
         <div className="grid grid-cols-7 border-b border-line bg-surface text-center text-xs font-bold text-ink-soft">
           {WEEKDAYS.map((d) => (
@@ -230,6 +287,8 @@ export default async function CalendarPage({ searchParams }: Props) {
         </div>
       </div>
 
+      )}
+
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
         <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-sky-500" /> Jauns, vēl nav apstiprināts</span>
         <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-strong" /> Gaida klienta apstiprinājumu</span>
@@ -260,7 +319,7 @@ export default async function CalendarPage({ searchParams }: Props) {
 
       {/* Visa mēneša saraksts — īsi; uzspiežot atveras tikai attiecīgā rezervācija */}
       <section className="mt-8 space-y-5">
-        {byDay.size === 0 && googleByDay.size === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā mēnesī rezervāciju nav.</p>}
+        {byDay.size === 0 && googleByDay.size === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā {view === "nedela" ? "nedēļā" : "mēnesī"} rezervāciju nav.</p>}
         {[...new Set([...byDay.keys(), ...googleByDay.keys()])].sort().map((day) => [day, byDay.get(day) ?? []] as const).map(([day, items]) => (
           <div key={day}>
             <h3 className="text-sm font-extrabold">{dayTitle(day)}</h3>
@@ -334,5 +393,165 @@ function GoogleCard({ g }: { g: GoogleEvent }) {
         </a>
       )}
     </li>
+  );
+}
+
+/** "9.–15. novembris 2026" vai "30. novembris – 6. decembris 2026" */
+function weekTitle(days: string[]) {
+  const a = new Date(`${days[0]}T12:00:00Z`);
+  const b = new Date(`${days[6]}T12:00:00Z`);
+  const m = (d: Date) => MONTHS[d.getUTCMonth()].toLowerCase();
+  return a.getUTCMonth() === b.getUTCMonth()
+    ? `${a.getUTCDate()}.–${b.getUTCDate()}. ${m(b)} ${b.getUTCFullYear()}`
+    : `${a.getUTCDate()}. ${m(a)} – ${b.getUTCDate()}. ${m(b)} ${b.getUTCFullYear()}`;
+}
+
+type Block = { key: string; from: number; to: number; title: string; sub: string; href: string; tone: string; selected?: boolean };
+
+const minutes = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+
+/**
+ * Nedēļas skats kā Google kalendārā: dienas kolonnās, laiki pa stundām, katra rezervācija — bloks
+ * no sākuma līdz beigām (telpu noma — 3 stundas). Uzreiz redzams, kuri laiki aizņemti un kuri brīvi.
+ */
+function WeekGrid({
+  days,
+  today,
+  bookings,
+  google,
+  label,
+  bookingHref,
+  dayHref,
+  selectedId,
+}: {
+  days: string[];
+  today: string;
+  bookings: Booking[];
+  google: GoogleEvent[];
+  label: (b: Booking) => string;
+  bookingHref: (id: string) => string;
+  dayHref: (d: string) => string;
+  selectedId?: string;
+}) {
+  const timed = new Map<string, Block[]>();
+  const allDay = new Map<string, Block[]>();
+  const add = (map: Map<string, Block[]>, day: string, b: Block) => map.set(day, [...(map.get(day) ?? []), b]);
+
+  for (const b of bookings) {
+    const day = b.event_date!.slice(0, 10);
+    const st = stateOf(b);
+    const tone = isTrip(b) ? "bg-purple-100 text-purple-900 ring-purple-300" : st.tone;
+    const who = b.company_name || b.parent_name || "—";
+    const dates = calendarEvent(b, "")?.dates ?? "";
+    const m = /T(\d{2})(\d{2})\d{2}\/\d{8}T(\d{2})(\d{2})/.exec(dates);
+    const block = { key: b.id, title: who, sub: label(b), href: bookingHref(b.id), tone, selected: b.id === selectedId };
+    if (m) add(timed, day, { ...block, from: Number(m[1]) * 60 + Number(m[2]), to: Number(m[3]) * 60 + Number(m[4]) });
+    else add(allDay, day, { ...block, from: 0, to: 0 });
+  }
+  for (const g of google) {
+    const block = { key: `g-${g.id}`, title: g.title, sub: "Google kalendārs", href: dayHref(g.date), tone: "bg-surface text-ink-soft ring-line" };
+    if (g.time) {
+      const from = minutes(g.time);
+      add(timed, g.date, { ...block, from, to: g.endTime ? Math.max(minutes(g.endTime), from + 30) : from + 60 });
+    } else add(allDay, g.date, { ...block, from: 0, to: 0 });
+  }
+
+  // Redzamās stundas: parasti 8–21, bet paplašina, ja kāds notikums ir agrāk vai vēlāk
+  const all = [...timed.values()].flat();
+  const first = Math.min(DAY_FROM, ...all.map((b) => Math.floor(b.from / 60)));
+  const last = Math.max(DAY_TO, ...all.map((b) => Math.ceil(b.to / 60)));
+  const hours = Array.from({ length: last - first }, (_, i) => first + i);
+  const hasAllDay = allDay.size > 0;
+  const hhmm = (n: number) => `${Math.floor(n / 60)}:${pad(n % 60)}`;
+
+  // Blokiem, kas pārklājas, — blakus kolonnas
+  const laid = (list: Block[]) => {
+    const sorted = [...list].sort((a, b) => a.from - b.from || b.to - a.to);
+    const ends: number[] = [];
+    const placed = sorted.map((b) => {
+      let lane = ends.findIndex((e) => e <= b.from);
+      if (lane === -1) lane = ends.push(0) - 1;
+      ends[lane] = b.to;
+      return { ...b, lane };
+    });
+    return placed.map((b) => ({ ...b, lanes: ends.length }));
+  };
+
+  return (
+    <div className="mt-5 overflow-x-auto rounded-2xl bg-white ring-1 ring-line">
+      <div className="min-w-[760px]">
+        {/* Dienu virsraksti */}
+        <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-line bg-surface text-center">
+          <div />
+          {days.map((d, i) => {
+            const date = new Date(`${d}T12:00:00Z`);
+            return (
+              <Link key={d} href={dayHref(d)} className="border-l border-line py-2 hover:bg-white">
+                <span className="block text-xs font-bold text-ink-soft">{WEEKDAYS[i]}</span>
+                <span className={cn("mx-auto mt-0.5 grid size-8 place-items-center rounded-full text-base font-extrabold", d === today && "bg-brand text-ink")}>
+                  {date.getUTCDate()}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Visas dienas notikumi (bez laika) */}
+        {hasAllDay && (
+          <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-line">
+            <div className="py-1.5 pr-1.5 text-right text-[10px] font-semibold text-ink-soft">bez laika</div>
+            {days.map((d) => (
+              <div key={d} className="space-y-1 border-l border-line p-1">
+                {(allDay.get(d) ?? []).map((b) => (
+                  <Link key={b.key} href={b.href} className={cn("block truncate rounded px-1.5 py-0.5 text-xs font-semibold ring-1 hover:ring-2", b.tone, b.selected && "ring-2 ring-ink")}>
+                    {b.title}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Stundu režģis */}
+        <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))]">
+          <div className="relative" style={{ height: hours.length * HOUR_PX }}>
+            {hours.map((h, i) => (
+              <span key={h} className="absolute right-1.5 -translate-y-1/2 text-[11px] font-semibold text-ink-soft" style={{ top: i * HOUR_PX }}>
+                {i > 0 && `${h}:00`}
+              </span>
+            ))}
+          </div>
+          {days.map((d) => (
+            <div key={d} className={cn("relative border-l border-line", d === today && "bg-brand-soft/30")} style={{ height: hours.length * HOUR_PX }}>
+              {hours.map((h, i) => (
+                <div key={h} className="absolute inset-x-0 border-t border-line/70" style={{ top: i * HOUR_PX }} />
+              ))}
+              {laid(timed.get(d) ?? []).map((b) => {
+                const top = ((b.from - first * 60) / 60) * HOUR_PX;
+                const height = Math.max(((b.to - b.from) / 60) * HOUR_PX - 2, 22);
+                return (
+                  <Link
+                    key={b.key}
+                    href={b.href}
+                    title={`${hhmm(b.from)}–${hhmm(b.to)} ${b.title} · ${b.sub}`}
+                    className={cn("absolute overflow-hidden rounded-md px-1.5 py-1 text-xs leading-tight ring-1 hover:z-10 hover:ring-2", b.tone, b.selected && "z-10 ring-2 ring-ink")}
+                    style={{ top: top + 1, height, left: `calc(${(100 / b.lanes) * b.lane}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)` }}
+                  >
+                    <span className="block font-bold">
+                      {hhmm(b.from)}–{hhmm(b.to)}
+                    </span>
+                    <span className="block truncate font-semibold">{b.title}</span>
+                    {height > 56 && <span className="block truncate opacity-80">{b.sub}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
