@@ -407,7 +407,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
         {prices.workshops.length > 0 && (
           <section>
             <h2 className="display text-2xl">Radošās darbnīcas</h2>
-            <p className="mt-1 text-ink-soft">Var izvēlēties vairākas — dalībnieki tās apmeklē pēc kārtas.</p>
+            <p className="mt-1 text-ink-soft">Var izvēlēties vairākas. Aprakstus un bildes nosūtīsim prezentācijā.</p>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {prices.workshops.map((w) => {
                 const active = workshops.includes(w.id);
@@ -422,7 +422,6 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                         </span>
                         <span>
                           <span className="block font-extrabold">{w.title}</span>
-                          {w.description && <span className="mt-1 line-clamp-3 block text-sm text-ink-soft">{w.description}</span>}
                         </span>
                       </span>
                     </label>
@@ -453,7 +452,6 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                           <span>
                             <span className="block font-extrabold">{a.title}</span>
                             {unitText(a) && <span className="block text-xs font-semibold text-ink-soft">{unitText(a)}</span>}
-                            {a.description && <span className="mt-1 line-clamp-3 block text-sm text-ink-soft">{a.description}</span>}
                           </span>
                         </span>
                       </label>
