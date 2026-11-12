@@ -1,8 +1,8 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdmin, type AdminContext } from "@/lib/auth";
-import { BOOKING_STATUSES, atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
-import { CALENDAR_INVITES, calendarEvent, pickHosts } from "@/lib/calendar";
+import { BOOKING_STATUSES, withHostsLine, atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
+import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
@@ -95,7 +95,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // Pieteikums pirms izmaiņām — lai zinātu, vai statuss tiešām mainās uz "Apstiprināta"
     const { data: before } = await admin.db.from("bookings").select("*").eq("id", id).maybeSingle<Booking>();
 
-    const { error } = await admin.db.from("bookings").update({ status }).eq("id", id);
+    // Apstiprinot ar izvēlētām programmas vadītājām — tās saglabā pieteikumā (rinda "Vada: …"; redzams kalendārā)
+    const message = status === "Apstiprināta" && hosts.length && before ? withHostsLine(before.message, hostNames(hosts)) : undefined;
+    const { error } = await admin.db.from("bookings").update(message !== undefined ? { status, message } : { status }).eq("id", id);
     if (error) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }

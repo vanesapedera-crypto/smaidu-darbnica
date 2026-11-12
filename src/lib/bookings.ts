@@ -340,3 +340,14 @@ export function decodeShortConfirm(code: string): string | null {
   const id = hex.slice(0, 32).replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
   return `/rezervacija/${id}?k=${hex.slice(32)}`;
 }
+
+/** Kas vada programmu — glabājas ziņojuma rindā "Vada: Agija, Gunta" (izvēlas panelī, apstiprinot vai labojot) */
+export function hostsOf(message: string | null | undefined): string {
+  return message?.match(/^Vada:[ \t]*([^\n]+)/m)?.[1]?.trim() ?? "";
+}
+
+/** Ieliek (vai nomaina) ziņojumā rindu "Vada: …"; tukšs — rindu izņem */
+export function withHostsLine(message: string | null | undefined, names: string): string {
+  const clean = (message ?? "").replace(/\n*^Vada:[^\n]*$/m, "").trim();
+  return names ? [clean, `Vada: ${names}`].filter(Boolean).join("\n\n") : clean;
+}

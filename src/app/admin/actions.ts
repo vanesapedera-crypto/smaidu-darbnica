@@ -10,8 +10,8 @@ import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyReviewRequest } from "@/lib/notify";
-import { CALENDAR_INVITES, calendarEvent, pickHosts } from "@/lib/calendar";
-import { atStudio } from "@/lib/bookings";
+import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts } from "@/lib/calendar";
+import { atStudio, withHostsLine } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
@@ -125,6 +125,12 @@ export async function saveBookingDetails(id: string, form: FormData) {
     const msg = (row.message as string | undefined) ?? b.message;
     if (!submitted) row.message = withCostOverride(msg, null);
     else if (submitted !== shown) row.message = withCostOverride(msg, costsFromText(submitted));
+  }
+
+  // Kas vada programmu (izvēles rūtiņas "hosts"; "hosts_shown" — lauks bija formā)
+  if (form.has("hosts_shown")) {
+    const names = hostNames(form.getAll("hosts").filter((v): v is string => typeof v === "string"));
+    row.message = withHostsLine((row.message as string | undefined) ?? b.message, names);
   }
 
   await db.from("bookings").update(row).eq("id", id);
@@ -378,7 +384,13 @@ export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<
   if (b.status !== "Apstiprināta") return { error: "Kalendārā var ielikt tikai apstiprinātas rezervācijas." };
 
   if (!b.event_date) return { error: "Pieteikumam nav datuma." };
-  const ok = await pushToGoogle(db, b, pickHosts(hosts));
+  const picked = pickHosts(hosts);
+  if (picked.length) {
+    b.message = withHostsLine(b.message, hostNames(picked));
+    await db.from("bookings").update({ message: b.message }).eq("id", id);
+    revalidatePath("/admin", "layout");
+  }
+  const ok = await pushToGoogle(db, b, picked);
   return ok ? { ok: true } : { error: "Neizdevās ielikt Google kalendārā. Pārbaudiet, vai Google kalendārs ir savienots, un mēģiniet vēlreiz." };
 }
 

@@ -32,6 +32,12 @@ export const CALENDAR_HOSTS = [
   { name: "Madara K", email: "madarakuksa3@gmail.com" },
   { name: "Keita", email: "keitaplavina3@gmail.com" },
 ];
+/** Vadītāju adreses → vārdi, piem. "Agija, Gunta" */
+export const hostNames = (emails: string[]) =>
+  CALENDAR_HOSTS.filter((h) => emails.includes(h.email))
+    .map((h) => h.name)
+    .join(", ");
+
 /** No paneļa atsūtītās vadītāju adreses — pieņem tikai adreses no saraksta (bez atkārtojumiem) */
 export function pickHosts(input: unknown): string[] {
   const list = Array.isArray(input) ? input : typeof input === "string" && input ? [input] : [];

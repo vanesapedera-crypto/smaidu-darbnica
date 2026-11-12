@@ -119,13 +119,13 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
             </li>
             <li>{guests ? CALENDAR_INVITES ? "Notikums tiks ielikts Google kalendārā, komanda saņems ielūgumu." : "Rezervācija tiks ielikta jūsu Google kalendārā (rezerves kopija)." : "Pieteikumam nav datuma — kalendārā netiks ielikta."}</li>
           </ul>
-          {guests && withHost && CALENDAR_INVITES && (
+          {guests && withHost && (
             <div className="space-y-1.5">
               <span className="block font-semibold">Programmu vada (var atzīmēt vairākas)</span>
               <HostPicker value={hosts} onChange={setHosts} />
             </div>
           )}
-          {recipients.length > 0 && <p className="text-xs break-words text-ink-soft">Ielūgumu saņems: {recipients.join(", ")}</p>}
+          {CALENDAR_INVITES && recipients.length > 0 && <p className="text-xs break-words text-ink-soft">Ielūgumu saņems: {recipients.join(", ")}</p>}
           <div className="flex gap-2">
             <button
               type="button"

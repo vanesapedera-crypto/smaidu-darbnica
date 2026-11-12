@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { requireSection } from "@/lib/auth";
-import type { Booking } from "@/lib/bookings";
+import { hostsOf, type Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
 import { timeLabel } from "@/lib/dates";
@@ -39,6 +39,10 @@ export default async function CalendarPage() {
   const costsOf = (b: Booking) =>
     b.inquiry_type === "business" ? null : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
   const titles = new Map([...business, ...programs].map((s) => [s.slug, s.title]));
+  const programTitle = (b: Booking) => {
+    const slug = b.service_slug || b.program;
+    return slug ? (titles.get(slug) ?? slug) : null;
+  };
   const label = (b: Booking) => {
     const slug = b.service_slug || b.program;
     const program = slug ? (titles.get(slug) ?? slug) : null;
@@ -91,15 +95,24 @@ export default async function CalendarPage() {
                 )}
               >
                 <span className="text-sm font-semibold">{timeLabel(b.event_time, b.location) || "—"}</span>
-                <span className="min-w-0 truncate text-sm">
-                  <b>{label(b)}</b> · {b.company_name || b.parent_name || "—"}
-                  {c?.exact && (
-                    <span className="text-ink-soft">
-                      {" "}
-                      · {eur(c.total)}
-                      {c.plusVat ? " + PVN" : ""}
-                    </span>
-                  )}
+                <span className="min-w-0 text-sm">
+                  <span className="block truncate">
+                    <b>{isVenue(b) ? "Telpu noma" : label(b)}</b> · {b.company_name || b.parent_name || "—"}
+                    {c?.exact && (
+                      <span className="text-ink-soft">
+                        {" "}
+                        · {eur(c.total)}
+                        {c.plusVat ? " + PVN" : ""}
+                      </span>
+                    )}
+                  </span>
+                  {/* Telpu nomai ar izklaides programmu — programma un kas to vada (mazākiem burtiem) */}
+                  {(() => {
+                    const program = isVenue(b) ? programTitle(b) : null;
+                    const hosts = hostsOf(b.message);
+                    const parts = [program && `Izklaides programma: ${program}`, hosts && `Vada: ${hosts}`].filter(Boolean);
+                    return parts.length > 0 && <span className="mt-0.5 block truncate text-xs text-ink-soft">{parts.join(" · ")}</span>;
+                  })()}
                 </span>
                 <span className={cn("w-fit rounded-full px-2.5 py-1 text-xs font-bold ring-1", st.tone)}>{st.label}</span>
                 <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />

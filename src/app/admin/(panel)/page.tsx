@@ -1,7 +1,7 @@
 import { Building2, Search, User } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
-import { FIXED_VENUES, phoneDigits, type Booking } from "@/lib/bookings";
-import { calendarEvent } from "@/lib/calendar";
+import { FIXED_VENUES, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
+import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { VAT_NOTE, amountText, bookingCosts, bookingPrices, costsToText, eur, parseCostOverride, priceVariants } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
@@ -270,6 +270,28 @@ export default async function BookingsPage({ searchParams }: Props) {
                                       placeholder="vai ierakstiet citu nosaukumu, piem. izrādes nosaukumu"
                                       className={cn(adminInput, "mt-1")}
                                     />
+                                  </>,
+                                  true,
+                                )}
+                              {isPrivate &&
+                                field(
+                                  "Programmu vada",
+                                  <>
+                                    <input type="hidden" name="hosts_shown" value="1" />
+                                    <span className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                                      {CALENDAR_HOSTS.map((h) => (
+                                        <label key={h.email} className="inline-flex items-center gap-1.5 text-sm text-ink">
+                                          <input
+                                            type="checkbox"
+                                            name="hosts"
+                                            value={h.email}
+                                            defaultChecked={hostsOf(b.message).split(/,\s*/).includes(h.name)}
+                                            className="size-4 accent-ink"
+                                          />
+                                          {h.name}
+                                        </label>
+                                      ))}
+                                    </span>
                                   </>,
                                   true,
                                 )}

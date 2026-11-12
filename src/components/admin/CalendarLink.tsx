@@ -5,7 +5,6 @@ import { CalendarCheck, CalendarPlus, LoaderCircle } from "lucide-react";
 import { addToGoogleCalendar } from "@/app/admin/actions";
 import { calendarUrl, type CalendarEvent } from "@/lib/calendar";
 import HostPicker from "./HostPicker";
-import { CALENDAR_INVITES } from "@/lib/calendar";
 import { adminSecondary } from "./styles";
 
 /**
@@ -30,7 +29,7 @@ export default function CalendarLink({
   return (
     <div className="space-y-2">
       <p className="text-sm text-ink-soft">Google kalendārs — ar roku</p>
-      {withHost && CALENDAR_INVITES && (
+      {withHost && (
         <div className="space-y-1.5">
           <p className="text-sm font-semibold">Programmu vada (var atzīmēt vairākas)</p>
           <HostPicker value={hosts} onChange={setHosts} />
