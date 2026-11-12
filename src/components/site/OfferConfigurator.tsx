@@ -53,6 +53,7 @@ const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas
 const SEASON_SHORT: Record<Season, string> = { summer: "Vasara", xmas: "Ziema" };
 /** "Kā tas notiek" — īsa info katrā solī (teksts — šeit) */
 const HOW: Record<string, string> = {
+  rotaluzvedums: "Vasarā piedāvājam rotaļuzvedumus — tos veidojam pēc jūsu pasākuma tematikas. Ierakstiet tematiku, un sagatavosim piemērotu uzvedumu.",
   izrades: "Izrāde ilgst ~45 minūtes, aktieri ierodas ar savu skaņu un gaismu. Ja jums nav piemērotas telpas, to varam sarunāt mēs.",
   darbnicas: "Galdus darbnīcām nodrošina pasūtītājs. Mēs atvedam visus materiālus un standarta galda dekorācijas — tās ir iekļautas cenā. Bērni pienāk pie galdiem, izveido savu darbiņu un paņem to līdzi. Animatoru skaits atkarīgs no bērnu skaita un darbnīcu daudzuma.",
   aktivitates: "Aktivitātes notiek visu pasākuma laiku paralēli darbnīcām. Lielformāta spēles atvedam, uzstādām un pieskatām. Pārsteiguma tēls ierodas uz pasākumu, satiekas ar bērniem un fotografējas.",
@@ -104,7 +105,22 @@ export default function OfferConfigurator({
   const allShowItems = allShows
     .filter((v) => v.title.trim())
     .map((v) => ({ show: v, price: allPrices.activities.find((a) => isShow(a) && norm(a.title).includes(norm(v.title))) }));
-  const showItems = allShowItems.filter((x) => fits(x.price ? x.price.season : x.show.season, season));
+  // Sezona izrādei: no cenas ieraksta, citādi no lapas "Izrādes"; ja nav norādīta, bet nosaukumā vai aprakstā ir "Ziemassvētk" — tikai ziemai
+  const showSeason = (x: (typeof allShowItems)[number]) => {
+    const own = x.price?.season && x.price.season !== "all" ? x.price.season : x.show.season;
+    if (own && own !== "all") return own;
+    return /ziemassvētk/i.test(`${x.show.title} ${x.show.description ?? ""}`) ? "xmas" : "all";
+  };
+  // Vasarā izrādes nepiedāvājam — tikai rotaļuzvedumu pēc klienta tematikas
+  const showItems = season === "summer" ? [] : allShowItems.filter((x) => fits(showSeason(x), season));
+  const [playWanted, setPlayWanted] = useState(false);
+  const [playTheme, setPlayTheme] = useState("");
+  const playItem = allPrices.activities.find((a) => /rotaļuzvedum/i.test(a.title));
+  const play = season === "summer" && playWanted;
+  // Ziemā — arī egles iedegšanas pasākums (cena — aktivitāte "Egles iedegšana" 💰 Cenās, ja tāda ir)
+  const [treeWanted, setTreeWanted] = useState(false);
+  const treeItem = allPrices.activities.find((a) => /egl\S* iedegš/i.test(a.title));
+  const tree = season === "xmas" && treeWanted;
   const matched = new Set(allShowItems.map((x) => x.price?.id).filter(Boolean));
   // Lielformāta spēles — atsevišķa sadaļa ar bildēm; cena — aktivitāte "Lielformāta spēles" (par gabalu) × izvēlēto spēļu skaits
   const isGames = (a: Activity) => /lielformāt/i.test(a.title);
@@ -114,7 +130,7 @@ export default function OfferConfigurator({
   const characterItem = characters.length ? prices.activities.find(isCharacter) : undefined;
   const [pickedCharacters, setPickedCharacters] = useState<string[]>([]);
   const otherActivities = prices.activities.filter(
-    (a) => !matched.has(a.id) && !(games.length && isGames(a)) && !(characterItem && isCharacter(a)),
+    (a) => !matched.has(a.id) && !(games.length && isGames(a)) && !(characterItem && isCharacter(a)) && !(playItem && a.id === playItem.id) && !(treeItem && a.id === treeItem.id),
   );
   const [pickedGames, setPickedGames] = useState<string[]>([]);
   const [pickedShows, setPickedShows] = useState<string[]>([]);
@@ -165,7 +181,7 @@ export default function OfferConfigurator({
   const travelHours = travel.status === "ok" && travel.cost ? (travel.km ?? 0) / AVG_KMH : 0;
   const travelSum =
     travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) + Math.max(1, travellers) * travelHours * (prices.travelHour ?? 0) : 0;
-  const showsSum = chosenShows.reduce((s, x) => s + (x.price ? activityPrice(x.price) : 0), 0);
+  const showsSum = chosenShows.reduce((s, x) => s + (x.price ? activityPrice(x.price) : 0), 0) + (play && playItem ? activityPrice(playItem) : 0) + (tree && treeItem ? activityPrice(treeItem) : 0);
   const gamesSum = gamesItem ? gamesItem.price * pickedGames.length : 0;
   const charactersSum = characterItem ? activityPrice(characterItem) * pickedCharacters.length : 0;
   const venueSum = showChosen && ownVenue === "no" ? (prices.venueMin ?? 0) : 0;
@@ -176,11 +192,11 @@ export default function OfferConfigurator({
   // Mazāk par minimālo pasūtījumu nerēķinām
   const atMinimum = sum > 0 && sum < (prices.minTotal ?? 0);
   const total = atMinimum ? (prices.minTotal ?? 0) : sum;
-  const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length + pickedGames.length + pickedCharacters.length > 0;
+  const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length + pickedGames.length + pickedCharacters.length + (play ? 1 : 0) + (tree ? 1 : 0) > 0;
   // Darbnīcas un aktivitātes bez cenas panelī — rāda, bet cenu precizēsim
   const otherUnknown =
     chosenWorkshops.some((w) => !w.perPerson) || chosenActivities.some((a) => !a.price) || (pickedGames.length > 0 && !gamesItem?.price) || (pickedCharacters.length > 0 && !characterItem?.price);
-  const extras = [showPriceUnknown && "izrādes cena", otherUnknown && "dažu pozīciju cena"].filter(Boolean).join(" + ");
+  const extras = [showPriceUnknown && "izrādes cena", play && !playItem?.price && "rotaļuzveduma cena", tree && !treeItem?.price && "egles iedegšanas cena", otherUnknown && "dažu pozīciju cena"].filter(Boolean).join(" + ");
 
   const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
   const toggleActivity = (id: string) =>
@@ -237,6 +253,8 @@ export default function OfferConfigurator({
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
       peak > 0 && `Iekļauta piemaksa ceturtdienai/piektdienai: +${prices.peakPercent} %`,
       chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
+      play && `Rotaļuzvedums${playTheme.trim() ? ` — tematika: ${playTheme.trim()}` : ""}`,
+      tree && "Egles iedegšanas pasākums",
       chosenWorkshops.length > 0 && `Radošās darbnīcas: ${chosenWorkshops.map((w) => w.title).join(", ")}`,
       chosenActivities.length > 0 &&
         `Aktivitātes: ${chosenActivities.map((a) => (a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title)).join(", ")}`,
@@ -274,9 +292,13 @@ export default function OfferConfigurator({
               ...chosenShows.map((x) => x.price?.id).filter(Boolean),
               ...(pickedGames.length && gamesItem ? [gamesItem.id] : []),
               ...(pickedCharacters.length && characterItem ? [characterItem.id] : []),
+              ...(play && playItem ? [playItem.id] : []),
+              ...(tree && treeItem ? [treeItem.id] : []),
             ],
             intro: [
               chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
+              play && `Rotaļuzvedums${playTheme.trim() ? ` — tematika: ${playTheme.trim()}` : ""}`,
+              tree && "Egles iedegšanas pasākums",
               pickedGames.length > 0 && `Lielformāta spēles: ${pickedGames.join(", ")}`,
               pickedCharacters.length > 0 && `Pārsteiguma tēli: ${pickedCharacters.join(", ")}`,
               showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : "jānodrošina Smaidu Darbnīcai"}`,
@@ -422,6 +444,8 @@ export default function OfferConfigurator({
   ) : null;
 
   const summaryItems = [
+    ...(play ? [["Rotaļuzvedums", playTheme.trim() || "uzvedums"]] : []),
+    ...(tree ? [["Egles iedegšana", "pasākums"]] : []),
     ...chosenShows.map((x) => [x.show.title, "izrāde"]),
     ...chosenWorkshops.map((w) => [w.title, "darbnīca"]),
     ...chosenActivities.map((a) => [a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title, "aktivitāte"]),
@@ -454,7 +478,7 @@ export default function OfferConfigurator({
     </div>
   );
 
-  const howKey = ["pasakums", "izrades", "darbnicas", "aktivitates", "kontakti"][step];
+  const howKey = ["pasakums", season === "summer" ? "rotaluzvedums" : "izrades", "darbnicas", "aktivitates", "kontakti"][step];
   const heading = (title: string, lead?: string) => (
     <div className="mb-5">
       <p className={eye}>
@@ -495,9 +519,9 @@ export default function OfferConfigurator({
         <ol className="flex gap-1.5 pt-4">
           {STEPS.map((s, i) => (
             <li key={s} className="flex-1">
-              <button type="button" disabled={!season && i > 0} onClick={() => setStep(i)} className="block w-full text-left disabled:cursor-not-allowed">
+              <button type="button" disabled={!season && i > 0} onClick={() => setStep(i)} title={i === 1 && season === "summer" ? "Rotaļuzvedums" : s} className="block w-full text-left disabled:cursor-not-allowed">
                 <span className={cn("block h-1.5 rounded-full", i <= step ? "bg-brand" : "bg-white/15")} />
-                <span className={cn("mt-1.5 hidden text-[11px] font-bold sm:block", i === step ? "text-brand" : "text-white/50")}>{s}</span>
+                <span className={cn("mt-1.5 hidden text-[11px] font-bold sm:block", i === step ? "text-brand" : "text-white/50")}>{i === 1 && season === "summer" ? "Rotaļuzvedums" : s}</span>
               </button>
             </li>
           ))}
@@ -521,6 +545,8 @@ export default function OfferConfigurator({
                           setPickedShows([]);
                           setPickedGames([]);
                           setPickedCharacters([]);
+                          setPlayWanted(false);
+                          setTreeWanted(false);
                           setOwnVenue("");
                         }
                         setErrors((er) => ({ ...er, choice: "" }));
@@ -572,7 +598,24 @@ export default function OfferConfigurator({
               </>
             )}
 
-            {step === 1 && (
+            {step === 1 && season === "summer" && (
+              <>
+                {heading("Rotaļuzvedums")}
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => setPlayWanted((x) => !x)} className={pill(playWanted)}>
+                    {playWanted ? "✓ Izvēlēts" : "+ Pievienot rotaļuzvedumu"}
+                  </button>
+                </div>
+                {playWanted && (
+                  <label className="mt-5 block text-sm font-bold text-white/70">
+                    Pasākuma tematika
+                    <input value={playTheme} onChange={(e) => setPlayTheme(e.target.value)} placeholder="Piem. pirāti, cirks, Havaju ballīte" className={field} />
+                  </label>
+                )}
+              </>
+            )}
+
+            {step === 1 && season !== "summer" && (
               <>
                 {heading("Izrādes")}
                 {showItems.length === 0
@@ -607,6 +650,22 @@ export default function OfferConfigurator({
                         </div>
                       );
                     })}
+                {/* Ziemā — egles iedegšanas pasākums */}
+                {season === "xmas" && (
+                  <div className="flex items-center justify-between gap-3 border-b border-dashed border-white/15 py-3.5">
+                    <div className="flex min-w-0 items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- bilde no public/media */}
+                      <img src={treeItem?.image || "/media/salikt/egles-iedegsana.webp"} alt="" className="size-14 shrink-0 rounded-lg object-cover" />
+                      <div className="min-w-0">
+                        <p className="font-extrabold">Egles iedegšanas pasākums</p>
+                        <p className="text-sm text-white/50">{treeItem?.description || "Svētku programma egles iedegšanai — vadītāji, tēli un Ziemassvētku noskaņa."}</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setTreeWanted((x) => !x)} className={pill(treeWanted)}>
+                      {treeWanted ? "✓ Izvēlēts" : "+ Pievienot"}
+                    </button>
+                  </div>
+                )}
                 {showChosen && (
                   <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <p className="font-extrabold">Telpa izrādei</p>
