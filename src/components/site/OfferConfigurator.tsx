@@ -67,6 +67,12 @@ const fits = (itemSeason: string | null | undefined, season: Season | "") =>
   Boolean(season) && (!itemSeason || itemSeason === "all" || itemSeason === season);
 const norm = (t: string) => t.toLowerCase().replace(/[„”“"'«»]/g, "").replace(/\s+/g, " ").trim();
 const ytId = (src: string) => src.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/)?.[1];
+/** Izrādes nosaukums lapā vienādā veidā: Izrāde “…” */
+const showLabel = (t: string) => {
+  // Nosaukums pēdiņās (piem. Ziemassvētku izrāde “Dāvanu prieks”) → izrāde “Dāvanu prieks”; bez pēdiņām → izrāde “Ziemassvētku faktors”
+  const quoted = t.match(/[„“"]([^„“”"]+)[”"“]/)?.[1];
+  return `Izrāde “${(quoted ?? t).trim()}”`;
+};
 const showPoster = (v: ShowInfo) => v.poster || (ytId(v.src) ? `https://i.ytimg.com/vi/${ytId(v.src)}/hqdefault.jpg` : "");
 
 const eur = (n: number) => `${n.toLocaleString("lv-LV", { maximumFractionDigits: 0 })} €`;
@@ -121,6 +127,7 @@ export default function OfferConfigurator({
   const [treeWanted, setTreeWanted] = useState(false);
   const treeItem = allPrices.activities.find((a) => /egl\S* iedegš/i.test(a.title));
   const tree = season === "xmas" && treeWanted;
+  const tentItem = allPrices.activities.find((a) => /telt/i.test(a.title));
   const matched = new Set(allShowItems.map((x) => x.price?.id).filter(Boolean));
   // Lielformāta spēles — atsevišķa sadaļa ar bildēm; cena — aktivitāte "Lielformāta spēles" (par gabalu) × izvēlēto spēļu skaits
   const isGames = (a: Activity) => /lielformāt/i.test(a.title);
@@ -130,7 +137,7 @@ export default function OfferConfigurator({
   const characterItem = characters.length ? prices.activities.find(isCharacter) : undefined;
   const [pickedCharacters, setPickedCharacters] = useState<string[]>([]);
   const otherActivities = prices.activities.filter(
-    (a) => !matched.has(a.id) && !(games.length && isGames(a)) && !(characterItem && isCharacter(a)) && !(playItem && a.id === playItem.id) && !(treeItem && a.id === treeItem.id),
+    (a) => !matched.has(a.id) && !(games.length && isGames(a)) && !(characterItem && isCharacter(a)) && !(playItem && a.id === playItem.id) && !(treeItem && a.id === treeItem.id) && !(tentItem && a.id === tentItem.id),
   );
   const [pickedGames, setPickedGames] = useState<string[]>([]);
   const [pickedShows, setPickedShows] = useState<string[]>([]);
@@ -144,6 +151,9 @@ export default function OfferConfigurator({
   const [travel, setTravel] = useState<TravelState>({ status: "idle" });
   // Ja izvēlētais datums aizņemts — vai drīkstam piedāvāt citu
   const [otherDate, setOtherDate] = useState<"" | "yes" | "no">("");
+  // Pasākums ārā: nojumi nodrošina klients vai atvedam savas teltis (papildu maksa — aktivitāte "Teltis" 💰 Cenās, ja tāda ir)
+  const [outdoor, setOutdoor] = useState<"" | "yes" | "no">("");
+  const [shelter, setShelter] = useState<"" | "client" | "tents">("");
   const [form, setForm] = useState({ companyName: clientName, parentName: "", phone: "", email: "", eventDate: "", message: "", consent: false });
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
@@ -185,10 +195,12 @@ export default function OfferConfigurator({
   const gamesSum = gamesItem ? gamesItem.price * pickedGames.length : 0;
   const charactersSum = characterItem ? activityPrice(characterItem) * pickedCharacters.length : 0;
   const venueSum = showChosen && ownVenue === "no" ? (prices.venueMin ?? 0) : 0;
+  const tents = outdoor === "yes" && shelter === "tents";
+  const tentSum = tents && tentItem ? activityPrice(tentItem) : 0;
   // Ceturtdienās un piektdienās — piemaksa programmai (darbnīcām, aktivitātēm, izrādēm); ceļam un telpas nomai — nav
   const weekday = form.eventDate ? new Date(`${form.eventDate}T12:00:00`).getDay() : -1;
   const peak = weekday === 4 || weekday === 5 ? (prices.peakPercent ?? 0) / 100 : 0;
-  const sum = (workshopsSum + activitiesSum + showsSum + gamesSum + charactersSum) * (1 + peak) + travelSum + venueSum;
+  const sum = (workshopsSum + activitiesSum + showsSum + gamesSum + charactersSum) * (1 + peak) + travelSum + venueSum + tentSum;
   // Mazāk par minimālo pasūtījumu nerēķinām
   const atMinimum = sum > 0 && sum < (prices.minTotal ?? 0);
   const total = atMinimum ? (prices.minTotal ?? 0) : sum;
@@ -196,7 +208,7 @@ export default function OfferConfigurator({
   // Darbnīcas un aktivitātes bez cenas panelī — rāda, bet cenu precizēsim
   const otherUnknown =
     chosenWorkshops.some((w) => !w.perPerson) || chosenActivities.some((a) => !a.price) || (pickedGames.length > 0 && !gamesItem?.price) || (pickedCharacters.length > 0 && !characterItem?.price);
-  const extras = [showPriceUnknown && "izrādes cena", play && !playItem?.price && "rotaļuzveduma cena", tree && !treeItem?.price && "egles iedegšanas cena", otherUnknown && "dažu pozīciju cena"].filter(Boolean).join(" + ");
+  const extras = [showPriceUnknown && "izrādes cena", play && !playItem?.price && "rotaļuzveduma cena", tree && !treeItem?.price && "egles iedegšanas cena", tents && !tentItem?.price && "telšu cena", otherUnknown && "dažu pozīciju cena"].filter(Boolean).join(" + ");
 
   const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
   const toggleActivity = (id: string) =>
@@ -249,6 +261,7 @@ export default function OfferConfigurator({
     const lines = [
       season && SEASON_LABEL[season],
       `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${extras ? ` + ${extras}` : ""}`,
+      outdoor === "yes" && `Pasākums ārā — ${shelter === "tents" ? "teltis atvedīs Smaidu Darbnīca (papildu maksa)" : shelter === "client" ? "nojumi nodrošina klients" : "nojume nav norādīta"}`,
       otherDate && `Ja datums aizņemts: ${otherDate === "yes" ? "var piedāvāt citu datumu" : "der tikai šis datums"}`,
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
       peak > 0 && `Iekļauta piemaksa ceturtdienai/piektdienai: +${prices.peakPercent} %`,
@@ -446,6 +459,7 @@ export default function OfferConfigurator({
   const summaryItems = [
     ...(play ? [["Rotaļuzvedums", playTheme.trim() || "uzvedums"]] : []),
     ...(tree ? [["Egles iedegšana", "pasākums"]] : []),
+    ...(tents ? [["Teltis", "ārā"]] : []),
     ...chosenShows.map((x) => [x.show.title, "izrāde"]),
     ...chosenWorkshops.map((w) => [w.title, "darbnīca"]),
     ...chosenActivities.map((a) => [a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title, "aktivitāte"]),
@@ -595,6 +609,30 @@ export default function OfferConfigurator({
                     </button>
                   </div>
                 </div>
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-white/70">Vai pasākums notiks ārā?</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setOutdoor("no")} className={pill(outdoor === "no")}>
+                      Telpās
+                    </button>
+                    <button type="button" onClick={() => setOutdoor("yes")} className={pill(outdoor === "yes")}>
+                      Ārā
+                    </button>
+                  </div>
+                  {outdoor === "yes" && (
+                    <div className="mt-4">
+                      <p className="text-sm font-bold text-white/70">Nojume darbnīcām un aktivitātēm</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setShelter("client")} className={pill(shelter === "client")}>
+                          Nojumi nodrošināsim mēs
+                        </button>
+                        <button type="button" onClick={() => setShelter("tents")} className={pill(shelter === "tents")}>
+                          Atvediet savas teltis (papildu maksa)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -630,7 +668,7 @@ export default function OfferConfigurator({
                               <img src={showPoster(v)} alt="" className="size-14 shrink-0 rounded-lg object-cover" />
                             )}
                             <div className="min-w-0">
-                              <p className="font-extrabold">{v.title}</p>
+                              <p className="font-extrabold">{showLabel(v.title)}</p>
                               <p className="text-sm text-white/50">
                                 {[v.duration, v.audience].filter(Boolean).join(" · ")}
                                 {v.src && (
