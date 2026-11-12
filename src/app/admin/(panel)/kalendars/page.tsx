@@ -18,6 +18,18 @@ export const metadata = { title: "Kalendārs" };
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const WEEKDAY_NAMES = ["svētdiena", "pirmdiena", "otrdiena", "trešdiena", "ceturtdiena", "piektdiena", "sestdiena"];
 
+/** Komandas grafika pasākums (tabula team_events) */
+type TeamEvent = { id: string; event_date: string; time: string | null; title: string; place: string | null; team: string | null; details: string | null; published: boolean };
+
+/** Kārtošanai dienas ietvaros: "16.30 un 17.40" → 990; "no rīta" → agri; "vakarā" → 18.00; nezināms — beigās */
+function minuteOf(t: string | null | undefined): number {
+  const m = /(\d{1,2})[.:](\d{2})/.exec(t ?? "");
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  if (/rīt/i.test(t ?? "")) return 0;
+  if (/vakar/i.test(t ?? "")) return 18 * 60;
+  return 24 * 60;
+}
+
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
 
@@ -33,8 +45,10 @@ export default async function CalendarPage() {
   const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me));
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
-  const [{ data, error }, business, programs, settings] = await Promise.all([
+  const [{ data, error }, { data: eventRows }, business, programs, settings] = await Promise.all([
     db.from("bookings").select("*").not("event_date", "is", null).neq("status", "Atcelta").order("event_date").order("event_time", { nullsFirst: true }),
+    // Komandas grafiks (sadaļa "Komandas grafiks"); komanda redz tikai "Rādīt kalendārā" (to nosaka datubāzes RLS)
+    db.from("team_events").select("*").order("event_date"),
     getServices("business"),
     getServices("private"),
     getSettings(),
@@ -68,7 +82,20 @@ export default async function CalendarPage() {
   const upcoming = group(all.filter((b) => b.event_date!.slice(0, 10) >= today));
   // Arhīvs — jaunākās dienas augšā
   const archive = group(all.filter((b) => b.event_date!.slice(0, 10) < today).reverse());
-  const upcomingDays = [...upcoming.keys()].sort();
+
+  const events = (eventRows ?? []) as TeamEvent[];
+  const eventsByDay = new Map<string, TeamEvent[]>();
+  for (const e of events) {
+    const day = String(e.event_date).slice(0, 10);
+    eventsByDay.set(day, [...(eventsByDay.get(day) ?? []), e]);
+  }
+  const eventDays = [...eventsByDay.keys()];
+  const upcomingDays = [...new Set([...upcoming.keys(), ...eventDays.filter((d) => d >= today)])].sort();
+  const archiveDays = [...new Set([...archive.keys(), ...eventDays.filter((d) => d < today)])].sort().reverse();
+  const archiveCount = [...archive.values()].flat().length + events.filter((e) => String(e.event_date).slice(0, 10) < today).length;
+  // Komandas pasākumā — vai ielogojusies animatore ir komandā (vārds komandas tekstā, punkti nav svarīgi)
+  const norm = (t: string) => ` ${t.toLowerCase().replace(/\./g, "").replace(/[^a-zāčēģīķļņšūž0-9]+/g, " ")} `;
+  const inTeam = (e: TeamEvent) => Boolean(me && norm(e.team ?? "").includes(norm(me)));
 
   const dayTitle = (day: string) => {
     const d = new Date(`${day}T12:00:00Z`);
@@ -76,14 +103,69 @@ export default async function CalendarPage() {
     return `${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${year}, ${WEEKDAY_NAMES[d.getUTCDay()]}`;
   };
 
-  const renderDay = (day: string, items: Booking[]) => (
+  const eventRow = (e: TeamEvent) => {
+    const mine = inTeam(e);
+    return (
+      <li key={e.id}>
+        <details className="group">
+          <summary
+            className={cn(
+              "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
+              "border-l-4 border-sky-400",
+              mine && "bg-amber-50 ring-2 ring-amber-400",
+              "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
+            )}
+          >
+            <span className="text-sm font-semibold">{e.time || "—"}</span>
+            <span className="min-w-0 text-sm">
+              <span className="block truncate">
+                {mine && (
+                  <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-xs font-extrabold text-ink">
+                    <Star className="size-3 fill-current" aria-hidden /> Tu vadi
+                  </span>
+                )}
+                <b>{e.title}</b>
+                {e.place && ` · ${e.place}`}
+              </span>
+              {e.team && <span className="mt-0.5 block truncate text-xs text-ink-soft">Komanda: {e.team}</span>}
+            </span>
+            {role === "owner" && !e.published ? (
+              <span className="w-fit rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-ink-soft ring-1 ring-line">Komanda neredz</span>
+            ) : (
+              <span />
+            )}
+            <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />
+          </summary>
+          <div className="mt-2 rounded-2xl bg-white p-4 text-sm ring-1 ring-line sm:p-5">
+            <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[110px_1fr]">
+              <dt className="text-ink-soft">Laiks</dt>
+              <dd className="font-semibold">{e.time || "—"}</dd>
+              <dt className="text-ink-soft">Vieta</dt>
+              <dd className="font-semibold">{e.place || "—"}</dd>
+              <dt className="text-ink-soft">Komanda</dt>
+              <dd className="font-semibold">{e.team || "—"}</dd>
+            </dl>
+            {e.details && <p className="mt-3 rounded-xl bg-surface p-3 whitespace-pre-line">{e.details}</p>}
+            {role === "owner" && (
+              <a href={`/admin/grafiks/${e.id}`} className="mt-3 inline-block font-semibold underline decoration-brand decoration-2 underline-offset-4">
+                Labot
+              </a>
+            )}
+          </div>
+        </details>
+      </li>
+    );
+  };
+
+  const renderDay = (day: string, items: Booking[], dayEvents: TeamEvent[] = []) => (
     <div key={day}>
       <h3 className={cn("text-sm font-extrabold", day === today && "text-ink")}>
         {day === today ? "Šodien · " : ""}
         {dayTitle(day)}
       </h3>
       <ul className="mt-2 space-y-2">
-        {items.map((b) => {
+        {[
+          ...items.map((b) => ({ min: minuteOf(b.event_time), node: (() => {
           const st = stateOf(b);
           const c = costsOf(b);
           return (
@@ -132,7 +214,11 @@ export default async function CalendarPage() {
               </details>
             </li>
           );
-        })}
+        })() })),
+          ...dayEvents.map((e) => ({ min: minuteOf(e.time), node: eventRow(e) })),
+        ]
+          .sort((x, y) => x.min - y.min)
+          .map((x) => x.node)}
       </ul>
     </div>
   );
@@ -146,11 +232,14 @@ export default async function CalendarPage() {
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-brand-strong bg-white ring-1 ring-line" /> Telpu noma</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-purple-400 bg-white ring-1 ring-line" /> Izbraukuma ballīte</span>
+        {events.length > 0 && (
+          <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-sky-400 bg-white ring-1 ring-line" /> Komandas grafiks</span>
+        )}
       </div>
 
       <section className="mt-6 space-y-6">
         {upcomingDays.length === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Gaidāmu rezervāciju nav.</p>}
-        {upcomingDays.map((day) => renderDay(day, upcoming.get(day) ?? []))}
+        {upcomingDays.map((day) => renderDay(day, upcoming.get(day) ?? [], eventsByDay.get(day)))}
       </section>
 
       {/* Google kalendāra notikumi, kas nav no mājaslapas (piem. Kristīnes) — tikai administratorei; ielādējas atsevišķi, lai lapa nav jāgaida */}
@@ -160,10 +249,10 @@ export default async function CalendarPage() {
         </Suspense>
       )}
 
-      {archive.size > 0 && (
+      {archiveDays.length > 0 && (
         <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
-          <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Arhīvs — notikušās rezervācijas ({[...archive.values()].flat().length})</summary>
-          <div className="mt-4 space-y-6">{[...archive.entries()].map(([day, items]) => renderDay(day, items))}</div>
+          <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Arhīvs — notikušās rezervācijas ({archiveCount})</summary>
+          <div className="mt-4 space-y-6">{archiveDays.map((day) => renderDay(day, archive.get(day) ?? [], eventsByDay.get(day)))}</div>
         </details>
       )}
     </>

@@ -108,6 +108,8 @@ function FieldInput({ field, value, folder }: { field: FieldDef; value: string |
         </fieldset>
       );
     }
+    case "date":
+      return <input id={field.name} name={field.name} type="date" defaultValue={text.slice(0, 10)} required={field.required} className={adminInput} />;
     case "number":
       // step="any" — lai var ievadīt arī decimāldaļas (piem. 0.3 € par km)
       return <input id={field.name} name={field.name} type="number" step="any" defaultValue={text} className={adminInput} />;

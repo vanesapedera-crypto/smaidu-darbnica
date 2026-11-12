@@ -11,6 +11,7 @@ export type FieldType =
   | "text"
   | "textarea"
   | "number"
+  | "date" //     datums (YYYY-MM-DD)
   | "checkbox"
   | "select"
   | "image"

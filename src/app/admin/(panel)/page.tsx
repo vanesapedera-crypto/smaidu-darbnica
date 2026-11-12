@@ -9,6 +9,7 @@ import RemoveFromCalendar from "@/components/admin/RemoveFromCalendar";
 import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
+import TeamEventsPending from "@/components/admin/TeamEventsPending";
 import { googleConnection } from "@/lib/google-calendar";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
@@ -397,6 +398,9 @@ export default async function BookingsPage({ searchParams }: Props) {
           </button>
         </form>
       </div>
+
+      {/* Komandas grafika pasākumi, kas vēl jāapstiprina */}
+      {!q && <TeamEventsPending db={db} />}
 
       {error ? (
         <p className="mt-8 rounded-xl bg-destructive/10 p-4 text-sm font-semibold text-destructive">

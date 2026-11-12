@@ -209,7 +209,16 @@ export async function saveEntity(key: string, id: string | null, _: ActionState,
   }
 
   refreshSite();
-  redirect(`/admin/${key}?saglabats=1`);
+  // Komandas grafiks tiek apstiprināts sadaļā "Pieteikumi" — pēc saglabāšanas atpakaļ uz to
+  redirect(key === "grafiks" ? "/admin" : `/admin/${key}?saglabats=1`);
+}
+
+/** Komandas grafika pasākums — apstiprināt (komanda to redz kalendārā). id tukšs — visus vēl neapstiprinātos */
+export async function publishTeamEvent(id: string | null) {
+  const { db } = await requireAdmin();
+  const q = db.from("team_events").update({ published: true });
+  await (id ? q.eq("id", id) : q.eq("published", false));
+  revalidatePath("/admin", "layout");
 }
 
 export async function deleteEntity(key: string, id: string) {
@@ -218,7 +227,7 @@ export async function deleteEntity(key: string, id: string) {
   if (!entity) return;
   await db.from(entity.table).delete().eq("id", id);
   refreshSite();
-  redirect(`/admin/${key}?dzests=1`);
+  redirect(key === "grafiks" ? "/admin" : `/admin/${key}?dzests=1`);
 }
 
 /** Galerijas masveida pievienošana pēc attēlu augšupielādes. */

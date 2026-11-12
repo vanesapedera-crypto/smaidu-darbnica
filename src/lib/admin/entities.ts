@@ -16,7 +16,7 @@ import type { FieldDef } from "./fields";
  * var pievienot, neveidojot jaunas lapas.
  */
 
-export type EntityKey = "pakalpojumi" | "programmas" | "galerija" | "atsauksmes" | "klienti" | "komanda" | "seo";
+export type EntityKey = "pakalpojumi" | "programmas" | "galerija" | "atsauksmes" | "klienti" | "komanda" | "seo" | "grafiks";
 
 export type EntityConfig = {
   key: EntityKey;
@@ -216,6 +216,27 @@ export const entities: Record<EntityKey, EntityConfig> = {
     ],
   },
 
+  grafiks: {
+    key: "grafiks",
+    table: "team_events",
+    title: "Komandas grafiks",
+    singular: "pasākums",
+    description:
+      "Pasākumi, kas nav mājaslapas pieteikumi (izrādes, egļu iedegšanas u. c.). Komanda tos redz sadaļā “Kalendārs” tikai tad, kad ieslēgts “Rādīt kalendārā”.",
+    empty: { eventDate: "", time: "", title: "", place: "", team: "", details: "", published: false },
+    listTitle: "title",
+    listSubtitle: "event_date",
+    order: [{ column: "event_date" }, { column: "created_at" }],
+    fields: [
+      { name: "published", label: "Rādīt kalendārā (komanda redz)", type: "checkbox" },
+      { name: "event_date", label: "Datums", type: "date", required: true },
+      { name: "time", label: "Laiks", type: "text", help: "Piem. 18.00–21.00, 16.30 un 17.40 vai “laiki jāprecizē”" },
+      { name: "title", label: "Nosaukums", type: "text", required: true, wide: true },
+      { name: "place", label: "Vieta", type: "text", wide: true },
+      { name: "team", label: "Komanda", type: "text", wide: true, help: "Vārdi ar komatiem, piem. Agija, Madara K., Gunta. Animatorēm ar savu kontu šie pasākumi kalendārā būs ar “Tu vadi”." },
+      { name: "details", label: "Piezīmes", type: "textarea", rows: 4, wide: true },
+    ],
+  },
   seo: {
     key: "seo",
     table: "page_seo",
