@@ -167,6 +167,20 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
           address: address.trim() || undefined,
           eventType: "Saliktais piedāvājums",
           message: lines.join("\n"),
+          // No izvēles panelī automātiski izveidojas prezentācija (bez cenām) — to pārbauda un nosūta klientam PDF
+          presentation: {
+            title: season ? SEASON_LABEL[season] : "",
+            hours,
+            workshopIds: chosenWorkshops.map((w) => w.id),
+            activityIds: [...chosenActivities.map((a) => a.id), ...chosenShows.map((x) => x.price?.id).filter(Boolean)],
+            intro: [
+              chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
+              showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : "jānodrošina Smaidu Darbnīcai"}`,
+              form.message.trim(),
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          },
           consent: form.consent,
           website,
           startedAt,

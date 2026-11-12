@@ -1,3 +1,4 @@
+import { absoluteUrl } from "@/lib/seo";
 import { after, NextResponse } from "next/server";
 import { bookedProgramSlots, bookedProgramVariants, bookedSlots } from "@/lib/availability";
 import {
@@ -206,6 +207,27 @@ export async function POST(request: Request) {
         errors[row.children_count ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
         return NextResponse.json({ success: false, errors }, { status: 422 });
       }
+    }
+  }
+
+  // Lapa "Salikt piedāvājumu": no klienta izvēles sistēma izveido prezentāciju (sadaļā "Prezentācijas"),
+  // saite uz to — pieteikuma ziņojumā. Ja neizdodas (piem. migrācija nav palaista), pieteikums tāpat tiek saglabāts.
+  const pres = isBusiness && body.presentation && typeof body.presentation === "object" ? (body.presentation as Record<string, unknown>) : null;
+  if (pres) {
+    const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)).slice(0, 40) : []);
+    const { data: presId } = await supabase.rpc("create_client_presentation", {
+      p_client: row.company_name ?? row.parent_name,
+      p_title: String(pres.title ?? "").slice(0, 200) || null,
+      p_date: row.event_date,
+      p_place: row.address,
+      p_children: row.participants,
+      p_hours: Number(pres.hours) || null,
+      p_workshops: ids(pres.workshopIds),
+      p_activities: ids(pres.activityIds),
+      p_intro: String(pres.intro ?? "").slice(0, 3000) || null,
+    });
+    if (typeof presId === "string") {
+      record.message = [record.message, `Prezentācija: ${absoluteUrl(`/admin/prezentacijas-izveide?id=${presId}`)}`].filter(Boolean).join("\n\n");
     }
   }
 
