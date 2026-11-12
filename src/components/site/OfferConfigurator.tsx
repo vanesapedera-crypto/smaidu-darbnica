@@ -52,7 +52,7 @@ type Season = "summer" | "xmas";
 const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas: "Ziemas pasākums" };
 const SEASON_SHORT: Record<Season, string> = { summer: "Vasara", xmas: "Ziema" };
 /** Soļi (secība lapā) */
-const STEPS = ["Sezona", "Izrādes", "Darbnīcas", "Aktivitātes", "Pamatinfo", "Kontakti"] as const;
+const STEPS = ["Pasākums", "Izrādes", "Darbnīcas", "Aktivitātes", "Kontakti"] as const;
 /** Vai darbnīca / aktivitāte / izrāde der izvēlētajai sezonai (bez sezonas — visu gadu) */
 const fits = (itemSeason: string | null | undefined, season: Season | "") =>
   Boolean(season) && (!itemSeason || itemSeason === "all" || itemSeason === season);
@@ -484,7 +484,7 @@ export default function OfferConfigurator({
           <div>
             {step === 0 && (
               <>
-                {heading("Kāds būs pasākums?", "No tā atkarīgs, kas parādīsies tālāk.")}
+                {heading("Jūsu pasākums", "Sezona, datums, dalībnieku skaits un ilgums — no tā atkarīgs piedāvājums un cena.")}
                 <div className="grid grid-cols-2 gap-3">
                   {(Object.keys(SEASON_SHORT) as Season[]).map((v) => (
                     <button
@@ -511,6 +511,29 @@ export default function OfferConfigurator({
                   ))}
                 </div>
                 {errors.choice && <p className="mt-3 text-sm font-semibold text-brand">{errors.choice}</p>}
+                <h3 className="display mt-8 mb-3 text-xl">Pamatinformācija</h3>
+                <p className="-mt-2 mb-4 text-sm text-white/60">Pēc tā aprēķinām aptuveno cenu.</p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="text-sm font-bold text-white/70">
+                    Pasākuma datums
+                    <input type="date" value={form.eventDate} onChange={set("eventDate")} className={field} />
+                  </label>
+                  <label className="text-sm font-bold text-white/70">
+                    Dalībnieku skaits
+                    <input type="number" min={1} value={participants || ""} onChange={(e) => setParticipants(Number(e.target.value))} className={field} />
+                  </label>
+                  <label className="text-sm font-bold text-white/70">
+                    Ilgums
+                    <select value={hours} onChange={(e) => setHours(Number(e.target.value))} className={field}>
+                      {[1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
+                        <option key={h} value={h} className="text-ink">
+                          {String(h).replace(".", ",")} h
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {peak > 0 && <p className="mt-3 text-sm text-white/60">Ceturtdienās un piektdienās — piemaksa {prices.peakPercent} %.</p>}
               </>
             )}
 
@@ -625,33 +648,6 @@ export default function OfferConfigurator({
             )}
 
             {step === 4 && (
-              <>
-                {heading("Pamatinformācija", "Pēc tā precizēsim aptuveno cenu.")}
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <label className="text-sm font-bold text-white/70">
-                    Pasākuma datums
-                    <input type="date" value={form.eventDate} onChange={set("eventDate")} className={field} />
-                  </label>
-                  <label className="text-sm font-bold text-white/70">
-                    Dalībnieku skaits
-                    <input type="number" min={1} value={participants || ""} onChange={(e) => setParticipants(Number(e.target.value))} className={field} />
-                  </label>
-                  <label className="text-sm font-bold text-white/70">
-                    Ilgums
-                    <select value={hours} onChange={(e) => setHours(Number(e.target.value))} className={field}>
-                      {[1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
-                        <option key={h} value={h} className="text-ink">
-                          {String(h).replace(".", ",")} h
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {peak > 0 && <p className="mt-3 text-sm text-white/60">Ceturtdienās un piektdienās — piemaksa {prices.peakPercent} %.</p>}
-              </>
-            )}
-
-            {step === 5 && (
               <>
                 {heading("Vieta un kontakti", "Pēc nosūtīšanas sagatavosim prezentāciju ar visām detaļām.")}
                 <div className="grid gap-4 sm:grid-cols-2">
