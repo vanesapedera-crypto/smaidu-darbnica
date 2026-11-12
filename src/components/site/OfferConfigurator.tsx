@@ -127,6 +127,8 @@ export default function OfferConfigurator({
   const [ownVenue, setOwnVenue] = useState<"" | "yes" | "no">("");
   const [address, setAddress] = useState("");
   const [travel, setTravel] = useState<TravelState>({ status: "idle" });
+  // Ja izvēlētais datums aizņemts — vai drīkstam piedāvāt citu
+  const [otherDate, setOtherDate] = useState<"" | "yes" | "no">("");
   const [form, setForm] = useState({ companyName: clientName, parentName: "", phone: "", email: "", eventDate: "", message: "", consent: false });
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
@@ -232,6 +234,7 @@ export default function OfferConfigurator({
     const lines = [
       season && SEASON_LABEL[season],
       `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${extras ? ` + ${extras}` : ""}`,
+      otherDate && `Ja datums aizņemts: ${otherDate === "yes" ? "var piedāvāt citu datumu" : "der tikai šis datums"}`,
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
       peak > 0 && `Iekļauta piemaksa ceturtdienai/piektdienai: +${prices.peakPercent} %`,
       chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
@@ -556,6 +559,17 @@ export default function OfferConfigurator({
                 </div>
                 {peak > 0 && <p className="mt-3 text-sm text-white/60">Ceturtdienās un piektdienās — piemaksa {prices.peakPercent} %.</p>}
                 {minHours > 1 && <p className="mt-3 text-sm text-white/60">Ar izvēlēto programmu pasākumam vajag vismaz {minHours} h.</p>}
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-white/70">Ja šis datums būs aizņemts, vai varam piedāvāt citu datumu?</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setOtherDate("yes")} className={pill(otherDate === "yes")}>
+                      Jā, varat piedāvāt
+                    </button>
+                    <button type="button" onClick={() => setOtherDate("no")} className={pill(otherDate === "no")}>
+                      Nē, der tikai šis datums
+                    </button>
+                  </div>
+                </div>
               </>
             )}
 
