@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { LoaderCircle, Send } from "lucide-react";
 import { resendAllToGoogle } from "@/app/admin/actions";
 import { adminSecondary } from "./styles";
+import { CALENDAR_INVITES } from "@/lib/calendar";
 
 /** Poga "Nosūtīt ielūgumus vēlreiz" — visas nākamās apstiprinātās rezervācijas vēlreiz Google kalendārā (sk. resendAllToGoogle) */
 export default function ResendInvites() {
@@ -16,7 +17,9 @@ export default function ResendInvites() {
         type="button"
         disabled={pending}
         onClick={() => {
-          if (!confirm("Visas nākamās apstiprinātās rezervācijas tiks ieliktas (vai atjaunotas) jūsu Google kalendārā. Klientiem un komandai nekas netiek sūtīts. Turpināt?")) return;
+          if (!confirm(CALENDAR_INVITES
+                ? "Visas nākamās apstiprinātās rezervācijas tiks ieliktas Google kalendārā vēlreiz, un viesi (Kristīne u. c.) saņems ielūgumu. Klientiem nekas netiek sūtīts. Turpināt?"
+                : "Visas nākamās apstiprinātās rezervācijas tiks ieliktas (vai atjaunotas) jūsu Google kalendārā. Klientiem un komandai nekas netiek sūtīts. Turpināt?")) return;
           setResult("");
           start(async () => {
             const r = await resendAllToGoogle();

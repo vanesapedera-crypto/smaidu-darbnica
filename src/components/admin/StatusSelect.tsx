@@ -117,7 +117,7 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
                 "Klients nav norādījis e-pastu — apstiprinājums viņam netiks nosūtīts."
               )}
             </li>
-            <li>{guests ? "Rezervācija tiks ielikta jūsu Google kalendārā (rezerves kopija)." : "Pieteikumam nav datuma — kalendārā netiks ielikta."}</li>
+            <li>{guests ? CALENDAR_INVITES ? "Notikums tiks ielikts Google kalendārā, komanda saņems ielūgumu." : "Rezervācija tiks ielikta jūsu Google kalendārā (rezerves kopija)." : "Pieteikumam nav datuma — kalendārā netiks ielikta."}</li>
           </ul>
           {guests && withHost && CALENDAR_INVITES && (
             <div className="space-y-1.5">

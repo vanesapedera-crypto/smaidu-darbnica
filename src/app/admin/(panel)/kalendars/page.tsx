@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
@@ -17,16 +16,14 @@ const WEEKDAY_NAMES = ["svētdiena", "pirmdiena", "otrdiena", "trešdiena", "cet
 
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
-type Props = { searchParams: Promise<{ r?: string }> };
 
 /**
  * Rezervāciju kalendārs — vienkāršs saraksts: viena zem otras tikai tās dienas, kurās kaut kas notiek,
  * no šodienas uz priekšu. Pagājušās rezervācijas — sakļautā sadaļā "Arhīvs". Atceltās nerāda.
- * Uzspiežot uz rezervācijas, zem tās atveras visa informācija (r — atvērtās rezervācijas id).
+ * Uzspiežot uz rezervācijas, zem tās uzreiz atveras visa informācija (bez lapas pārlādes).
  */
-export default async function CalendarPage({ searchParams }: Props) {
+export default async function CalendarPage() {
   const { db, role } = await requireSection("kalendars");
-  const { r } = await searchParams;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
   const [{ data, error }, business, programs, settings] = await Promise.all([
@@ -65,7 +62,6 @@ export default async function CalendarPage({ searchParams }: Props) {
   const googleByDay = new Map<string, GoogleEvent[]>();
   for (const g of google) googleByDay.set(g.date, [...(googleByDay.get(g.date) ?? []), g]);
   const upcomingDays = [...new Set([...upcoming.keys(), ...googleByDay.keys()])].sort();
-  const archiveOpen = Boolean(r && all.some((b) => b.id === r && b.event_date!.slice(0, 10) < today));
 
   const dayTitle = (day: string) => {
     const d = new Date(`${day}T12:00:00Z`);
@@ -83,16 +79,15 @@ export default async function CalendarPage({ searchParams }: Props) {
         {items.map((b) => {
           const st = stateOf(b);
           const c = costsOf(b);
-          const open = b.id === r;
-          return [
-            <li key={b.id} id={`r-${b.id}`} className="scroll-mt-6">
-              <Link
-                href={open ? "/admin/kalendars" : `/admin/kalendars?r=${b.id}#r-${b.id}`}
-                scroll={false}
+          return (
+            <li key={b.id}>
+              <details className="group">
+              <summary
                 className={cn(
-                  "grid items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto]",
+                  "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
                   isTrip(b) && "border-l-4 border-purple-400",
-                  open && "bg-brand-soft ring-2 ring-ink",
+                  isVenue(b) && "border-l-4 border-brand-strong",
+                  "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
                 )}
               >
                 <span className="text-sm font-semibold">{timeLabel(b.event_time, b.location) || "—"}</span>
@@ -107,11 +102,14 @@ export default async function CalendarPage({ searchParams }: Props) {
                   )}
                 </span>
                 <span className={cn("w-fit rounded-full px-2.5 py-1 text-xs font-bold ring-1", st.tone)}>{st.label}</span>
-                {open ? <ChevronUp className="hidden size-4 text-ink-soft sm:block" aria-hidden /> : <ChevronDown className="hidden size-4 text-ink-soft sm:block" aria-hidden />}
-              </Link>
-            </li>,
-            open && <BookingCard key={`${b.id}-card`} b={b} label={label(b)} costs={c} />,
-          ];
+                <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />
+              </summary>
+              <ul className="mt-2">
+                <BookingCard b={b} label={label(b)} costs={c} />
+              </ul>
+              </details>
+            </li>
+          );
         })}
         {gItems.map((g) => (
           <li key={g.id}>
@@ -141,10 +139,7 @@ export default async function CalendarPage({ searchParams }: Props) {
       {error && <p className="mt-4 text-sm font-semibold text-destructive">Neizdevās ielādēt rezervācijas: {error.message}</p>}
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
-        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-sky-500" /> Jauns, vēl nav apstiprināts</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-strong" /> Gaida klienta apstiprinājumu</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" /> Klients nav apstiprinājis 3+ dienas</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" /> Apstiprināta</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-brand-strong bg-white ring-1 ring-line" /> Telpu noma</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-purple-400 bg-white ring-1 ring-line" /> Izbraukuma ballīte</span>
       </div>
 
@@ -154,7 +149,7 @@ export default async function CalendarPage({ searchParams }: Props) {
       </section>
 
       {archive.size > 0 && (
-        <details open={archiveOpen} className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
+        <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
           <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Arhīvs — notikušās rezervācijas ({[...archive.values()].flat().length})</summary>
           <div className="mt-4 space-y-6">{[...archive.entries()].map(([day, items]) => renderDay(day, items))}</div>
         </details>
