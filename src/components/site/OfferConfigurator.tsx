@@ -55,7 +55,7 @@ const SEASON_SHORT: Record<Season, string> = { summer: "Vasara", xmas: "Ziema" }
 const HOW: Record<string, string> = {
   pasakums: "Pēc šīs informācijas aprēķinām aptuveno cenu. Ceturtdienās un piektdienās cenai pieskaita piemaksu. Ja datums vēl nav zināms, to var atstāt tukšu.",
   izrades: "Izrāde ilgst ~45 minūtes, aktieri ierodas ar savu skaņu un gaismu. Ja jums nav piemērotas telpas, to varam sarunāt mēs.",
-  darbnicas: "Galdus darbnīcām nodrošina pasūtītājs. Mēs atvedam visus materiālus un standarta galda dekorācijas — tās ir iekļautas cenā. Bērni pienāk pie galdiem, izveido savu darbiņu un paņem to līdzi; katru darbnīcu vada animatore.",
+  darbnicas: "Galdus darbnīcām nodrošina pasūtītājs. Mēs atvedam visus materiālus un standarta galda dekorācijas — tās ir iekļautas cenā. Bērni pienāk pie galdiem, izveido savu darbiņu un paņem to līdzi. Animatoru skaits atkarīgs no bērnu skaita un darbnīcu daudzuma.",
   aktivitates: "Aktivitātes notiek visu pasākuma laiku paralēli darbnīcām. Lielformāta spēles atvedam, uzstādām un pieskatām. Pārsteiguma tēls ierodas uz pasākumu, satiekas ar bērniem un fotografējas.",
   kontakti: "Pēc nosūtīšanas sagatavosim prezentāciju ar aprakstiem un bildēm un sazināsimies, lai precizētu detaļas un galīgo cenu.",
 };
