@@ -39,9 +39,23 @@ export type CalcSettings = {
   vat: number;
   /** Lapā "Salikt piedāvājumu": cik dalībniekiem radošajās darbnīcās vajag 1 animatoru */
   perAnimator: number;
+  /** Sagatavošanās un novākšanas likme, € par stundu (radošajām darbnīcām) */
+  prepHour: number;
+  /** Cik stundas sagatavošanās un novākšanas katram darbnīcu animatoram (pirms un pēc) */
+  prepHours: number;
+  /** Laiks ceļā: € par stundu katram braucošajam (lapā "Salikt piedāvājumu") */
+  travelHour: number;
+  /** Telpas noma izrādei, ja telpu nodrošinām mēs — vismaz šī summa (bez PVN) */
+  venueMin: number;
+  /** Minimālā pasūtījuma summa (bez PVN) lapā "Salikt piedāvājumu" */
+  minTotal: number;
+  /** Piemaksa ceturtdienās un piektdienās, % (lapā "Salikt piedāvājumu") */
+  peakPercent: number;
+  /** Standarta galda noformējums — € par katru radošo darbnīcu (bez PVN) */
+  decorPerWorkshop: number;
 };
 
-export const DEFAULT_CALC_SETTINGS: CalcSettings = { animatorHour: 0, animatorFixed: 0, markup: 0, vat: 21, perAnimator: 15 };
+export const DEFAULT_CALC_SETTINGS: CalcSettings = { animatorHour: 0, animatorFixed: 0, markup: 0, vat: 21, perAnimator: 15, prepHour: 15, prepHours: 1, travelHour: 5, venueMin: 300, minTotal: 600, peakPercent: 50, decorPerWorkshop: 30 };
 
 export type CalcWorkshop = { id: string; title: string; costPerPerson: number; persons: number };
 /** Viena personāla rinda: loma (vadītājs, animators, aktieris…), skaits, aprēķins un likme */
@@ -210,6 +224,13 @@ export const parseSettings = (raw: unknown): CalcSettings => {
     markup: n(o.markup ?? DEFAULT_CALC_SETTINGS.markup),
     vat: n(o.vat ?? DEFAULT_CALC_SETTINGS.vat),
     perAnimator: n(o.perAnimator ?? DEFAULT_CALC_SETTINGS.perAnimator) || DEFAULT_CALC_SETTINGS.perAnimator,
+    prepHour: n(o.prepHour ?? DEFAULT_CALC_SETTINGS.prepHour),
+    prepHours: n(o.prepHours ?? DEFAULT_CALC_SETTINGS.prepHours),
+    travelHour: n(o.travelHour ?? DEFAULT_CALC_SETTINGS.travelHour),
+    venueMin: n(o.venueMin ?? DEFAULT_CALC_SETTINGS.venueMin),
+    minTotal: n(o.minTotal ?? DEFAULT_CALC_SETTINGS.minTotal),
+    peakPercent: n(o.peakPercent ?? DEFAULT_CALC_SETTINGS.peakPercent),
+    decorPerWorkshop: n(o.decorPerWorkshop ?? DEFAULT_CALC_SETTINGS.decorPerWorkshop),
   };
 };
 

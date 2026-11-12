@@ -11,13 +11,34 @@ type Unit = "hour" | "person" | "piece" | "fixed";
 type Workshop = { id: string; title: string; description: string | null; image: string | null; season?: string | null; perPerson: number };
 type Activity = { id: string; title: string; description: string | null; image: string | null; season?: string | null; unit: Unit; price: number };
 /** Cenas klientam ar uzcenojumu un PVN (funkcija configurator_prices) */
-export type ConfiguratorPrices = { factor: number; animatorHour: number; perAnimator: number; workshops: Workshop[]; activities: Activity[] };
+export type ConfiguratorPrices = {
+  factor: number;
+  animatorHour: number;
+  perAnimator: number;
+  /** Sagatavošanās un novākšana: likme klientam (€/h) un stundas katram darbnīcu animatoram */
+  prepHour?: number;
+  prepHours?: number;
+  /** Laiks ceļā: likme klientam (€/h) katram braucošajam */
+  travelHour?: number;
+  /** Telpas noma izrādei (ja telpu nodrošinām mēs) — vismaz šī summa ar PVN */
+  venueMin?: number;
+  /** Minimālā pasūtījuma summa ar PVN */
+  minTotal?: number;
+  /** Piemaksa ceturtdienās un piektdienās, % */
+  peakPercent?: number;
+  /** Standarta galda noformējums — ar PVN par katru darbnīcu */
+  decorPerWorkshop?: number;
+  workshops: Workshop[];
+  activities: Activity[];
+};
 
 type TravelState = { status: "idle" | "loading" | "ok" | "error"; km?: number; cost?: number; far?: boolean; error?: string };
 
 /** Tālākiem braucieniem (no Tukuma 100 km un vairāk vienā virzienā) ceļš var maksāt līdz 0,50 €/km — aptuvenajā cenā rēķina ar to */
 const FAR_KM = 100;
 const FAR_RATE = 0.5;
+/** Vidējais ātrums laikam ceļā (turp un atpakaļ) */
+const AVG_KMH = 70;
 
 /** Izrāde — aktivitāte, kuras nosaukumā ir "izrāde" (tai jānorāda, vai telpa ir klienta vai mūsu) */
 const isShow = (a: Activity) => /izrād/i.test(a.title);
@@ -82,15 +103,32 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
   const showPriceUnknown = chosenShows.some((x) => !x.price);
 
   const workshopAnimators = chosenWorkshops.length ? Math.max(chosenWorkshops.length, Math.ceil(people / Math.max(1, prices.perAnimator))) : 0;
-  const workshopsSum = chosenWorkshops.reduce((s, w) => s + w.perPerson * people, 0) + workshopAnimators * hours * prices.animatorHour;
+  const workshopsSum =
+    chosenWorkshops.reduce((s, w) => s + w.perPerson * people, 0) +
+    workshopAnimators * hours * prices.animatorHour +
+    // Sagatavošanās pirms un novākšana pēc darbnīcām (piem. +1 h katram animatoram)
+    workshopAnimators * (prices.prepHours ?? 0) * (prices.prepHour ?? 0) +
+    // Standarta galda noformējums katrai darbnīcai
+    chosenWorkshops.length * (prices.decorPerWorkshop ?? 0);
   const activityPrice = (a: Activity) =>
     a.unit === "hour" ? a.price * hours : a.unit === "piece" ? a.price * (activities[a.id] || 1) : a.unit === "person" ? a.price * people : a.price;
   const activitiesSum = chosenActivities.reduce((s, a) => s + activityPrice(a), 0);
-  const travelSum = travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) : 0;
+  // Ceļš: km izdevumi + laiks ceļā katram braucošajam (darbnīcu animatori + pa vienam katrai aktivitātei ar cilvēku)
+  const travellers = workshopAnimators + chosenActivities.filter((a) => a.unit === "hour" || a.unit === "person").length;
+  const travelHours = travel.status === "ok" && travel.cost ? (travel.km ?? 0) / AVG_KMH : 0;
+  const travelSum =
+    travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) + Math.max(1, travellers) * travelHours * (prices.travelHour ?? 0) : 0;
   const showsSum = chosenShows.reduce((s, x) => s + (x.price ? activityPrice(x.price) : 0), 0);
-  const total = workshopsSum + activitiesSum + showsSum + travelSum;
+  const venueSum = showChosen && ownVenue === "no" ? (prices.venueMin ?? 0) : 0;
+  // Ceturtdienās un piektdienās — piemaksa programmai (darbnīcām, aktivitātēm, izrādēm); ceļam un telpas nomai — nav
+  const weekday = form.eventDate ? new Date(`${form.eventDate}T12:00:00`).getDay() : -1;
+  const peak = weekday === 4 || weekday === 5 ? (prices.peakPercent ?? 0) / 100 : 0;
+  const sum = (workshopsSum + activitiesSum + showsSum) * (1 + peak) + travelSum + venueSum;
+  // Mazāk par minimālo pasūtījumu nerēķinām
+  const atMinimum = sum > 0 && sum < (prices.minTotal ?? 0);
+  const total = atMinimum ? (prices.minTotal ?? 0) : sum;
   const anything = chosenWorkshops.length + chosenActivities.length + chosenShows.length > 0;
-  const extras = [showChosen && ownVenue === "no" && "telpas īre", showPriceUnknown && "izrādes cena"].filter(Boolean).join(" + ");
+  const extras = [showPriceUnknown && "izrādes cena"].filter(Boolean).join(" + ");
 
   const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
   const toggleActivity = (id: string) =>
@@ -141,11 +179,12 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
       season && SEASON_LABEL[season],
       `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${extras ? ` + ${extras}` : ""}`,
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
+      peak > 0 && `Iekļauta piemaksa ceturtdienai/piektdienai: +${prices.peakPercent} %`,
       chosenShows.length > 0 && `Izrādes: ${chosenShows.map((x) => x.show.title).join(", ")}`,
       chosenWorkshops.length > 0 && `Radošās darbnīcas: ${chosenWorkshops.map((w) => w.title).join(", ")}`,
       chosenActivities.length > 0 &&
         `Aktivitātes: ${chosenActivities.map((a) => (a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title)).join(", ")}`,
-      showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : "jānodrošina Smaidu Darbnīcai (cena atkarīga no telpas)"}`,
+      showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : `jānodrošina Smaidu Darbnīcai (aprēķinā telpas noma no ${eur(prices.venueMin ?? 0)} — jāprecizē)`}`,
       address.trim() && `Adrese: ${address.trim()}${travel.status === "ok" ? ` (${travel.km} km turp un atpakaļ)` : ""}`,
       form.message.trim() && `\n${form.message.trim()}`,
     ].filter(Boolean);
@@ -260,9 +299,13 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
         {season && (
         <>
         {/* 1. Pamatinformācija */}
-        <section className="grid gap-4 sm:grid-cols-2">
+        <section className="grid gap-4 sm:grid-cols-3">
           <Field id="participants" label="Dalībnieku skaits">
             <input id="participants" type="number" min={1} value={participants || ""} onChange={(e) => setParticipants(Number(e.target.value))} className={inputClass} />
+          </Field>
+          <Field id="eventDate" label="Pasākuma datums"
+            hint={peak ? `Ceturtdienās un piektdienās — piemaksa ${prices.peakPercent} %.` : undefined} error={errors.eventDate}>
+            <input id="eventDate" type="date" value={form.eventDate} onChange={set("eventDate")} className={inputClass} />
           </Field>
           <Field id="hours" label="Pasākuma ilgums, stundas">
             <select id="hours" value={hours} onChange={(e) => setHours(Number(e.target.value))} className={inputClass}>
@@ -415,7 +458,11 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
                 </label>
               ))}
             </div>
-            {ownVenue === "no" && <p className="mt-3 text-sm text-ink-soft">Telpas īres cena atkarīga no konkrētās telpas — to precizēsim un pieskaitīsim piedāvājumā.</p>}
+            {ownVenue === "no" && (
+          <p className="mt-3 text-sm text-ink-soft">
+            Telpas noma — no {eur(prices.venueMin ?? 0)} (ar PVN), atkarībā no konkrētās telpas. Aptuvenajā cenā ir iekļauta minimālā summa, precīzu cenu saskaņosim ar jums.
+          </p>
+        )}
             {errors.venue && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{errors.venue}</p>}
           </fieldset>
         )}
@@ -466,9 +513,6 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
           <Field id="email" label="E-pasts" required error={errors.email}>
             <input id="email" type="email" value={form.email} onChange={set("email")} className={inputClass} />
           </Field>
-          <Field id="eventDate" label="Pasākuma datums" error={errors.eventDate}>
-            <input id="eventDate" type="date" value={form.eventDate} onChange={set("eventDate")} className={inputClass} />
-          </Field>
           <Field id="message" label="Papildu informācija" className="sm:col-span-2">
             <textarea id="message" rows={3} value={form.message} onChange={set("message")} className={inputClass} />
           </Field>
@@ -496,6 +540,8 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
           <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Aptuvenā cena</p>
           <p className="mt-2 font-display text-5xl font-extrabold">{anything ? eur(approx(total)) : "—"}</p>
           <p className="mt-1 text-sm text-white/70">ar PVN{extras ? ` + ${extras}` : ""}</p>
+          {anything && peak > 0 && <p className="mt-2 text-xs text-white/70">Iekļauta piemaksa ceturtdienai/piektdienai (+{prices.peakPercent} %).</p>}
+          {anything && atMinimum && <p className="mt-2 text-xs text-white/70">Minimālā pasūtījuma summa — {eur(prices.minTotal ?? 0)} ar PVN.</p>}
           {anything && (
             <ul className="mt-5 space-y-1.5 border-t border-white/15 pt-4 text-sm">
               {chosenShows.map((x) => (

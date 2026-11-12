@@ -27,7 +27,7 @@ export default async function ShowPricesPage({ searchParams }: Props) {
     <>
       <PageHeader
         title="Izrādes — cenas"
-        description="Izmaksas un sezona katrai izrādei. Klientam lapā “Salikt piedāvājumu” cena tiek rādīta ar uzcenojumu un PVN (tāpat kā pakalpojumiem)."
+        description="Cena klientam (bez PVN) un sezona katrai izrādei. Lapā “Salikt piedāvājumu” klients to redz ar PVN. Ja telpu nodrošinām mēs — pieskaita telpas nomu (no summas likmēs)."
       />
       {saglabats && <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">Saglabāts: {saglabats}</p>}
 
@@ -46,7 +46,7 @@ export default async function ShowPricesPage({ searchParams }: Props) {
                     <p className="text-sm text-ink-soft">{[v.duration, v.audience].filter(Boolean).join(" · ") || "—"}</p>
                   </div>
                   <label className="block space-y-1.5">
-                    <span className="block text-sm font-bold">Izmaksas, €</span>
+                    <span className="block text-sm font-bold">Cena bez PVN, €</span>
                     <input name="cost" inputMode="decimal" defaultValue={item ? String(item.cost).replace(".", ",") : ""} placeholder="0" className={adminInput} />
                   </label>
                   <SeasonChecks value={item?.season ?? v.season} />
