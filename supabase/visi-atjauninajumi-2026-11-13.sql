@@ -162,7 +162,8 @@ as $$
     'workshops', coalesce((
       select jsonb_agg(jsonb_build_object('id', ws.id, 'title', ws.title, 'description', ws.description, 'image', ws.image, 'season', ws.season,
         'perPerson', round(ws.cost * (select k from s), 2)) order by ws.title)
-      from ws where ws.cost > 0), '[]'::jsonb),
+      from ws where ws.cost > 0
+        and not exists (select 1 from public.cost_items c where c.kind = 'activity' and lower(c.title) = lower(ws.title))), '[]'::jsonb),
     'activities', coalesce((
       select jsonb_agg(jsonb_build_object('id', c.id, 'title', c.title, 'description', c.description, 'image', c.image, 'season', c.season,
         'unit', c.unit,
@@ -173,3 +174,17 @@ as $$
 $$;
 
 grant execute on function public.configurator_prices() to anon, authenticated;
+
+-- 5) Papildu aktivitātes (cenas ievada 💰 Cenas → Pakalpojumi). Tējnīca un SPA zona — aktivitātes, nevis darbnīcas:
+--    klientu saitē darbnīca, kuras nosaukums sakrīt ar aktivitāti, netiek rādīta.
+insert into public.cost_items (kind, title, unit, sort, season)
+select 'activity', v.title, 'hour', v.sort, 'all'
+from (values
+  ('Pārsteiguma tēls', 5),
+  ('Tējnīca', 15),
+  ('SPA zona', 16),
+  ('Glitera spīdumi sejiņai', 25),
+  ('Slaima ballīte', 55),
+  ('Putu ballīte', 56)
+) as v(title, sort)
+where not exists (select 1 from public.cost_items c where lower(c.title) = lower(v.title));

@@ -434,7 +434,7 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
         {/* 3. Aktivitātes un izrādes */}
         {otherActivities.length > 0 && (
           <section>
-            <h2 className="display text-2xl">Aktivitātes</h2>
+            <h2 className="display text-2xl">Papildu aktivitātes</h2>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {otherActivities.map((a) => {
                 const active = activities[a.id] !== undefined;
