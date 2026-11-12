@@ -87,7 +87,7 @@ const approx = (n: number) => Math.round(n / 10) * 10;
 export default function OfferConfigurator({
   prices: allPrices,
   shows: allShows = [],
-  games = [],
+  games: allGames = [],
   characters = [],
   clientName = "",
 }: {
@@ -102,6 +102,10 @@ export default function OfferConfigurator({
 }) {
   // Vispirms klients izvēlas sezonu — sarakstos paliek tikai tās sezonas (un visu gadu) iespējas
   const [season, setSeason] = useState<Season | "">("");
+  // Lielformāta spēles ziemas piedāvājumā nerāda
+  const games = season === "xmas" ? [] : allGames;
+  // Cik stundas pārsteiguma tēls būs pasākumā
+  const [charHours, setCharHours] = useState(1);
   const prices = {
     ...allPrices,
     workshops: allPrices.workshops.filter((w) => fits(w.season, season)),
@@ -193,9 +197,13 @@ export default function OfferConfigurator({
     travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) + Math.max(1, travellers) * travelHours * (prices.travelHour ?? 0) : 0;
   const showsSum = chosenShows.reduce((s, x) => s + (x.price ? activityPrice(x.price) : 0), 0) + (play && playItem ? activityPrice(playItem) : 0) + (tree && treeItem ? activityPrice(treeItem) : 0);
   const gamesSum = gamesItem ? gamesItem.price * pickedGames.length : 0;
-  const charactersSum = characterItem ? activityPrice(characterItem) * pickedCharacters.length : 0;
+  const charactersSum = characterItem
+    ? (characterItem.unit === "hour" ? characterItem.price * charHours : activityPrice(characterItem)) * pickedCharacters.length
+    : 0;
   const venueSum = showChosen && ownVenue === "no" ? (prices.venueMin ?? 0) : 0;
-  const tents = outdoor === "yes" && shelter === "tents";
+  // Jautājums par āra pasākumu un teltīm — tikai vasarā
+  const outside = season === "summer" && outdoor === "yes";
+  const tents = outside && shelter === "tents";
   const tentSum = tents && tentItem ? activityPrice(tentItem) : 0;
   // Ceturtdienās un piektdienās — piemaksa programmai (darbnīcām, aktivitātēm, izrādēm); ceļam un telpas nomai — nav
   const weekday = form.eventDate ? new Date(`${form.eventDate}T12:00:00`).getDay() : -1;
@@ -261,7 +269,7 @@ export default function OfferConfigurator({
     const lines = [
       season && SEASON_LABEL[season],
       `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${extras ? ` + ${extras}` : ""}`,
-      outdoor === "yes" && `Pasākums ārā — ${shelter === "tents" ? "teltis atvedīs Smaidu Darbnīca (papildu maksa)" : shelter === "client" ? "nojumi nodrošina klients" : "nojume nav norādīta"}`,
+      outside && `Pasākums ārā — ${shelter === "tents" ? "teltis atvedīs Smaidu Darbnīca (papildu maksa)" : shelter === "client" ? "nojumi nodrošina klients" : "nojume nav norādīta"}`,
       otherDate && `Ja datums aizņemts: ${otherDate === "yes" ? "var piedāvāt citu datumu" : "der tikai šis datums"}`,
       `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
       peak > 0 && `Iekļauta piemaksa ceturtdienai/piektdienai: +${prices.peakPercent} %`,
@@ -272,7 +280,8 @@ export default function OfferConfigurator({
       chosenActivities.length > 0 &&
         `Aktivitātes: ${chosenActivities.map((a) => (a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title)).join(", ")}`,
       pickedGames.length > 0 && `Lielformāta spēles (${pickedGames.length}): ${pickedGames.join(", ")}`,
-      pickedCharacters.length > 0 && `Pārsteiguma tēli (${pickedCharacters.length}): ${pickedCharacters.join(", ")}`,
+      pickedCharacters.length > 0 &&
+        `Pārsteiguma tēli (${pickedCharacters.length}): ${pickedCharacters.join(", ")} — ${String(charHours).replace(".", ",")} h`,
       showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : `jānodrošina Smaidu Darbnīcai (aprēķinā telpas noma no ${eur(prices.venueMin ?? 0)} — jāprecizē)`}`,
       address.trim() && `Adrese: ${address.trim()}${travel.status === "ok" ? ` (${travel.km} km turp un atpakaļ)` : ""}`,
       form.message.trim() && `\n${form.message.trim()}`,
@@ -313,7 +322,7 @@ export default function OfferConfigurator({
               play && `Rotaļuzvedums${playTheme.trim() ? ` — tematika: ${playTheme.trim()}` : ""}`,
               tree && "Egles iedegšanas pasākums",
               pickedGames.length > 0 && `Lielformāta spēles: ${pickedGames.join(", ")}`,
-              pickedCharacters.length > 0 && `Pārsteiguma tēli: ${pickedCharacters.join(", ")}`,
+              pickedCharacters.length > 0 && `Pārsteiguma tēli: ${pickedCharacters.join(", ")} — ${String(charHours).replace(".", ",")} h`,
               showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : "jānodrošina Smaidu Darbnīcai"}`,
               form.message.trim(),
             ]
@@ -464,7 +473,7 @@ export default function OfferConfigurator({
     ...chosenWorkshops.map((w) => [w.title, "darbnīca"]),
     ...chosenActivities.map((a) => [a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title, "aktivitāte"]),
     ...(pickedGames.length ? [[`Lielformāta spēles × ${pickedGames.length}`, "spēles"]] : []),
-    ...pickedCharacters.map((c) => [c, "tēls"]),
+    ...pickedCharacters.map((c) => [c, `tēls · ${String(charHours).replace(".", ",")} h`]),
     ...(travel.status === "ok" && travel.cost ? [["Ceļa izdevumi", `${travel.km} km`]] : []),
   ];
   const summary = (
@@ -609,30 +618,7 @@ export default function OfferConfigurator({
                     </button>
                   </div>
                 </div>
-                <div className="mt-5">
-                  <p className="text-sm font-bold text-white/70">Vai pasākums notiks ārā?</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setOutdoor("no")} className={pill(outdoor === "no")}>
-                      Telpās
-                    </button>
-                    <button type="button" onClick={() => setOutdoor("yes")} className={pill(outdoor === "yes")}>
-                      Ārā
-                    </button>
-                  </div>
-                  {outdoor === "yes" && (
-                    <div className="mt-4">
-                      <p className="text-sm font-bold text-white/70">Nojume darbnīcām un aktivitātēm</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => setShelter("client")} className={pill(shelter === "client")}>
-                          Nojumi nodrošināsim mēs
-                        </button>
-                        <button type="button" onClick={() => setShelter("tents")} className={pill(shelter === "tents")}>
-                          Atvediet savas teltis (papildu maksa)
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+
               </>
             )}
 
@@ -734,6 +720,32 @@ export default function OfferConfigurator({
                     {prices.workshops.map((w) => tile(`w:${w.id}`, w.title, w.image || fallbackImage(w.title), workshops.includes(w.id), () => toggleWorkshop(w.id)))}
                   </ul>
                 )}
+                {season === "summer" && (
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-sm font-bold text-white/70">Vai pasākums notiks ārā?</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setOutdoor("no")} className={pill(outdoor === "no")}>
+                      Telpās
+                    </button>
+                    <button type="button" onClick={() => setOutdoor("yes")} className={pill(outdoor === "yes")}>
+                      Ārā
+                    </button>
+                  </div>
+                  {outdoor === "yes" && (
+                    <div className="mt-4">
+                      <p className="text-sm font-bold text-white/70">Nojume darbnīcām un aktivitātēm</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setShelter("client")} className={pill(shelter === "client")}>
+                          Nojumi nodrošināsim mēs
+                        </button>
+                        <button type="button" onClick={() => setShelter("tents")} className={pill(shelter === "tents")}>
+                          Atvediet savas teltis (papildu maksa)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                )}
                 {infoPanel && <div className="mt-4 lg:hidden">{infoPanel}</div>}
               </>
             )}
@@ -760,6 +772,16 @@ export default function OfferConfigurator({
                         ),
                       )}
                     </ul>
+                    <label className="mt-4 flex flex-wrap items-center gap-3 text-sm font-bold text-white/70">
+                      Cik ilgi tēls būs pasākumā?
+                      <select value={charHours} onChange={(e) => setCharHours(Number(e.target.value))} className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white">
+                        {[0.5, 1, 1.5, 2, 3, 4].map((h) => (
+                          <option key={h} value={h} className="text-ink">
+                            {String(h).replace(".", ",")} h
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </>
                 )}
                 {games.length > 0 && (
