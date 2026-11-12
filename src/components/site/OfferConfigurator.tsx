@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Car, Check, CircleCheck, LoaderCircle, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Check, CircleCheck, Download, LoaderCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Honeypot } from "./form";
 import { fallbackImage } from "@/lib/salikt-images";
+import type { ContactSettings } from "@/lib/content/types";
+import PresentationPages, { type Slide } from "@/components/admin/team/PresentationPages";
 
 type Unit = "hour" | "person" | "piece" | "fixed";
 type Workshop = { id: string; title: string; description: string | null; image: string | null; season?: string | null; perPerson: number };
@@ -57,7 +59,6 @@ const HOW: Record<string, string> = {
   izrades: "Izrādes ilgst ~45 minūtes, aktieri ierodas ar savu skaņu un gaismu. Ja jums nav piemērotas telpas, to varam sarunāt mēs. Var izvēlēties arī egles iedegšanas pasākumu.",
   darbnicas: "Galdus darbnīcām nodrošina pasūtītājs. Mēs atvedam visus materiālus un standarta galda dekorācijas — tās ir iekļautas cenā. Bērni pienāk pie galdiem, izveido savu darbiņu un paņem to līdzi. Animatoru skaits atkarīgs no bērnu skaita un darbnīcu daudzuma.",
   aktivitates: "Aktivitātes notiek visu pasākuma laiku paralēli darbnīcām. Lielformāta spēles atvedam, uzstādām un pieskatām. Pārsteiguma tēls ierodas uz pasākumu, satiekas ar bērniem un fotografējas.",
-  kontakti: "Pēc nosūtīšanas sagatavosim prezentāciju ar aprakstiem un bildēm un sazināsimies, lai precizētu detaļas un galīgo cenu.",
 };
 
 /** Soļi (secība lapā) */
@@ -90,6 +91,7 @@ export default function OfferConfigurator({
   games: allGames = [],
   characters = [],
   clientName = "",
+  contact,
 }: {
   prices: ConfiguratorPrices;
   shows?: ShowInfo[];
@@ -99,6 +101,8 @@ export default function OfferConfigurator({
   characters?: { name: string; image: string }[];
   /** No saites ?klients=… — uzņēmuma lauks jau aizpildīts */
   clientName?: string;
+  /** Kontakti prezentācijas pēdējai lapai */
+  contact: ContactSettings;
 }) {
   // Vispirms klients izvēlas sezonu — sarakstos paliek tikai tās sezonas (un visu gadu) iespējas
   const [season, setSeason] = useState<Season | "">("");
@@ -359,12 +363,67 @@ export default function OfferConfigurator({
   };
 
   if (state === "sent") {
+    // Prezentācija ar klienta izvēlēto programmu — to var saglabāt kā PDF (pārlūka drukas logs → "Saglabāt kā PDF")
+    const slides: Slide[] = [
+      ...chosenShows.map((x) => ({ id: `s-${x.show.title}`, title: showLabel(x.show.title), description: x.show.description?.replace(/\*\*/g, "") ?? null, image: showPoster(x.show) || null, tag: "Izrāde" })),
+      ...(tree ? [{ id: "tree", title: "Egles iedegšanas pasākums", description: treeItem?.description ?? null, image: treeItem?.image || "/media/salikt/egles-iedegsana.webp", tag: "Svētku programma" }] : []),
+      ...(play
+        ? [{ id: "play", title: "Rotaļuzvedums", description: [playItem?.description, playTheme.trim() && `Tematika: ${playTheme.trim()}`].filter(Boolean).join("\n\n") || null, image: playItem?.image || null, tag: "Programma" }]
+        : []),
+      ...chosenWorkshops.map((w) => ({ id: w.id, title: w.title, description: w.description, image: w.image || fallbackImage(w.title), tag: "Radošā darbnīca" })),
+      ...chosenActivities.map((a) => ({ id: a.id, title: a.title, description: a.description, image: a.image || fallbackImage(a.title), tag: "Papildu aktivitāte" })),
+      ...pickedCharacters.map((c) => ({
+        id: `c-${c}`,
+        title: c,
+        description: characterItem?.description ?? null,
+        image: characters.find((x) => x.name === c)?.image || null,
+        tag: "Pārsteiguma tēls",
+      })),
+      ...(pickedGames.length
+        ? [{ id: "games", title: "Lielformāta spēles", description: [gamesItem?.description, pickedGames.join(", ")].filter(Boolean).join("\n\n"), image: games.find((g) => g.name === pickedGames[0])?.image || null, tag: "Spēles" }]
+        : []),
+    ];
+    const extrasList = [
+      tents ? "Teltis (atvedam mēs)" : "",
+      showChosen && ownVenue === "no" ? "Telpa izrādei (sarunāsim mēs)" : "",
+    ].filter(Boolean);
+    const meta = [season ? SEASON_SHORT[season] : "", form.eventDate ? form.eventDate.split("-").reverse().join(".") : "", `${people} dalībnieki`, `${String(hours).replace(".", ",")} h`]
+      .filter(Boolean)
+      .join(" · ");
     return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <CircleCheck className="mx-auto size-14 text-brand" aria-hidden />
-        <p className="display mt-5 text-3xl">Paldies! Izvēle nosūtīta.</p>
-        <p className="mt-3 text-white/70">Sagatavosim prezentāciju ar visām detaļām un sazināsimies ar jums tuvākajā laikā.</p>
-      </div>
+      <>
+        <style>{`
+          @page { size: A4 landscape; margin: 0; }
+          .page { width: 297mm; height: 210mm; }
+          @media print {
+            body { background: #fff !important; }
+            .page { box-shadow: none !important; margin: 0 !important; break-after: page; }
+            .page:last-child { break-after: auto; }
+          }
+        `}</style>
+        <div className="mx-auto max-w-2xl px-4 py-16 text-center print:hidden">
+          <CircleCheck className="mx-auto size-14 text-brand" aria-hidden />
+          <p className="display mt-5 text-3xl">Paldies! Izvēle nosūtīta.</p>
+          <p className="mt-3 text-white/70">Lejupielādējiet prezentāciju ar jūsu izvēlēto programmu. Mēs sazināsimies, lai precizētu detaļas un galīgo cenu.</p>
+          <button type="button" onClick={() => window.print()} className="mt-7 inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3 font-extrabold text-ink">
+            <Download className="size-4" aria-hidden /> Lejupielādēt prezentāciju (PDF)
+          </button>
+          <p className="mt-3 text-xs text-white/40">Atvērsies drukas logs — izvēlieties “Saglabāt kā PDF”.</p>
+        </div>
+        <div className="hidden bg-white text-ink print:block">
+          <PresentationPages
+            kicker="Piedāvājums"
+            client={form.companyName.trim() || clientName || "Jūsu pasākums"}
+            title={season === "summer" ? "Jūsu vasaras pasākums" : "Jūsu ziemas pasākums"}
+            meta={meta}
+            slides={slides}
+            extras={extrasList}
+            note="Cena tiks precizēta pēc sarunas."
+            contact={contact}
+            contactLine={`${contact.phoneBusiness} · ${contact.email} · www.smaidudarbnica.lv`}
+          />
+        </div>
+      </>
     );
   }
 
@@ -803,7 +862,7 @@ export default function OfferConfigurator({
 
             {step === 4 && (
               <>
-                {heading("Vieta un kontakti", "Pēc nosūtīšanas sagatavosim prezentāciju ar visām detaļām.")}
+                {heading("Vieta un kontakti")}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm font-bold text-white/70 sm:col-span-2">
                     Pasākuma adrese

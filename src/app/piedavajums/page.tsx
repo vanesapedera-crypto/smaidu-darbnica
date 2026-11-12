@@ -24,6 +24,7 @@ export default async function OfferPage({ searchParams }: Props) {
     <OfferConfigurator prices={prices} shows={shows} games={(settings.business.games ?? []).filter((g) => g.name.trim())}
       characters={(settings.programs.characters ?? []).filter((c) => c.name.trim())}
       clientName={client}
+      contact={settings.contact}
     />
   ) : (
     <div className="mx-auto max-w-2xl px-4 py-20 text-center">
