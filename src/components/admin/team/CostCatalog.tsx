@@ -77,7 +77,7 @@ export default async function CostCatalog({ db, role }: Pick<MemberContext, "db"
               <Num name="prepHour" label="Sagatavošanās un novākšana, €/h" value={settings.prepHour} />
               <Num name="prepHours" label="Sagatavošanās + novākšana darbnīcām, h (katram animatoram)" value={settings.prepHours} />
               <Num name="travelHour" label="Laiks ceļā, €/h (katram braucošajam)" value={settings.travelHour} />
-              <Num name="venueMin" label="Telpas noma izrādei — no, € (bez PVN)" value={settings.venueMin} />
+              <Num name="venueMin" label="Telpas noma izrādei — no, € (ar PVN)" value={settings.venueMin} />
               <Num name="minTotal" label="Minimālā pasūtījuma summa, € (bez PVN)" value={settings.minTotal} />
               <Num name="peakPercent" label="Piemaksa ceturtdienās un piektdienās, %" value={settings.peakPercent} />
               <Num name="decorPerWorkshop" label="Galda noformējums — par katru darbnīcu, € (bez PVN)" value={settings.decorPerWorkshop} />

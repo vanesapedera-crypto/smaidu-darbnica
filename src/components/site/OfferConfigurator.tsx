@@ -528,6 +528,7 @@ export default function OfferConfigurator({
     ...(play ? [["Rotaļuzvedums", playTheme.trim() || "uzvedums"]] : []),
     ...(tree ? [["Egles iedegšana", "pasākums"]] : []),
     ...(tents ? [["Teltis", "ārā"]] : []),
+    ...(venueSum ? [["Telpas noma izrādei", `no ${eur(venueSum)}`]] : []),
     ...chosenShows.map((x) => [x.show.title, "izrāde"]),
     ...chosenWorkshops.map((w) => [w.title, "darbnīca"]),
     ...chosenActivities.map((a) => [a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title, "aktivitāte"]),

@@ -155,7 +155,8 @@ as $$
     'prepHour', round((select prep_hour * k from s), 2),
     'prepHours', (select prep_hours from s),
     'travelHour', round((select travel_hour * k from s), 2),
-    'venueMin', round((select venue_min * vat_k from s), 2),
+    -- Telpas noma izrādei: summa ar PVN, kā ievadīta likmēs (piem. no 300 €)
+    'venueMin', (select venue_min from s),
     'minTotal', round((select min_total * vat_k from s), 2),
     'peakPercent', (select peak_percent from s),
     'decorPerWorkshop', round((select decor * vat_k from s), 2),
