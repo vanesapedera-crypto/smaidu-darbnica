@@ -1,13 +1,13 @@
 "use server";
 
-import { toSeason } from "@/lib/team/season";
+import { seasonFromForm } from "@/lib/team/season";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { canSee, isManagerRole, requireAdmin, requireMember, requireSection } from "@/lib/auth";
 import { isSection, type Section } from "@/lib/team/sections";
 import { parseItems } from "@/lib/team/workshops";
-import { computeOffer, parseCalc, parseSettings } from "@/lib/team/offer-calc";
+import { computeOffer, parseCalc, parseSettings, showPriceItem, type CostItemRow } from "@/lib/team/offer-calc";
 import { slugify } from "@/lib/admin/fields";
 import { ACCESS_COOKIE } from "@/lib/auth-cookies";
 import { cookies } from "next/headers";
@@ -257,7 +257,7 @@ export async function saveWorkshop(id: string | null, _: TeamActionState, form: 
     title,
     description: text(form, "description", 5000),
     image: text(form, "image", 500),
-    season: toSeason(form.get("season")),
+    season: seasonFromForm(form),
     items: parseItems(items),
     participants: Number.isInteger(participants) && participants > 0 && participants < 100000 ? participants : null,
     updated_at: new Date().toISOString(),
@@ -317,7 +317,7 @@ export async function saveCostItem(id: string | null, _: TeamActionState, form: 
     cost: Math.max(0, numField(form, "cost")),
     description: text(form, "description", 5000),
     image: text(form, "image", 500),
-    season: toSeason(form.get("season")),
+    season: seasonFromForm(form),
     updated_at: new Date().toISOString(),
   };
   const { error } = id ? await db.from("cost_items").update(row).eq("id", id) : await db.from("cost_items").insert(row);
@@ -519,4 +519,20 @@ export async function deletePresentation(id: string) {
   await db.from("presentations").delete().eq("id", id);
   revalidatePath("/admin/prezentacijas");
   redirect("/admin/prezentacijas?dzests=1");
+}
+
+/** Lapa "Izrādes — cenas": izrādes izmaksas un sezona (cost_items aktivitāte ar fiksētu summu "Izrāde „…”") */
+export async function saveShowPrice(form: FormData) {
+  const { db } = await requireSection("piedavajumi", true);
+  const show = text(form, "show", 200);
+  if (!show) return;
+  const { data } = await db.from("cost_items").select("*").eq("kind", "activity");
+  const existing = showPriceItem((data ?? []) as CostItemRow[], show);
+  const row = { cost: Math.max(0, numField(form, "cost")), season: seasonFromForm(form), updated_at: new Date().toISOString() };
+  if (existing) await db.from("cost_items").update(row).eq("id", existing.id);
+  else await db.from("cost_items").insert({ ...row, kind: "activity", unit: "fixed", title: `Izrāde „${show}”`, sort: 5 });
+  revalidatePath("/admin/izrades-cenas");
+  revalidatePath("/admin/izmaksas");
+  revalidatePath("/uznemumiem/salikt");
+  redirect(`/admin/izrades-cenas?saglabats=${encodeURIComponent(show)}`);
 }

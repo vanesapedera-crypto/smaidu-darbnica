@@ -51,12 +51,12 @@ export default function OfferConfigurator({ prices: allPrices, shows: allShows =
     workshops: allPrices.workshops.filter((w) => fits(w.season, season)),
     activities: allPrices.activities.filter((a) => fits(a.season, season)),
   };
-  const shows = allShows.filter((v) => fits(v.season, season));
-  // Izrādes cena — no aktivitātes "Pakalpojumos", kuras nosaukumā ir izrādes nosaukums (piem. "Izrāde „Dāvanu recepte”")
-  const showItems = shows
+  // Izrādes cena un sezona — no "💰 Cenas → Izrādes" (aktivitāte "Izrāde „Nosaukums”"); ja cenas nav — sezona no lapas "Izrādes"
+  const allShowItems = allShows
     .filter((v) => v.title.trim())
-    .map((v) => ({ show: v, price: prices.activities.find((a) => isShow(a) && norm(a.title).includes(norm(v.title))) }));
-  const matched = new Set(showItems.map((x) => x.price?.id).filter(Boolean));
+    .map((v) => ({ show: v, price: allPrices.activities.find((a) => isShow(a) && norm(a.title).includes(norm(v.title))) }));
+  const showItems = allShowItems.filter((x) => fits(x.price ? x.price.season : x.show.season, season));
+  const matched = new Set(allShowItems.map((x) => x.price?.id).filter(Boolean));
   const otherActivities = prices.activities.filter((a) => !matched.has(a.id));
   const [pickedShows, setPickedShows] = useState<string[]>([]);
   const [participants, setParticipants] = useState(30);

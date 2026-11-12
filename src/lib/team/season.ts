@@ -14,3 +14,10 @@ export function toSeason(v: unknown): Season {
   if (t === "xmas" || t.startsWith("ziem")) return "xmas";
   return "all";
 }
+
+/** Divas atzīmes formā ("season_summer", "season_xmas") → sezona: abas vai neviena — visu gadu */
+export function seasonFromForm(form: FormData): Season {
+  const summer = form.get("season_summer") === "on";
+  const xmas = form.get("season_xmas") === "on";
+  return summer && !xmas ? "summer" : xmas && !summer ? "xmas" : "all";
+}

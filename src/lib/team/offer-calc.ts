@@ -212,3 +212,10 @@ export const parseSettings = (raw: unknown): CalcSettings => {
     perAnimator: n(o.perAnimator ?? DEFAULT_CALC_SETTINGS.perAnimator) || DEFAULT_CALC_SETTINGS.perAnimator,
   };
 };
+
+/** Izrādes nosaukums salīdzināšanai (bez pēdiņām, mazajiem burtiem) */
+export const normTitle = (t: string) => t.toLowerCase().replace(/[„”“"'«»]/g, "").replace(/\s+/g, " ").trim();
+
+/** Izrādes cenas ieraksts izmaksu katalogā: aktivitāte, kuras nosaukumā ir "izrāde" un izrādes nosaukums */
+export const showPriceItem = (items: CostItemRow[], show: string) =>
+  items.find((i) => i.kind === "activity" && /izrād/i.test(i.title) && normTitle(i.title).includes(normTitle(show)));

@@ -42,8 +42,8 @@ const groups: Group[] = [
       { href: "/admin/darbnicas", label: "Radošās darbnīcas", icon: Palette, section: "darbnicas" },
       { href: "/admin/izejmateriali", label: "Izejmateriāli", icon: Package, section: "darbnicas" },
       { href: "/admin/izmaksas", label: "Pakalpojumi", icon: Coins, section: "piedavajumi" },
-      // Izrādes (apraksts, video, sezona) — lapai "Salikt piedāvājumu"; cenu izrādei ieraksta "Pakalpojumos"
-      { href: "/admin/iestatijumi/shows", label: "Izrādes", icon: Clapperboard, ownerOnly: true },
+      // Izrāžu izmaksas un sezona — lapai "Salikt piedāvājumu"
+      { href: "/admin/izrades-cenas", label: "Izrādes", icon: Clapperboard, section: "piedavajumi" },
     ],
   },
 ];
