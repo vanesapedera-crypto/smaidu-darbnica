@@ -6,6 +6,7 @@ import { Car, Check, CircleCheck, LoaderCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
+import { fallbackImage } from "@/lib/salikt-images";
 
 type Unit = "hour" | "person" | "piece" | "fixed";
 type Workshop = { id: string; title: string; description: string | null; image: string | null; season?: string | null; perPerson: number };
@@ -46,37 +47,6 @@ const isShow = (a: Activity) => /izrād/i.test(a.title);
 /** Izrāde no lapas "Izrādes" (panelī: Iestatījumi → Izrādes) */
 export type ShowInfo = { title: string; src: string; poster: string; duration?: string; audience?: string; season?: string; description?: string };
 
-/**
- * Bildes no public/media/salikt — ja darbnīcai, aktivitātei vai izrādei panelī nav savas bildes,
- * to izvēlas pēc nosaukuma (piem. "Sejas apgleznošana" → sejas-apgleznosana.webp).
- */
-const KEYWORD_IMAGES: [RegExp, string][] = [
-  [/piparkūk/i, "piparkukas"],
-  [/sejas|sejiņ/i, "sejas-apgleznosana"],
-  [/glit/i, "glitera-tetovejumi"],
-  [/mirdz/i, "mirdzumins"],
-  [/burbu/i, "burbuli"],
-  [/putu/i, "putu-ballite"],
-  [/slaim/i, "slaims"],
-  [/eksperiment|pētniek/i, "eksperimenti"],
-  [/virtu|donut/i, "virtuli"],
-  [/cepum/i, "cepumu-apgleznosana"],
-  [/keks|kēks|kūciņ/i, "keksini"],
-  [/zobeni/i, "kroni-zils"],
-  [/kroņ|kroni/i, "kroni"],
-  [/piesprau/i, "piespraudes"],
-  [/olaf/i, "olafs"],
-  [/balon/i, "tels-baloni"],
-  [/tēl/i, "tels-suns"],
-  [/vadīt|vadītāj|organiz/i, "pasakuma-vaditaja"],
-  [/lent|deju|kustīb/i, "lentes"],
-  [/apglezno|krāso|tekstil|maisiņ|krekl|nospied/i, "apgleznosana"],
-  [/egl|ziemassvētk/i, "egles-iedegsana"],
-];
-const fallbackImage = (title: string) => {
-  const hit = KEYWORD_IMAGES.find(([re]) => re.test(title));
-  return hit ? `/media/salikt/${hit[1]}.webp` : null;
-};
 const SEASON_IMAGE = { summer: "/media/salikt/burbuli.webp", xmas: "/media/salikt/egles-iedegsana.webp" } as const;
 
 type Season = "summer" | "xmas";
@@ -313,6 +283,17 @@ export default function OfferConfigurator({
       // eslint-disable-next-line @next/next/no-img-element -- bildes no paneļa (jebkura adrese)
       <img src={src} alt={alt} className="aspect-[4/3] w-full object-cover" />
     ) : null;
+  // "Vairāk informācijas" — apraksts un bilde (tie paši, kas prezentācijā) jaunā cilnē, lai izvēle šeit nepazūd
+  const moreInfo = (id: string, query = "") => (
+    <a
+      href={`/uznemumiem/salikt/info/${id}${query}`}
+      target="_blank"
+      rel="noopener"
+      className="border-t border-line px-4 py-2.5 text-sm font-bold underline decoration-brand decoration-2 underline-offset-4 hover:bg-surface"
+    >
+      Vairāk informācijas →
+    </a>
+  );
   const unitText = (a: Activity) => (a.unit === "hour" ? "visu pasākuma laiku" : a.unit === "piece" ? "izvēlieties skaitu" : a.unit === "person" ? "katram dalībniekam" : "");
 
   return (
@@ -435,7 +416,8 @@ export default function OfferConfigurator({
                 const active = workshops.includes(w.id);
                 return (
                   <li key={w.id}>
-                    <label className={card(active)}>
+                    <div className={card(active)}>
+                    <label className="flex flex-1 cursor-pointer flex-col">
                       <input type="checkbox" checked={active} onChange={() => toggleWorkshop(w.id)} className="sr-only" />
                       {picture(w.image || fallbackImage(w.title), w.title)}
                       <span className="flex flex-1 items-start gap-3 p-4">
@@ -447,6 +429,8 @@ export default function OfferConfigurator({
                         </span>
                       </span>
                     </label>
+                    {moreInfo(w.id)}
+                    </div>
                   </li>
                 );
               })}
@@ -477,6 +461,7 @@ export default function OfferConfigurator({
                           </span>
                         </span>
                       </label>
+                      {moreInfo(a.id)}
                       {active && a.unit === "piece" && (
                         <label className="flex items-center gap-2 border-t border-line px-4 py-3 text-sm font-bold">
                           Skaits
@@ -508,7 +493,8 @@ export default function OfferConfigurator({
                 const active = pickedGames.includes(g.name);
                 return (
                   <li key={g.name}>
-                    <label className={card(active)}>
+                    <div className={card(active)}>
+                    <label className="flex flex-1 cursor-pointer flex-col">
                       <input
                         type="checkbox"
                         checked={active}
@@ -526,6 +512,9 @@ export default function OfferConfigurator({
                         <span className="text-sm font-extrabold">{g.name}</span>
                       </span>
                     </label>
+                    {/* Visām spēlēm — viens apraksts (aktivitātes "Lielformāta spēles" apraksts), bilde — konkrētās spēles */}
+                    {gamesItem && moreInfo(gamesItem.id, `?spele=${encodeURIComponent(g.name)}`)}
+                    </div>
                   </li>
                 );
               })}
