@@ -70,7 +70,7 @@ const KEYWORD_IMAGES: [RegExp, string][] = [
   [/tēl/i, "tels-suns"],
   [/vadīt|vadītāj|organiz/i, "pasakuma-vaditaja"],
   [/lent|deju|kustīb/i, "lentes"],
-  [/apglezno|krāso|tekstil|maisiņ/i, "apgleznosana"],
+  [/apglezno|krāso|tekstil|maisiņ|krekl|nospied/i, "apgleznosana"],
   [/egl|ziemassvētk/i, "egles-iedegsana"],
 ];
 const fallbackImage = (title: string) => {

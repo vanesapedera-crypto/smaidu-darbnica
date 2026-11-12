@@ -77,3 +77,33 @@ from (values
   ('Putu ballīte', 56)
 ) as v(title, sort)
 where not exists (select 1 from public.cost_items c where lower(c.title) = lower(v.title));
+
+-- 6) Radošās darbnīcas (materiālus un cenas ievada 💰 Cenas → Radošās darbnīcas).
+--    Esošās pārsauc, lai nebūtu dublikātu (materiāli saglabājas).
+update public.workshops set title = 'Kroņu darbnīca' where lower(title) = 'kroņi'
+  and not exists (select 1 from public.workshops w where lower(w.title) = 'kroņu darbnīca');
+update public.workshops set title = 'Fejas nūjiņas' where lower(title) = 'feju nūjiņas'
+  and not exists (select 1 from public.workshops w where lower(w.title) = 'fejas nūjiņas');
+update public.workshops set title = 'Sveču dekorēšanas darbnīca' where lower(title) = 'sveču darbnīca'
+  and not exists (select 1 from public.workshops w where lower(w.title) = 'sveču dekorēšanas darbnīca');
+
+insert into public.workshops (title, items, season)
+select v.title, '[]'::jsonb, v.season
+from (values
+  ('Piparkūku dekorēšana', 'xmas'),
+  ('Slaimu veidošana', 'all'),
+  ('Keksiņu dekorēšana', 'all'),
+  ('Piparkūku krāsošana', 'xmas'),
+  ('Kroņu darbnīca', 'all'),
+  ('Fejas nūjiņas', 'all'),
+  ('Virtuļu darbnīca', 'all'),
+  ('T-kreklu darbnīca', 'all'),
+  ('Eglīšu rotājumi', 'xmas'),
+  ('Nospiedumu glezna', 'all'),
+  ('Koka vilciņu darbnīca', 'all'),
+  ('Piekariņu darbnīca', 'all'),
+  ('Aploksnītes', 'all'),
+  ('Rokassprādzes', 'all'),
+  ('Sveču dekorēšanas darbnīca', 'all')
+) as v(title, season)
+where not exists (select 1 from public.workshops w where lower(w.title) = lower(v.title));
