@@ -20,26 +20,14 @@ export default async function OfferPage({ searchParams }: Props) {
   const prices = !error && data ? (data as ConfiguratorPrices) : null;
   const shows = settings.shows.videos ?? [];
 
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-      <p className="text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase">Pasākuma piedāvājums</p>
-      <h1 className="display mt-3 text-4xl sm:text-5xl">{client ? `Sveiki, ${client}!` : "Salieciet savu pasākumu"}</h1>
-      <p className="mt-4 max-w-2xl text-lg leading-8 text-ink-soft">
-        Atzīmējiet, ko vēlaties savā pasākumā — aptuvenā cena parādās uzreiz. Nosūtiet izvēli, un mēs sagatavosim prezentāciju ar
-        visām detaļām.
+  return prices ? (
+    <OfferConfigurator prices={prices} shows={shows} games={(settings.business.games ?? []).filter((g) => g.name.trim())} clientName={client} />
+  ) : (
+    <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+      <p className="display text-2xl">Piedāvājuma salikšana šobrīd nav pieejama.</p>
+      <p className="mt-3 text-white/60">
+        Zvaniet {settings.contact.phoneBusiness} vai rakstiet {settings.contact.email} — sagatavosim piedāvājumu jūsu pasākumam.
       </p>
-      <div className="mt-10">
-        {prices ? (
-          <OfferConfigurator prices={prices} shows={shows} games={(settings.business.games ?? []).filter((g) => g.name.trim())} clientName={client} />
-        ) : (
-          <div className="rounded-3xl bg-white p-8 text-center">
-            <p className="text-lg font-bold">Piedāvājuma salikšana šobrīd nav pieejama.</p>
-            <p className="mt-2 text-ink-soft">
-              Zvaniet {settings.contact.phoneBusiness} vai rakstiet {settings.contact.email} — sagatavosim piedāvājumu jūsu pasākumam.
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

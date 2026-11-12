@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Car, Check, CircleCheck, LoaderCircle, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Check, CircleCheck, LoaderCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { buttonClass } from "./ui";
-import { Field, Honeypot, inputClass } from "./form";
+import { Honeypot } from "./form";
 import { fallbackImage } from "@/lib/salikt-images";
 
 type Unit = "hour" | "person" | "piece" | "fixed";
@@ -50,7 +49,10 @@ export type ShowInfo = { title: string; src: string; poster: string; duration?: 
 const SEASON_IMAGE = { summer: "/media/salikt/burbuli.webp", xmas: "/media/salikt/egles-iedegsana.webp" } as const;
 
 type Season = "summer" | "xmas";
-const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas: "Ziemassvētku pasākums" };
+const SEASON_LABEL: Record<Season, string> = { summer: "Vasaras pasākums", xmas: "Ziemas pasākums" };
+const SEASON_SHORT: Record<Season, string> = { summer: "Vasara", xmas: "Ziema" };
+/** Soļi (secība lapā) */
+const STEPS = ["Sezona", "Izrādes", "Darbnīcas", "Aktivitātes", "Pamatinfo", "Kontakti"] as const;
 /** Vai darbnīca / aktivitāte / izrāde der izvēlētajai sezonai (bez sezonas — visu gadu) */
 const fits = (itemSeason: string | null | undefined, season: Season | "") =>
   Boolean(season) && (!itemSeason || itemSeason === "all" || itemSeason === season);
@@ -112,6 +114,9 @@ export default function OfferConfigurator({
   const [startedAt] = useState(() => Date.now());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [step, setStep] = useState(0);
+  // Uzspiestā kartīte — tās apraksts labajā pusē ("w:<id>", "a:<id>", "g:<spēle>")
+  const [focus, setFocus] = useState("");
 
   const people = Math.max(0, participants || 0);
   const chosenWorkshops = prices.workshops.filter((w) => workshops.includes(w.id));
@@ -185,7 +190,7 @@ export default function OfferConfigurator({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const missing: Record<string, string> = {};
-    if (!season) missing.choice = "Izvēlieties, vai tas ir vasaras vai Ziemassvētku pasākums.";
+    if (!season) missing.choice = "Izvēlieties, vai tas ir vasaras vai ziemas pasākums.";
     else if (!anything) missing.choice = "Atzīmējiet vismaz vienu izrādi, darbnīcu vai aktivitāti.";
     if (showChosen && !ownVenue) missing.venue = "Norādiet, vai izrādei ir sava telpa.";
     if (!form.companyName.trim()) missing.companyName = "Norādiet uzņēmumu.";
@@ -195,6 +200,9 @@ export default function OfferConfigurator({
     if (!form.consent) missing.consent = "Nepieciešama piekrišana datu apstrādei.";
     if (Object.keys(missing).length) {
       setErrors(missing);
+      // Uz soli, kurā ir kļūda
+      if (missing.choice) setStep(0);
+      else if (missing.venue) setStep(1);
       return;
     }
 
@@ -266,402 +274,460 @@ export default function OfferConfigurator({
     }
   }
 
+
+  const next = () => {
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    setFocus("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const back = () => {
+    setStep((s) => Math.max(0, s - 1));
+    setFocus("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (state === "sent") {
     return (
-      <div className="rounded-3xl bg-brand p-10 text-center">
-        <CircleCheck className="mx-auto size-12" aria-hidden />
-        <p className="mt-4 display text-2xl">Paldies! Pieteikums nosūtīts.</p>
-        <p className="mt-2">Sazināsimies ar jums tuvākajā laikā, lai precizētu detaļas un galīgo cenu.</p>
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <CircleCheck className="mx-auto size-14 text-brand" aria-hidden />
+        <p className="display mt-5 text-3xl">Paldies! Izvēle nosūtīta.</p>
+        <p className="mt-3 text-white/70">Sagatavosim prezentāciju ar visām detaļām un sazināsimies ar jums tuvākajā laikā.</p>
       </div>
     );
   }
 
-  const card = (active: boolean) =>
-    cn(
-      "flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border-2 bg-white transition-colors",
-      active ? "border-ink ring-3 ring-brand" : "border-line hover:border-ink",
-    );
-  const picture = (src: string | null, alt: string) =>
-    src ? (
-      // eslint-disable-next-line @next/next/no-img-element -- bildes no paneļa (jebkura adrese)
-      <img src={src} alt={alt} className="aspect-[4/3] w-full object-cover" />
-    ) : null;
-  // "Vairāk informācijas" — apraksts un bilde (tie paši, kas prezentācijā) jaunā cilnē, lai izvēle šeit nepazūd
-  const moreInfo = (id: string, query = "") => (
-    <a
-      href={`/piedavajums/info/${id}${query}`}
-      target="_blank"
-      rel="noopener"
-      className="border-t border-line px-4 py-2.5 text-sm font-bold underline decoration-brand decoration-2 underline-offset-4 hover:bg-surface"
-    >
-      Vairāk informācijas →
-    </a>
-  );
   const unitText = (a: Activity) => (a.unit === "hour" ? "visu pasākuma laiku" : a.unit === "piece" ? "izvēlieties skaitu" : a.unit === "person" ? "katram dalībniekam" : "");
+  const eye = "text-[11px] font-extrabold tracking-[0.22em] text-brand uppercase";
+  const field = "mt-1.5 block w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/30 focus:border-brand";
+  const pill = (on: boolean) =>
+    cn("rounded-full border-2 px-4 py-1.5 text-sm font-extrabold whitespace-nowrap transition-colors", on ? "border-brand bg-brand text-ink" : "border-white/70 hover:border-brand");
+
+  // Kartīte ar bildi un nosaukumu uz tās. Uzspiežot — apraksts labajā pusē; uzspiežot vēlreiz — atzīmē / noņem
+  const tile = (key: string, title: string, image: string | null, on: boolean, toggle: () => void, contain = false) => (
+    <li key={key}>
+      <button
+        type="button"
+        onClick={() => (focus === key ? toggle() : setFocus(key))}
+        className={cn(
+          "relative block aspect-square w-full overflow-hidden rounded-xl border-2 text-left transition",
+          on ? "border-brand" : "border-transparent",
+          focus === key && "ring-2 ring-white",
+        )}
+      >
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- bildes no paneļa vai public/media
+          <img src={image} alt="" className={cn("size-full", contain ? "bg-white object-contain p-2" : "object-cover")} />
+        ) : (
+          <span className="block size-full bg-white/5" />
+        )}
+        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-2.5 pt-6 pb-2 text-[13px] leading-tight font-extrabold text-white">
+          {title}
+        </span>
+        {on && (
+          <span className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-brand text-ink">
+            <Check className="size-4" strokeWidth={3} aria-hidden />
+          </span>
+        )}
+      </button>
+    </li>
+  );
+
+  // Uzspiestās kartītes apraksts
+  const focused = (() => {
+    const [kind, id] = [focus.slice(0, 1), focus.slice(2)];
+    if (kind === "w") {
+      const w = prices.workshops.find((x) => x.id === id);
+      return w && { title: w.title, image: w.image || fallbackImage(w.title), text: w.description, on: workshops.includes(w.id), toggle: () => toggleWorkshop(w.id) };
+    }
+    if (kind === "a") {
+      const a = otherActivities.find((x) => x.id === id);
+      return (
+        a && { title: a.title, image: a.image || fallbackImage(a.title), text: a.description, note: unitText(a), on: activities[a.id] !== undefined, toggle: () => toggleActivity(a.id), piece: a.unit === "piece" ? a : undefined }
+      );
+    }
+    if (kind === "g") {
+      const g = games.find((x) => x.name === id);
+      return g && { title: g.name, image: g.image, text: gamesItem?.description ?? null, on: pickedGames.includes(g.name), toggle: () => setPickedGames((gs) => (gs.includes(g.name) ? gs.filter((x) => x !== g.name) : [...gs, g.name])) };
+    }
+    return null;
+  })();
+
+  const infoPanel = focused ? (
+    <div key={focus} className="animate-in fade-in rounded-2xl border border-brand bg-white/[0.04] p-4">
+      {focused.image && (
+        // eslint-disable-next-line @next/next/no-img-element -- bilde no paneļa vai public/media
+        <img src={focused.image} alt="" className="aspect-[2/1] w-full rounded-lg object-cover" />
+      )}
+      <p className="display mt-3 text-lg">{focused.title}</p>
+      {"note" in focused && focused.note && <p className="text-xs font-semibold text-white/50">{focused.note}</p>}
+      <p className="mt-2 text-sm leading-6 whitespace-pre-line text-white/70">{focused.text || "Sīkāku aprakstu nosūtīsim prezentācijā."}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={focused.toggle} className={pill(focused.on)}>
+          {focused.on ? "✓ Izvēlēts" : "+ Pievienot"}
+        </button>
+        {"piece" in focused && focused.piece && focused.on && (
+          <label className="flex items-center gap-2 text-sm font-bold">
+            Skaits
+            <input
+              type="number"
+              min={1}
+              value={activities[focused.piece.id] || ""}
+              onChange={(e) => setActivities((as) => ({ ...as, [focused.piece!.id]: Math.max(1, Number(e.target.value) || 1) }))}
+              className="w-16 rounded-lg border border-white/20 bg-transparent px-2 py-1"
+            />
+          </label>
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  const summaryItems = [
+    ...chosenShows.map((x) => [x.show.title, "izrāde"]),
+    ...chosenWorkshops.map((w) => [w.title, "darbnīca"]),
+    ...chosenActivities.map((a) => [a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title, "aktivitāte"]),
+    ...(pickedGames.length ? [[`Lielformāta spēles × ${pickedGames.length}`, "spēles"]] : []),
+    ...(travel.status === "ok" && travel.cost ? [["Ceļa izdevumi", `${travel.km} km`]] : []),
+  ];
+  const summary = (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+      <p className={eye}>Aptuvenā cena</p>
+      <p className="display mt-1.5 text-3xl text-brand">{anything ? eur(approx(total)) : "—"}</p>
+      <p className="text-sm text-white/50">ar PVN{extras ? ` + ${extras}` : ""}</p>
+      {summaryItems.length > 0 && (
+        <ul className="mt-3 border-t border-dashed border-white/15 text-sm">
+          {summaryItems.map(([t, k]) => (
+            <li key={t + k} className="flex justify-between gap-3 border-b border-dashed border-white/15 py-2">
+              <span>✓ {t}</span>
+              <span className="shrink-0 text-white/40">{k}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-xs leading-5 text-white/40">
+        {people} dalībnieki · {String(hours).replace(".", ",")} h{form.eventDate ? ` · ${form.eventDate.split("-").reverse().join(".")}` : ""}
+        {peak > 0 && <><br />Iekļauta piemaksa ceturtdienai/piektdienai (+{prices.peakPercent} %).</>}
+        {anything && atMinimum && <><br />Minimālā pasūtījuma summa — {eur(prices.minTotal ?? 0)}.</>}
+        <br />Cena ir aptuvena — galīgo apstiprināsim pēc sarunas.
+      </p>
+    </div>
+  );
+
+  const heading = (title: string, lead?: string) => (
+    <div className="mb-5">
+      <p className={eye}>
+        {step + 1}. solis no {STEPS.length}
+      </p>
+      <h2 className="display mt-1.5 text-2xl sm:text-3xl">{title}</h2>
+      {lead && <p className="mt-1.5 text-white/60">{lead}</p>}
+    </div>
+  );
+  const grid = "grid grid-cols-3 gap-2.5 sm:grid-cols-4";
+  const empty = <p className="rounded-xl bg-white/5 p-5 text-sm text-white/60">Šai sezonai šeit nekā nav — spiediet “Tālāk”.</p>;
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <form onSubmit={submit} noValidate className="text-white">
       <Honeypot value={website} onChange={setWebsite} />
-      <div className="space-y-10">
-        {/* Sezona — no tās atkarīgs, kas parādās sarakstos */}
-        <section>
-          <h2 className="display text-2xl">Kāds pasākums?</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {(Object.keys(SEASON_LABEL) as Season[]).map((v) => (
-              <label
-                key={v}
-                className={cn(
-                  "relative flex aspect-[16/9] cursor-pointer items-end overflow-hidden rounded-2xl border-2 bg-ink p-5 text-lg font-extrabold text-white transition-colors",
-                  season === v ? "border-ink ring-4 ring-brand" : "border-line hover:border-ink",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="season"
-                  checked={season === v}
-                  onChange={() => {
-                    setSeason(v);
-                    // Mainot sezonu, citas sezonas izvēles notīra
-                    setWorkshops([]);
-                    setActivities({});
-                    setPickedShows([]);
-                    setPickedGames([]);
-                    setOwnVenue("");
-                  }}
-                  className="sr-only"
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element -- sezonas bilde */}
-                <img src={SEASON_IMAGE[v]} alt="" className={cn("absolute inset-0 size-full object-cover transition-opacity", season && season !== v ? "opacity-40" : "opacity-80")} />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <span className="relative">
-                {v === "summer" ? "☀️ " : "🎄 "}
-                {SEASON_LABEL[v]}
-                </span>
-              </label>
-            ))}
-          </div>
-        </section>
 
-        {season && (
-        <>
-        {/* 1. Pamatinformācija */}
-        <section className="grid gap-4 sm:grid-cols-3">
-          <Field id="participants" label="Dalībnieku skaits">
-            <input id="participants" type="number" min={1} value={participants || ""} onChange={(e) => setParticipants(Number(e.target.value))} className={inputClass} />
-          </Field>
-          <Field id="eventDate" label="Pasākuma datums"
-            hint={peak ? `Ceturtdienās un piektdienās — piemaksa ${prices.peakPercent} %.` : undefined} error={errors.eventDate}>
-            <input id="eventDate" type="date" value={form.eventDate} onChange={set("eventDate")} className={inputClass} />
-          </Field>
-          <Field id="hours" label="Pasākuma ilgums, stundas">
-            <select id="hours" value={hours} onChange={(e) => setHours(Number(e.target.value))} className={inputClass}>
-              {[1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
-                <option key={h} value={h}>
-                  {String(h).replace(".", ",")} h
-                </option>
-              ))}
-            </select>
-          </Field>
-        </section>
-
-        {/* Izrādes — ar video, ilgumu un aprakstu no lapas "Izrādes" */}
-        {showItems.length > 0 && (
-          <section>
-            <h2 className="display text-2xl">Izrādes</h2>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-              {showItems.map(({ show: v }) => {
-                const active = pickedShows.includes(v.title);
-                const poster = showPoster(v);
-                return (
-                  <li key={v.title}>
-                    <div className={card(active)}>
-                      <label className="flex flex-1 cursor-pointer flex-col">
-                        <input
-                          type="checkbox"
-                          checked={active}
-                          onChange={() => setPickedShows((ps) => (ps.includes(v.title) ? ps.filter((x) => x !== v.title) : [...ps, v.title]))}
-                          className="sr-only"
-                        />
-                        {picture(poster || fallbackImage(v.title), v.title)}
-                        <span className="flex flex-1 items-start gap-3 p-4">
-                          <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
-                            {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
-                          </span>
-                          <span>
-                            <span className="block font-extrabold">{v.title}</span>
-                            {(v.duration || v.audience) && (
-                              <span className="block text-xs font-semibold text-ink-soft">{[v.duration, v.audience].filter(Boolean).join(" · ")}</span>
-                            )}
-                            {v.description && <span className="mt-1 block text-sm whitespace-pre-line text-ink-soft">{v.description.replace(/\*\*/g, "")}</span>}
-                          </span>
-                        </span>
-                      </label>
-                      {v.src && (
-                        <a href={v.src} target="_blank" rel="noreferrer" className="border-t border-line px-4 py-3 text-sm font-bold underline decoration-brand decoration-2 underline-offset-4">
-                          Skatīties video
-                        </a>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-
-        {/* 2. Radošās darbnīcas */}
-        {prices.workshops.length > 0 && (
-          <section>
-            <h2 className="display text-2xl">Radošās darbnīcas</h2>
-            <p className="mt-1 text-ink-soft">Var izvēlēties vairākas. Aprakstus un bildes nosūtīsim prezentācijā.</p>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {prices.workshops.map((w) => {
-                const active = workshops.includes(w.id);
-                return (
-                  <li key={w.id}>
-                    <div className={card(active)}>
-                    <label className="flex flex-1 cursor-pointer flex-col">
-                      <input type="checkbox" checked={active} onChange={() => toggleWorkshop(w.id)} className="sr-only" />
-                      {picture(w.image || fallbackImage(w.title), w.title)}
-                      <span className="flex flex-1 items-start gap-3 p-4">
-                        <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
-                          {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
-                        </span>
-                        <span>
-                          <span className="block font-extrabold">{w.title}</span>
-                        </span>
-                      </span>
-                    </label>
-                    {moreInfo(w.id)}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-
-        {/* 3. Aktivitātes un izrādes */}
-        {otherActivities.length > 0 && (
-          <section>
-            <h2 className="display text-2xl">Papildu aktivitātes</h2>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {otherActivities.map((a) => {
-                const active = activities[a.id] !== undefined;
-                return (
-                  <li key={a.id}>
-                    <div className={card(active)}>
-                      <label className="flex flex-1 cursor-pointer flex-col">
-                        <input type="checkbox" checked={active} onChange={() => toggleActivity(a.id)} className="sr-only" />
-                        {picture(a.image || fallbackImage(a.title), a.title)}
-                        <span className="flex flex-1 items-start gap-3 p-4">
-                          <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
-                            {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
-                          </span>
-                          <span>
-                            <span className="block font-extrabold">{a.title}</span>
-                            {unitText(a) && <span className="block text-xs font-semibold text-ink-soft">{unitText(a)}</span>}
-                          </span>
-                        </span>
-                      </label>
-                      {moreInfo(a.id)}
-                      {active && a.unit === "piece" && (
-                        <label className="flex items-center gap-2 border-t border-line px-4 py-3 text-sm font-bold">
-                          Skaits
-                          <input
-                            type="number"
-                            min={1}
-                            value={activities[a.id] || ""}
-                            onChange={(e) => setActivities((as) => ({ ...as, [a.id]: Math.max(1, Number(e.target.value) || 1) }))}
-                            className="w-20 rounded-lg border border-input px-2 py-1.5"
-                          />
-                        </label>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-
-          </section>
-        )}
-
-        {/* Lielformāta spēles — izvēlas konkrētas pēc bildēm */}
-        {games.length > 0 && (
-          <section>
-            <h2 className="display text-2xl">Lielformāta spēles</h2>
-            <p className="mt-1 text-ink-soft">Atzīmējiet spēles, kuras vēlaties.</p>
-            <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-              {games.map((g) => {
-                const active = pickedGames.includes(g.name);
-                return (
-                  <li key={g.name}>
-                    <div className={card(active)}>
-                    <label className="flex flex-1 cursor-pointer flex-col">
-                      <input
-                        type="checkbox"
-                        checked={active}
-                        onChange={() => setPickedGames((gs) => (gs.includes(g.name) ? gs.filter((x) => x !== g.name) : [...gs, g.name]))}
-                        className="sr-only"
-                      />
-                      {g.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- spēles bilde no paneļa
-                        <img src={g.image} alt={g.name} className="aspect-square w-full bg-white object-contain p-2" />
-                      ) : null}
-                      <span className="flex flex-1 items-center gap-2 p-3">
-                        <span className={cn("grid size-5 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
-                          {active && <Check className="size-3.5" strokeWidth={3} aria-hidden />}
-                        </span>
-                        <span className="text-sm font-extrabold">{g.name}</span>
-                      </span>
-                    </label>
-                    {/* Visām spēlēm — viens apraksts (aktivitātes "Lielformāta spēles" apraksts), bilde — konkrētās spēles */}
-                    {gamesItem && moreInfo(gamesItem.id, `?spele=${encodeURIComponent(g.name)}`)}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-
-        {/* Izrādei — vai klientam ir sava telpa */}
-        {showChosen && (
-          <fieldset className="mt-5 rounded-2xl bg-surface p-5">
-            <legend className="sr-only">Telpa izrādei</legend>
-            <p className="font-bold">
-              Telpa izrādei<span className="ml-0.5 text-destructive" aria-hidden> *</span>
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {(
-                [
-                  ["yes", "Mums ir sava telpa"],
-                  ["no", "Telpu jānodrošina jums"],
-                ] as const
-              ).map(([v, l]) => (
-                <label key={v} className={cn("flex cursor-pointer items-center gap-3 rounded-xl border-2 bg-white p-3 text-sm font-bold", ownVenue === v ? "border-ink" : "border-line")}>
-                  <input type="radio" name="venue" checked={ownVenue === v} onChange={() => setOwnVenue(v)} className="size-5 accent-ink" />
-                  {l}
-                </label>
-              ))}
-            </div>
-            {ownVenue === "no" && (
-          <p className="mt-3 text-sm text-ink-soft">
-            Telpas noma — no {eur(prices.venueMin ?? 0)} (ar PVN), atkarībā no konkrētās telpas. Aptuvenajā cenā ir iekļauta minimālā summa, precīzu cenu saskaņosim ar jums.
-          </p>
-        )}
-            {errors.venue && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{errors.venue}</p>}
-          </fieldset>
-        )}
-
-        </>
-        )}
-
-        {/* 4. Norises vieta — ceļa izdevumi */}
-        <section>
-          <h2 className="display text-2xl">Norises vieta</h2>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <input
-              value={address}
-              onChange={(e) => {
-                setAddress(e.target.value);
-                setTravel({ status: "idle" });
-              }}
-              onBlur={quoteTravel}
-              placeholder="Adrese, piem. Rīgas iela 1, Jelgava, LV-3001"
-              className={inputClass}
-            />
-            <button type="button" onClick={quoteTravel} className={cn(buttonClass("outline"), "shrink-0")}>
-              {travel.status === "loading" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Car className="size-4" aria-hidden />}
-              Aprēķināt ceļu
-            </button>
-          </div>
-          {travel.status === "ok" && (
-            <p className="mt-2 text-sm text-ink-soft">
-              {travel.km} km turp un atpakaļ{travel.cost ? "" : " — ceļa izdevumu nav"}.
-              {travel.far && " Braucieniem 100 km un tālāk no Tukuma ceļa izdevumi var būt līdz 0,50 €/km — aptuvenajā cenā tie jau iekļauti."}
-            </p>
-          )}
-          {travel.status === "error" && <p className="mt-2 text-sm text-ink-soft">{travel.error ?? "Ceļa izdevumus precizēsim."}</p>}
-        </section>
-
-        {/* 5. Kontakti */}
-        <section className="grid gap-4 sm:grid-cols-2">
-          <h2 className="display text-2xl sm:col-span-2">Jūsu kontakti</h2>
-          <Field id="companyName" label="Uzņēmums" required error={errors.companyName}>
-            <input id="companyName" value={form.companyName} onChange={set("companyName")} className={inputClass} />
-          </Field>
-          <Field id="parentName" label="Kontaktpersona" required error={errors.parentName}>
-            <input id="parentName" value={form.parentName} onChange={set("parentName")} className={inputClass} />
-          </Field>
-          <Field id="phone" label="Telefons" required error={errors.phone}>
-            <input id="phone" type="tel" value={form.phone} onChange={set("phone")} className={inputClass} />
-          </Field>
-          <Field id="email" label="E-pasts" required error={errors.email}>
-            <input id="email" type="email" value={form.email} onChange={set("email")} className={inputClass} />
-          </Field>
-          <Field id="message" label="Papildu informācija" className="sm:col-span-2">
-            <textarea id="message" rows={3} value={form.message} onChange={set("message")} className={inputClass} />
-          </Field>
-          <label className="flex items-start gap-3 text-sm sm:col-span-2">
-            <input
-              type="checkbox"
-              checked={form.consent}
-              onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))}
-              className="mt-1 size-5 shrink-0 accent-ink"
-            />
-            <span>
-              Piekrītu, ka mani dati tiek apstrādāti, lai sagatavotu piedāvājumu.{" "}
-              <Link href="/privatuma-politika" className="link-underline">
-                Privātuma politika
-              </Link>
-            </span>
-          </label>
-          {errors.consent && <p role="alert" className="text-sm font-semibold text-destructive sm:col-span-2">{errors.consent}</p>}
-        </section>
+      {/* Galvene ar sezonas bildi */}
+      <div className="relative h-36 overflow-hidden sm:h-40">
+        {/* eslint-disable-next-line @next/next/no-img-element -- sezonas bilde */}
+        <img src={SEASON_IMAGE[season || "xmas"]} alt="" className="absolute inset-0 size-full object-cover opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#121110] to-transparent" />
+        <div className="relative mx-auto flex h-full max-w-6xl flex-col justify-end px-4 pb-5 sm:px-6">
+          <p className={eye}>Piedāvājums{clientName ? ` · ${clientName}` : ""}</p>
+          <h1 className="display mt-1.5 text-2xl sm:text-3xl">
+            {season === "summer" ? "Jūsu vasaras pasākums" : season === "xmas" ? "Jūsu ziemas pasākums" : clientName ? `Sveiki, ${clientName}!` : "Salieciet savu pasākumu"}
+          </h1>
+        </div>
       </div>
 
-      {/* Kopsavilkums ar aptuveno cenu (lielā ekrānā — blakus, paliek redzams) */}
-      <aside className="lg:sticky lg:top-6 lg:self-start">
-        <div className="rounded-3xl bg-ink p-6 text-white">
-          <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Aptuvenā cena</p>
-          <p className="mt-2 font-display text-5xl font-extrabold">{anything ? eur(approx(total)) : "—"}</p>
-          <p className="mt-1 text-sm text-white/70">ar PVN{extras ? ` + ${extras}` : ""}</p>
-          {anything && peak > 0 && <p className="mt-2 text-xs text-white/70">Iekļauta piemaksa ceturtdienai/piektdienai (+{prices.peakPercent} %).</p>}
-          {anything && atMinimum && <p className="mt-2 text-xs text-white/70">Minimālā pasūtījuma summa — {eur(prices.minTotal ?? 0)} ar PVN.</p>}
-          {anything && (
-            <ul className="mt-5 space-y-1.5 border-t border-white/15 pt-4 text-sm">
-              {chosenShows.map((x) => (
-                <li key={x.show.title}>✓ {x.show.title}</li>
-              ))}
-              {chosenWorkshops.map((w) => (
-                <li key={w.id}>✓ {w.title}</li>
-              ))}
-              {chosenActivities.map((a) => (
-                <li key={a.id}>
-                  ✓ {a.title}
-                  {a.unit === "piece" && ` × ${activities[a.id] || 1}`}
-                </li>
-              ))}
-              {pickedGames.length > 0 && <li>✓ Lielformāta spēles × {pickedGames.length}</li>}
-              {travel.status === "ok" && travel.cost ? <li>✓ Ceļa izdevumi</li> : null}
-            </ul>
+      {/* Soļi */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <ol className="flex gap-1.5 pt-4">
+          {STEPS.map((s, i) => (
+            <li key={s} className="flex-1">
+              <button type="button" disabled={!season && i > 0} onClick={() => setStep(i)} className="block w-full text-left disabled:cursor-not-allowed">
+                <span className={cn("block h-1.5 rounded-full", i <= step ? "bg-brand" : "bg-white/15")} />
+                <span className={cn("mt-1.5 hidden text-[11px] font-bold sm:block", i === step ? "text-brand" : "text-white/50")}>{s}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+
+        <div className="grid gap-7 pt-6 pb-28 lg:grid-cols-[minmax(0,1fr)_320px] lg:pb-14">
+          <div>
+            {step === 0 && (
+              <>
+                {heading("Kāds būs pasākums?", "No tā atkarīgs, kas parādīsies tālāk.")}
+                <div className="grid grid-cols-2 gap-3">
+                  {(Object.keys(SEASON_SHORT) as Season[]).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => {
+                        if (season !== v) {
+                          setSeason(v);
+                          setWorkshops([]);
+                          setActivities({});
+                          setPickedShows([]);
+                          setPickedGames([]);
+                          setOwnVenue("");
+                        }
+                        setErrors((er) => ({ ...er, choice: "" }));
+                      }}
+                      className={cn("relative h-28 overflow-hidden rounded-xl border-2 text-left sm:h-32", season === v ? "border-brand ring-2 ring-brand" : "border-white/15")}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- sezonas bilde */}
+                      <img src={SEASON_IMAGE[v]} alt="" className={cn("absolute inset-0 size-full object-cover", season && season !== v ? "opacity-30" : "opacity-70")} />
+                      <span className="display absolute bottom-3 left-4 text-xl">{SEASON_SHORT[v]}</span>
+                    </button>
+                  ))}
+                </div>
+                {errors.choice && <p className="mt-3 text-sm font-semibold text-brand">{errors.choice}</p>}
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                {heading("Izrādes", "Interaktīvas izrādes visai ģimenei.")}
+                {showItems.length === 0
+                  ? empty
+                  : showItems.map(({ show: v }) => {
+                      const on = pickedShows.includes(v.title);
+                      return (
+                        <div key={v.title} className="flex items-center justify-between gap-3 border-b border-dashed border-white/15 py-3.5">
+                          <div className="flex min-w-0 items-center gap-3">
+                            {showPoster(v) && (
+                              // eslint-disable-next-line @next/next/no-img-element -- video vāciņš
+                              <img src={showPoster(v)} alt="" className="size-14 shrink-0 rounded-lg object-cover" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-extrabold">{v.title}</p>
+                              <p className="text-sm text-white/50">
+                                {[v.duration, v.audience].filter(Boolean).join(" · ")}
+                                {v.src && (
+                                  <>
+                                    {" · "}
+                                    <a href={v.src} target="_blank" rel="noreferrer" className="text-brand underline underline-offset-2">
+                                      Skatīties video
+                                    </a>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => setPickedShows((ps) => (on ? ps.filter((x) => x !== v.title) : [...ps, v.title]))} className={pill(on)}>
+                            {on ? "✓ Izvēlēts" : "+ Pievienot"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                {showChosen && (
+                  <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <p className="font-extrabold">Telpa izrādei</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => setOwnVenue("yes")} className={pill(ownVenue === "yes")}>
+                        Mums ir sava telpa
+                      </button>
+                      <button type="button" onClick={() => setOwnVenue("no")} className={pill(ownVenue === "no")}>
+                        Telpu jānodrošina jums
+                      </button>
+                    </div>
+                    {ownVenue === "no" && (
+                      <p className="mt-3 text-sm text-white/60">Telpas noma — no {eur(prices.venueMin ?? 0)} (ar PVN), atkarībā no telpas. Precīzu cenu saskaņosim ar jums.</p>
+                    )}
+                    {errors.venue && <p className="mt-2 text-sm font-semibold text-brand">{errors.venue}</p>}
+                  </div>
+                )}
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                {heading("Radošās darbnīcas", "Uzspiediet uz kartītes — parādīsies apraksts. Var izvēlēties vairākas.")}
+                {prices.workshops.length === 0 ? (
+                  empty
+                ) : (
+                  <ul className={grid}>
+                    {prices.workshops.map((w) => tile(`w:${w.id}`, w.title, w.image || fallbackImage(w.title), workshops.includes(w.id), () => toggleWorkshop(w.id)))}
+                  </ul>
+                )}
+                {infoPanel && <div className="mt-4 lg:hidden">{infoPanel}</div>}
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                {heading("Papildu aktivitātes", "Uzspiediet uz kartītes — parādīsies apraksts.")}
+                {otherActivities.length === 0 && games.length === 0 ? (
+                  empty
+                ) : (
+                  <ul className={grid}>
+                    {otherActivities.map((a) => tile(`a:${a.id}`, a.title, a.image || fallbackImage(a.title), activities[a.id] !== undefined, () => toggleActivity(a.id)))}
+                  </ul>
+                )}
+                {games.length > 0 && (
+                  <>
+                    <h3 className="display mt-8 mb-3 text-xl">Lielformāta spēles</h3>
+                    <ul className={grid}>
+                      {games.map((g) =>
+                        tile(`g:${g.name}`, g.name, g.image || null, pickedGames.includes(g.name), () =>
+                          setPickedGames((gs) => (gs.includes(g.name) ? gs.filter((x) => x !== g.name) : [...gs, g.name])),
+                          true,
+                        ),
+                      )}
+                    </ul>
+                  </>
+                )}
+                {infoPanel && <div className="mt-4 lg:hidden">{infoPanel}</div>}
+              </>
+            )}
+
+            {step === 4 && (
+              <>
+                {heading("Pamatinformācija", "Pēc tā precizēsim aptuveno cenu.")}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="text-sm font-bold text-white/70">
+                    Pasākuma datums
+                    <input type="date" value={form.eventDate} onChange={set("eventDate")} className={field} />
+                  </label>
+                  <label className="text-sm font-bold text-white/70">
+                    Dalībnieku skaits
+                    <input type="number" min={1} value={participants || ""} onChange={(e) => setParticipants(Number(e.target.value))} className={field} />
+                  </label>
+                  <label className="text-sm font-bold text-white/70">
+                    Ilgums
+                    <select value={hours} onChange={(e) => setHours(Number(e.target.value))} className={field}>
+                      {[1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
+                        <option key={h} value={h} className="text-ink">
+                          {String(h).replace(".", ",")} h
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {peak > 0 && <p className="mt-3 text-sm text-white/60">Ceturtdienās un piektdienās — piemaksa {prices.peakPercent} %.</p>}
+              </>
+            )}
+
+            {step === 5 && (
+              <>
+                {heading("Vieta un kontakti", "Pēc nosūtīšanas sagatavosim prezentāciju ar visām detaļām.")}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="text-sm font-bold text-white/70 sm:col-span-2">
+                    Pasākuma adrese
+                    <span className="mt-1.5 flex gap-2">
+                      <input
+                        value={address}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          setTravel({ status: "idle" });
+                        }}
+                        onBlur={quoteTravel}
+                        placeholder="Piem. Rīgas iela 1, Jelgava, LV-3001"
+                        className={cn(field, "mt-0")}
+                      />
+                      <button type="button" onClick={quoteTravel} className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/20 px-4 font-bold hover:border-brand">
+                        {travel.status === "loading" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Car className="size-4" aria-hidden />}
+                        Ceļš
+                      </button>
+                    </span>
+                    {travel.status === "ok" && (
+                      <span className="mt-1.5 block font-semibold text-brand">
+                        {travel.km} km turp un atpakaļ{travel.cost ? " — ceļš iekļauts cenā" : " — ceļa izdevumu nav"}
+                      </span>
+                    )}
+                    {travel.status === "error" && <span className="mt-1.5 block font-normal text-white/50">{travel.error ?? "Ceļa izdevumus precizēsim."}</span>}
+                  </label>
+                  {(
+                    [
+                      ["companyName", "Uzņēmums", "text"],
+                      ["parentName", "Kontaktpersona", "text"],
+                      ["phone", "Telefons", "tel"],
+                      ["email", "E-pasts", "email"],
+                    ] as const
+                  ).map(([k, l, t]) => (
+                    <label key={k} className="text-sm font-bold text-white/70">
+                      {l} *
+                      <input type={t} value={form[k]} onChange={set(k)} className={field} />
+                      {errors[k] && <span className="mt-1 block text-brand">{errors[k]}</span>}
+                    </label>
+                  ))}
+                  <label className="text-sm font-bold text-white/70 sm:col-span-2">
+                    Papildu informācija
+                    <textarea rows={3} value={form.message} onChange={set("message")} className={field} />
+                  </label>
+                  <label className="flex items-start gap-3 text-sm text-white/70 sm:col-span-2">
+                    <input type="checkbox" checked={form.consent} onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))} className="mt-1 size-5 shrink-0 accent-[#ffd54a]" />
+                    <span>
+                      Piekrītu, ka mani dati tiek apstrādāti, lai sagatavotu piedāvājumu.{" "}
+                      <Link href="/privatuma-politika" className="underline">
+                        Privātuma politika
+                      </Link>
+                    </span>
+                  </label>
+                  {errors.consent && <p className="text-sm font-semibold text-brand sm:col-span-2">{errors.consent}</p>}
+                </div>
+
+                {/* Biļete — kopsavilkums un nosūtīšana */}
+                <div className="relative mt-7 rounded-2xl bg-brand p-6 text-ink before:absolute before:top-1/2 before:-left-3 before:size-6 before:-translate-y-1/2 before:rounded-full before:bg-[#121110] after:absolute after:top-1/2 after:-right-3 after:size-6 after:-translate-y-1/2 after:rounded-full after:bg-[#121110]">
+                  <p className="text-[11px] font-extrabold tracking-[0.22em] uppercase">Jūsu izvēle · aptuvenā cena ar PVN</p>
+                  <p className="display mt-1 text-4xl">{anything ? eur(approx(total)) : "—"}</p>
+                  {summaryItems.length > 0 && <p className="mt-2 font-bold">{summaryItems.map(([t]) => t).join(" · ")}</p>}
+                  {errors.choice && <p className="mt-2 font-bold">{errors.choice}</p>}
+                  <button type="submit" disabled={state === "sending"} className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-extrabold text-white disabled:opacity-60">
+                    {state === "sending" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+                    Nosūtīt izvēli
+                  </button>
+                  {state === "error" && <p className="mt-2 text-sm font-bold">Neizdevās nosūtīt — pārbaudiet laukus vai zvaniet mums.</p>}
+                </div>
+              </>
+            )}
+
+            {/* Atpakaļ / Tālāk */}
+            <div className="mt-7 hidden items-center justify-between lg:flex">
+              {step > 0 ? (
+                <button type="button" onClick={back} className="inline-flex items-center gap-2 rounded-full border-2 border-white/20 px-5 py-2.5 font-extrabold hover:border-white">
+                  <ArrowLeft className="size-4" aria-hidden /> Atpakaļ
+                </button>
+              ) : (
+                <span />
+              )}
+              {step < STEPS.length - 1 && (
+                <button type="button" disabled={!season} onClick={next} className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 font-extrabold text-ink disabled:opacity-40">
+                  Tālāk <ArrowRight className="size-4" aria-hidden />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Labajā pusē: uzspiestās kartītes apraksts un aptuvenā cena */}
+          <aside className="hidden space-y-4 lg:sticky lg:top-6 lg:block lg:self-start">
+            {(step === 2 || step === 3) && infoPanel}
+            {summary}
+          </aside>
+        </div>
+      </div>
+
+      {/* Telefonā: apakšā cena un pogas */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 bg-brand px-4 py-3 text-ink lg:hidden">
+        <div>
+          <p className="text-[11px] font-extrabold tracking-wider uppercase">Aptuveni</p>
+          <p className="display text-xl">{anything ? eur(approx(total)) : "—"}</p>
+        </div>
+        <div className="flex gap-2">
+          {step > 0 && (
+            <button type="button" onClick={back} aria-label="Atpakaļ" className="grid size-11 place-items-center rounded-full border-2 border-ink">
+              <ArrowLeft className="size-4" aria-hidden />
+            </button>
           )}
-          <p className="mt-5 text-xs leading-5 text-white/60">
-            Cena ir aptuvena — galīgo cenu apstiprināsim pēc sarunas, kad būs zināmas visas detaļas.
-          </p>
-          {errors.choice && <p role="alert" className="mt-3 rounded-lg bg-white/10 p-2 text-sm font-semibold">{errors.choice}</p>}
-          <button type="submit" disabled={state === "sending"} className={cn(buttonClass("primary", "lg"), "mt-5 w-full justify-center")}>
-            {state === "sending" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-            Nosūtīt pieteikumu
-          </button>
-          {state === "error" && (
-            <p role="alert" className="mt-3 text-sm font-semibold text-brand">
-              Neizdevās nosūtīt — pārbaudiet laukus vai zvaniet mums.
-            </p>
+          {step < STEPS.length - 1 && (
+            <button type="button" disabled={!season} onClick={next} className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 font-extrabold text-white disabled:opacity-40">
+              Tālāk <ArrowRight className="size-4" aria-hidden />
+            </button>
           )}
         </div>
-      </aside>
+      </div>
     </form>
   );
 }
