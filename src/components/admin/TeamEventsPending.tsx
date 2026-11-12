@@ -3,6 +3,7 @@ import { Check, Pencil, Plus } from "lucide-react";
 import type { AdminContext } from "@/lib/auth";
 import { publishTeamEvent } from "@/app/admin/actions";
 import { adminSecondary } from "./styles";
+import CancelTeamEvent from "./CancelTeamEvent";
 
 type TeamEvent = { id: string; event_date: string; time: string | null; title: string; place: string | null; team: string | null; details: string | null };
 
@@ -59,7 +60,8 @@ export default async function TeamEventsPending({ db }: { db: AdminContext["db"]
                 {e.team && <p className="mt-1">Komanda: {e.team}</p>}
                 {e.details && <p className="mt-2 rounded-xl bg-surface p-2.5 whitespace-pre-line text-ink-soft">{e.details}</p>}
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <CancelTeamEvent id={e.id} title={e.title} />
                 <Link href={`/admin/grafiks/${e.id}`} className={adminSecondary}>
                   <Pencil className="size-4" aria-hidden /> Labot
                 </Link>

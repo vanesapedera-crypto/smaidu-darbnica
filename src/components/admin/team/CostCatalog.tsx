@@ -72,6 +72,7 @@ export default async function CostCatalog({ db, role }: Pick<MemberContext, "db"
               <Num name="animatorFixed" label="Animators — par pasākumu, €" value={settings.animatorFixed} />
               <Num name="markup" label="Uzcenojums, %" value={settings.markup} />
               <Num name="vat" label="PVN, %" value={settings.vat} />
+              <Num name="perAnimator" label="Darbnīcās 1 animators uz … dalībniekiem" value={settings.perAnimator} />
             </div>
             <p className="text-xs text-ink-soft">
               Ceļa izdevumi — {money(site.programs.travelRate)} par km (tā pati likme, ko izmanto rezervācijās). Katrā piedāvājumā likmes var arī mainīt.

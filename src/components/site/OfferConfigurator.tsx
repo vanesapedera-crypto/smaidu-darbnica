@@ -1,0 +1,397 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Car, Check, CircleCheck, LoaderCircle, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { buttonClass } from "./ui";
+import { Field, Honeypot, inputClass } from "./form";
+
+type Unit = "hour" | "person" | "piece" | "fixed";
+type Workshop = { id: string; title: string; description: string | null; image: string | null; perPerson: number };
+type Activity = { id: string; title: string; description: string | null; image: string | null; unit: Unit; price: number };
+/** Cenas klientam ar uzcenojumu un PVN (funkcija configurator_prices) */
+export type ConfiguratorPrices = { factor: number; animatorHour: number; perAnimator: number; workshops: Workshop[]; activities: Activity[] };
+
+type TravelState = { status: "idle" | "loading" | "ok" | "error"; km?: number; cost?: number; far?: boolean; error?: string };
+
+/** Tālākiem braucieniem (no Tukuma 100 km un vairāk vienā virzienā) ceļš var maksāt līdz 0,50 €/km — aptuvenajā cenā rēķina ar to */
+const FAR_KM = 100;
+const FAR_RATE = 0.5;
+
+/** Izrāde — aktivitāte, kuras nosaukumā ir "izrāde" (tai jānorāda, vai telpa ir klienta vai mūsu) */
+const isShow = (a: Activity) => /izrād/i.test(a.title);
+
+const eur = (n: number) => `${n.toLocaleString("lv-LV", { maximumFractionDigits: 0 })} €`;
+/** Aptuvenā summa — noapaļota līdz 10 € */
+const approx = (n: number) => Math.round(n / 10) * 10;
+
+/**
+ * Klients atzīmē darbnīcas un aktivitātes — kopsumma (aptuveni, ar PVN) mainās uzreiz.
+ * Darbnīcām: materiāli × dalībnieki + animatori (vismaz 1 katrai darbnīcai un 1 uz `perAnimator` dalībniekiem) × stundas.
+ * Aktivitātēm: par stundu × ilgums, par gabalu × skaits, par personu × dalībnieki, fiksēta summa.
+ */
+export default function OfferConfigurator({ prices }: { prices: ConfiguratorPrices }) {
+  const [participants, setParticipants] = useState(30);
+  const [hours, setHours] = useState(2);
+  const [workshops, setWorkshops] = useState<string[]>([]);
+  // aktivitātes id → daudzums (gabaliem); pārējām — 1
+  const [activities, setActivities] = useState<Record<string, number>>({});
+  const [ownVenue, setOwnVenue] = useState<"" | "yes" | "no">("");
+  const [address, setAddress] = useState("");
+  const [travel, setTravel] = useState<TravelState>({ status: "idle" });
+  const [form, setForm] = useState({ companyName: "", parentName: "", phone: "", email: "", eventDate: "", message: "", consent: false });
+  const [website, setWebsite] = useState("");
+  const [startedAt] = useState(() => Date.now());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  const people = Math.max(0, participants || 0);
+  const chosenWorkshops = prices.workshops.filter((w) => workshops.includes(w.id));
+  const chosenActivities = prices.activities.filter((a) => activities[a.id] !== undefined);
+  const showChosen = chosenActivities.some(isShow);
+
+  const workshopAnimators = chosenWorkshops.length ? Math.max(chosenWorkshops.length, Math.ceil(people / Math.max(1, prices.perAnimator))) : 0;
+  const workshopsSum = chosenWorkshops.reduce((s, w) => s + w.perPerson * people, 0) + workshopAnimators * hours * prices.animatorHour;
+  const activityPrice = (a: Activity) =>
+    a.unit === "hour" ? a.price * hours : a.unit === "piece" ? a.price * (activities[a.id] || 1) : a.unit === "person" ? a.price * people : a.price;
+  const activitiesSum = chosenActivities.reduce((s, a) => s + activityPrice(a), 0);
+  const travelSum = travel.status === "ok" ? (travel.cost ?? 0) * (prices.factor || 1) : 0;
+  const total = workshopsSum + activitiesSum + travelSum;
+  const anything = chosenWorkshops.length + chosenActivities.length > 0;
+
+  const toggleWorkshop = (id: string) => setWorkshops((ws) => (ws.includes(id) ? ws.filter((x) => x !== id) : [...ws, id]));
+  const toggleActivity = (id: string) =>
+    setActivities((as) => {
+      const next = { ...as };
+      if (next[id] !== undefined) delete next[id];
+      else next[id] = 1;
+      return next;
+    });
+
+  async function quoteTravel() {
+    if (address.trim().length < 4) return;
+    setTravel({ status: "loading" });
+    try {
+      const res = await fetch(`/api/travel?address=${encodeURIComponent(address.trim())}`);
+      const d = await res.json();
+      const far = d.ok && Number(d.oneWayKm) >= FAR_KM;
+      setTravel(
+        d.ok
+          ? { status: "ok", km: d.roundTripKm, cost: far ? Math.round(Number(d.roundTripKm) * FAR_RATE) : d.cost, far }
+          : { status: "error", error: d.error },
+      );
+    } catch {
+      setTravel({ status: "error", error: "Ceļa izdevumus šobrīd neizdevās aprēķināt — tos precizēsim." });
+    }
+  }
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const missing: Record<string, string> = {};
+    if (!anything) missing.choice = "Atzīmējiet vismaz vienu darbnīcu vai aktivitāti.";
+    if (showChosen && !ownVenue) missing.venue = "Norādiet, vai izrādei ir sava telpa.";
+    if (!form.companyName.trim()) missing.companyName = "Norādiet uzņēmumu.";
+    if (!form.parentName.trim()) missing.parentName = "Norādiet kontaktpersonu.";
+    if (!form.phone.trim()) missing.phone = "Norādiet telefonu.";
+    if (!form.email.trim()) missing.email = "Norādiet e-pastu.";
+    if (!form.consent) missing.consent = "Nepieciešama piekrišana datu apstrādei.";
+    if (Object.keys(missing).length) {
+      setErrors(missing);
+      return;
+    }
+
+    const lines = [
+      `Saliktais piedāvājums — aptuveni ${eur(approx(total))} ar PVN${showChosen && ownVenue === "no" ? " + telpas īre" : ""}`,
+      `Dalībnieki: ${people}, ilgums: ${String(hours).replace(".", ",")} h`,
+      chosenWorkshops.length > 0 && `Radošās darbnīcas: ${chosenWorkshops.map((w) => w.title).join(", ")}`,
+      chosenActivities.length > 0 &&
+        `Aktivitātes: ${chosenActivities.map((a) => (a.unit === "piece" ? `${a.title} × ${activities[a.id] || 1}` : a.title)).join(", ")}`,
+      showChosen && `Telpa izrādei: ${ownVenue === "yes" ? "klientam ir sava telpa" : "jānodrošina Smaidu Darbnīcai (cena atkarīga no telpas)"}`,
+      address.trim() && `Adrese: ${address.trim()}${travel.status === "ok" ? ` (${travel.km} km turp un atpakaļ)` : ""}`,
+      form.message.trim() && `\n${form.message.trim()}`,
+    ].filter(Boolean);
+
+    setState("sending");
+    setErrors({});
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inquiryType: "business",
+          companyName: form.companyName,
+          parentName: form.parentName,
+          phone: form.phone,
+          email: form.email,
+          eventDate: form.eventDate || undefined,
+          participants: people || undefined,
+          address: address.trim() || undefined,
+          eventType: "Saliktais piedāvājums",
+          message: lines.join("\n"),
+          consent: form.consent,
+          website,
+          startedAt,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setState("sent");
+        return;
+      }
+      setErrors(data.errors ?? {});
+      setState("error");
+    } catch {
+      setState("error");
+    }
+  }
+
+  if (state === "sent") {
+    return (
+      <div className="rounded-3xl bg-brand p-10 text-center">
+        <CircleCheck className="mx-auto size-12" aria-hidden />
+        <p className="mt-4 display text-2xl">Paldies! Pieteikums nosūtīts.</p>
+        <p className="mt-2">Sazināsimies ar jums tuvākajā laikā, lai precizētu detaļas un galīgo cenu.</p>
+      </div>
+    );
+  }
+
+  const card = (active: boolean) =>
+    cn(
+      "flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border-2 bg-white transition-colors",
+      active ? "border-ink ring-3 ring-brand" : "border-line hover:border-ink",
+    );
+  const picture = (src: string | null, alt: string) =>
+    src ? (
+      // eslint-disable-next-line @next/next/no-img-element -- bildes no paneļa (jebkura adrese)
+      <img src={src} alt={alt} className="aspect-[4/3] w-full object-cover" />
+    ) : null;
+  const unitText = (a: Activity) => (a.unit === "hour" ? "visu pasākuma laiku" : a.unit === "piece" ? "izvēlieties skaitu" : a.unit === "person" ? "katram dalībniekam" : "");
+
+  return (
+    <form onSubmit={submit} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <Honeypot value={website} onChange={setWebsite} />
+      <div className="space-y-10">
+        {/* 1. Pamatinformācija */}
+        <section className="grid gap-4 sm:grid-cols-2">
+          <Field id="participants" label="Dalībnieku skaits">
+            <input id="participants" type="number" min={1} value={participants || ""} onChange={(e) => setParticipants(Number(e.target.value))} className={inputClass} />
+          </Field>
+          <Field id="hours" label="Pasākuma ilgums, stundas">
+            <select id="hours" value={hours} onChange={(e) => setHours(Number(e.target.value))} className={inputClass}>
+              {[1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
+                <option key={h} value={h}>
+                  {String(h).replace(".", ",")} h
+                </option>
+              ))}
+            </select>
+          </Field>
+        </section>
+
+        {/* 2. Radošās darbnīcas */}
+        {prices.workshops.length > 0 && (
+          <section>
+            <h2 className="display text-2xl">Radošās darbnīcas</h2>
+            <p className="mt-1 text-ink-soft">Var izvēlēties vairākas — dalībnieki tās apmeklē pēc kārtas.</p>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {prices.workshops.map((w) => {
+                const active = workshops.includes(w.id);
+                return (
+                  <li key={w.id}>
+                    <label className={card(active)}>
+                      <input type="checkbox" checked={active} onChange={() => toggleWorkshop(w.id)} className="sr-only" />
+                      {picture(w.image, w.title)}
+                      <span className="flex flex-1 items-start gap-3 p-4">
+                        <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
+                          {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
+                        </span>
+                        <span>
+                          <span className="block font-extrabold">{w.title}</span>
+                          {w.description && <span className="mt-1 line-clamp-3 block text-sm text-ink-soft">{w.description}</span>}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+        {/* 3. Aktivitātes un izrādes */}
+        {prices.activities.length > 0 && (
+          <section>
+            <h2 className="display text-2xl">Aktivitātes un izrādes</h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {prices.activities.map((a) => {
+                const active = activities[a.id] !== undefined;
+                return (
+                  <li key={a.id}>
+                    <div className={card(active)}>
+                      <label className="flex flex-1 cursor-pointer flex-col">
+                        <input type="checkbox" checked={active} onChange={() => toggleActivity(a.id)} className="sr-only" />
+                        {picture(a.image, a.title)}
+                        <span className="flex flex-1 items-start gap-3 p-4">
+                          <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2", active ? "border-ink bg-ink text-white" : "border-line")}>
+                            {active && <Check className="size-4" strokeWidth={3} aria-hidden />}
+                          </span>
+                          <span>
+                            <span className="block font-extrabold">{a.title}</span>
+                            {unitText(a) && <span className="block text-xs font-semibold text-ink-soft">{unitText(a)}</span>}
+                            {a.description && <span className="mt-1 line-clamp-3 block text-sm text-ink-soft">{a.description}</span>}
+                          </span>
+                        </span>
+                      </label>
+                      {active && a.unit === "piece" && (
+                        <label className="flex items-center gap-2 border-t border-line px-4 py-3 text-sm font-bold">
+                          Skaits
+                          <input
+                            type="number"
+                            min={1}
+                            value={activities[a.id] || ""}
+                            onChange={(e) => setActivities((as) => ({ ...as, [a.id]: Math.max(1, Number(e.target.value) || 1) }))}
+                            className="w-20 rounded-lg border border-input px-2 py-1.5"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Izrādei — vai klientam ir sava telpa */}
+            {showChosen && (
+              <fieldset className="mt-5 rounded-2xl bg-surface p-5">
+                <legend className="sr-only">Telpa izrādei</legend>
+                <p className="font-bold">
+                  Telpa izrādei<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {(
+                    [
+                      ["yes", "Mums ir sava telpa"],
+                      ["no", "Telpu jānodrošina jums"],
+                    ] as const
+                  ).map(([v, l]) => (
+                    <label key={v} className={cn("flex cursor-pointer items-center gap-3 rounded-xl border-2 bg-white p-3 text-sm font-bold", ownVenue === v ? "border-ink" : "border-line")}>
+                      <input type="radio" name="venue" checked={ownVenue === v} onChange={() => setOwnVenue(v)} className="size-5 accent-ink" />
+                      {l}
+                    </label>
+                  ))}
+                </div>
+                {ownVenue === "no" && <p className="mt-3 text-sm text-ink-soft">Telpas īres cena atkarīga no konkrētās telpas — to precizēsim un pieskaitīsim piedāvājumā.</p>}
+                {errors.venue && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{errors.venue}</p>}
+              </fieldset>
+            )}
+          </section>
+        )}
+
+        {/* 4. Norises vieta — ceļa izdevumi */}
+        <section>
+          <h2 className="display text-2xl">Norises vieta</h2>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={address}
+              onChange={(e) => {
+                setAddress(e.target.value);
+                setTravel({ status: "idle" });
+              }}
+              onBlur={quoteTravel}
+              placeholder="Adrese, piem. Rīgas iela 1, Jelgava, LV-3001"
+              className={inputClass}
+            />
+            <button type="button" onClick={quoteTravel} className={cn(buttonClass("outline"), "shrink-0")}>
+              {travel.status === "loading" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Car className="size-4" aria-hidden />}
+              Aprēķināt ceļu
+            </button>
+          </div>
+          {travel.status === "ok" && (
+            <p className="mt-2 text-sm text-ink-soft">
+              {travel.km} km turp un atpakaļ{travel.cost ? "" : " — ceļa izdevumu nav"}.
+              {travel.far && " Braucieniem 100 km un tālāk no Tukuma ceļa izdevumi var būt līdz 0,50 €/km — aptuvenajā cenā tie jau iekļauti."}
+            </p>
+          )}
+          {travel.status === "error" && <p className="mt-2 text-sm text-ink-soft">{travel.error ?? "Ceļa izdevumus precizēsim."}</p>}
+        </section>
+
+        {/* 5. Kontakti */}
+        <section className="grid gap-4 sm:grid-cols-2">
+          <h2 className="display text-2xl sm:col-span-2">Jūsu kontakti</h2>
+          <Field id="companyName" label="Uzņēmums" required error={errors.companyName}>
+            <input id="companyName" value={form.companyName} onChange={set("companyName")} className={inputClass} />
+          </Field>
+          <Field id="parentName" label="Kontaktpersona" required error={errors.parentName}>
+            <input id="parentName" value={form.parentName} onChange={set("parentName")} className={inputClass} />
+          </Field>
+          <Field id="phone" label="Telefons" required error={errors.phone}>
+            <input id="phone" type="tel" value={form.phone} onChange={set("phone")} className={inputClass} />
+          </Field>
+          <Field id="email" label="E-pasts" required error={errors.email}>
+            <input id="email" type="email" value={form.email} onChange={set("email")} className={inputClass} />
+          </Field>
+          <Field id="eventDate" label="Pasākuma datums" error={errors.eventDate}>
+            <input id="eventDate" type="date" value={form.eventDate} onChange={set("eventDate")} className={inputClass} />
+          </Field>
+          <Field id="message" label="Papildu informācija" className="sm:col-span-2">
+            <textarea id="message" rows={3} value={form.message} onChange={set("message")} className={inputClass} />
+          </Field>
+          <label className="flex items-start gap-3 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.consent}
+              onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))}
+              className="mt-1 size-5 shrink-0 accent-ink"
+            />
+            <span>
+              Piekrītu, ka mani dati tiek apstrādāti, lai sagatavotu piedāvājumu.{" "}
+              <Link href="/privatuma-politika" className="link-underline">
+                Privātuma politika
+              </Link>
+            </span>
+          </label>
+          {errors.consent && <p role="alert" className="text-sm font-semibold text-destructive sm:col-span-2">{errors.consent}</p>}
+        </section>
+      </div>
+
+      {/* Kopsavilkums ar aptuveno cenu (lielā ekrānā — blakus, paliek redzams) */}
+      <aside className="lg:sticky lg:top-6 lg:self-start">
+        <div className="rounded-3xl bg-ink p-6 text-white">
+          <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Aptuvenā cena</p>
+          <p className="mt-2 font-display text-5xl font-extrabold">{anything ? eur(approx(total)) : "—"}</p>
+          <p className="mt-1 text-sm text-white/70">ar PVN{showChosen && ownVenue === "no" ? " + telpas īre" : ""}</p>
+          {anything && (
+            <ul className="mt-5 space-y-1.5 border-t border-white/15 pt-4 text-sm">
+              {chosenWorkshops.map((w) => (
+                <li key={w.id}>✓ {w.title}</li>
+              ))}
+              {chosenActivities.map((a) => (
+                <li key={a.id}>
+                  ✓ {a.title}
+                  {a.unit === "piece" && ` × ${activities[a.id] || 1}`}
+                </li>
+              ))}
+              {travel.status === "ok" && travel.cost ? <li>✓ Ceļa izdevumi</li> : null}
+            </ul>
+          )}
+          <p className="mt-5 text-xs leading-5 text-white/60">
+            Cena ir aptuvena — galīgo cenu apstiprināsim pēc sarunas, kad būs zināmas visas detaļas.
+          </p>
+          {errors.choice && <p role="alert" className="mt-3 rounded-lg bg-white/10 p-2 text-sm font-semibold">{errors.choice}</p>}
+          <button type="submit" disabled={state === "sending"} className={cn(buttonClass("primary", "lg"), "mt-5 w-full justify-center")}>
+            {state === "sending" ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+            Nosūtīt pieteikumu
+          </button>
+          {state === "error" && (
+            <p role="alert" className="mt-3 text-sm font-semibold text-brand">
+              Neizdevās nosūtīt — pārbaudiet laukus vai zvaniet mums.
+            </p>
+          )}
+        </div>
+      </aside>
+    </form>
+  );
+}

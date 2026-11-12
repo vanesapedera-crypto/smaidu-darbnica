@@ -337,6 +337,7 @@ export async function saveCalcSettings(_: TeamActionState, form: FormData): Prom
     animatorFixed: Math.max(0, numField(form, "animatorFixed")),
     markup: numField(form, "markup"),
     vat: Math.max(0, numField(form, "vat")),
+    perAnimator: Math.max(1, Math.round(numField(form, "perAnimator")) || 15),
   };
   const { error } = await db.from("calc_settings").upsert({ id: 1, data, updated_at: new Date().toISOString() });
   if (error) return { error: `Neizdevās saglabāt: ${error.message}` };

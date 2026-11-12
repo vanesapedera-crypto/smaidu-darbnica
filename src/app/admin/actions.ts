@@ -221,6 +221,13 @@ export async function publishTeamEvent(id: string | null) {
   revalidatePath("/admin", "layout");
 }
 
+/** Komandas grafika pasākums — atcelt (piem. ja dublējas): izdzēš to pavisam */
+export async function cancelTeamEvent(id: string) {
+  const { db } = await requireAdmin();
+  await db.from("team_events").delete().eq("id", id);
+  revalidatePath("/admin", "layout");
+}
+
 export async function deleteEntity(key: string, id: string) {
   const { db } = await requireAdmin();
   const entity = getEntity(key);

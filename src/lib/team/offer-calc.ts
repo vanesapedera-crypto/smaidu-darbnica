@@ -33,9 +33,11 @@ export type CalcSettings = {
   markup: number;
   /** PVN, % */
   vat: number;
+  /** Lapā "Salikt piedāvājumu": cik dalībniekiem radošajās darbnīcās vajag 1 animatoru */
+  perAnimator: number;
 };
 
-export const DEFAULT_CALC_SETTINGS: CalcSettings = { animatorHour: 0, animatorFixed: 0, markup: 0, vat: 21 };
+export const DEFAULT_CALC_SETTINGS: CalcSettings = { animatorHour: 0, animatorFixed: 0, markup: 0, vat: 21, perAnimator: 15 };
 
 export type CalcWorkshop = { id: string; title: string; costPerPerson: number; persons: number };
 /** Viena personāla rinda: loma (vadītājs, animators, aktieris…), skaits, aprēķins un likme */
@@ -203,5 +205,6 @@ export const parseSettings = (raw: unknown): CalcSettings => {
     animatorFixed: n(o.animatorFixed ?? DEFAULT_CALC_SETTINGS.animatorFixed),
     markup: n(o.markup ?? DEFAULT_CALC_SETTINGS.markup),
     vat: n(o.vat ?? DEFAULT_CALC_SETTINGS.vat),
+    perAnimator: n(o.perAnimator ?? DEFAULT_CALC_SETTINGS.perAnimator) || DEFAULT_CALC_SETTINGS.perAnimator,
   };
 };
