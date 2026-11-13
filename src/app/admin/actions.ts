@@ -11,7 +11,7 @@ import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyReviewRequest } from "@/lib/notify";
 import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts } from "@/lib/calendar";
-import { atStudio, withHostsLine } from "@/lib/bookings";
+import { atStudio, withEditedMessage, withHostsLine } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
@@ -111,10 +111,15 @@ export async function saveBookingDetails(id: string, form: FormData) {
     row.travel_cost = num("travel_cost");
   }
 
+  // Ziņojums (pieteikuma teksts) — labots ar roku; sistēmas rindas (izmaksas, kas vada) saglabājas
+  if (form.has("message_text")) {
+    row.message = withEditedMessage(b.message, String(form.get("message_text") ?? "").replace(/\r/g, "").slice(0, 5000)) || null;
+  }
+
   // Programmas variants (piem. "Divi rūķi") — glabājas ziņojuma rindā "Izvēle: …"
   const variant = String(form.get("variant") ?? "").trim();
   if (variant) {
-    const msg = String(b.message ?? "");
+    const msg = String((row.message as string | null | undefined) ?? b.message ?? "");
     row.message = /Izvēle:[^\n]*/.test(msg) ? msg.replace(/Izvēle:[^\n]*/, `Izvēle: ${variant}`) : [msg, `Izvēle: ${variant}`].filter(Boolean).join("\n\n");
   }
 

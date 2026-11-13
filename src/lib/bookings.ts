@@ -351,3 +351,19 @@ export function withHostsLine(message: string | null | undefined, names: string)
   const clean = (message ?? "").replace(/\n*^Vada:[^\n]*$/m, "").trim();
   return names ? [clean, `Vada: ${names}`].filter(Boolean).join("\n\n") : clean;
 }
+
+/** Ziņojuma rindas, ko panelis pārvalda pats (labotās izmaksas, papildu pakalpojumi, kas vada) — ziņojuma labošanā tās nerāda */
+const SYSTEM_LINE = /^(Izmaksas:|Papildu pakalpojumi:|Vada:)/;
+/** Ziņojums labošanai panelī — bez sistēmas rindām */
+export const editableMessage = (message: string | null | undefined) =>
+  (message ?? "")
+    .split("\n")
+    .filter((l) => !SYSTEM_LINE.test(l))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+/** Labotais ziņojums + saglabātās sistēmas rindas no iepriekšējā ziņojuma */
+export function withEditedMessage(original: string | null | undefined, edited: string): string {
+  const system = (original ?? "").split("\n").filter((l) => SYSTEM_LINE.test(l));
+  return [edited.trim(), ...system].filter(Boolean).join("\n\n");
+}

@@ -1,6 +1,6 @@
 import { Building2, Search, User } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
-import { FIXED_VENUES, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
+import { FIXED_VENUES, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { VAT_NOTE, amountText, bookingCosts, bookingPrices, costsToText, eur, parseCostOverride, priceVariants } from "@/lib/pricing";
@@ -335,6 +335,18 @@ export default async function BookingsPage({ searchParams }: Props) {
                                   {field("Ceļa izdevumi (€)", <input type="number" step="any" min={0} name="travel_cost" defaultValue={b.travel_cost ?? ""} className={adminInput} />)}
                                 </>
                               )}
+                              <label className="text-sm text-ink-soft sm:col-span-3">
+                                Ziņojums
+                                <textarea
+                                  name="message_text"
+                                  rows={Math.min(14, Math.max(4, editableMessage(b.message).split("\n").length + 1))}
+                                  defaultValue={editableMessage(b.message)}
+                                  className={adminInput}
+                                />
+                                <span className="mt-1 block text-xs">
+                                  Var izlabot vai pierakstīt klāt (piem. klienta vēlmes). Izmaksas un “Programmu vada” labo atsevišķi — tās šeit nav redzamas, bet saglabājas.
+                                </span>
+                              </label>
                               {isPrivate && (
                                 <label className="text-sm text-ink-soft sm:col-span-3">
                                   Izmaksas {overridden && <span className="font-semibold text-ink">(labotas ar roku)</span>}
