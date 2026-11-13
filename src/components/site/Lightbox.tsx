@@ -5,6 +5,7 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/counter.css";
 import { isOptimizable } from "@/lib/images";
+import { useT } from "@/components/site/LocaleProvider";
 
 export type LightboxSlide = { src: string; alt: string; width?: number; height?: number };
 
@@ -25,6 +26,7 @@ export default function Lightbox({
   index: number;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <YarlLightbox
       open={index >= 0}
@@ -32,7 +34,7 @@ export default function Lightbox({
       close={onClose}
       plugins={[Counter]}
       controller={{ closeOnBackdropClick: true }}
-      labels={{ Previous: "Iepriekšējā", Next: "Nākamā", Close: "Aizvērt" }}
+      labels={{ Previous: t("Iepriekšējā"), Next: t("Nākamā"), Close: t("Aizvērt") }}
       styles={{ container: { backgroundColor: "rgba(17, 24, 39, 0.96)" } }}
       slides={slides.map((s) => ({
         src: optimized(s.src, 1920),

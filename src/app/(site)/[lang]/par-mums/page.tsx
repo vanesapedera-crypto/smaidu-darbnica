@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import Photo from "@/components/site/Photo";
 import { StageHeading, StageHero } from "@/components/site/stage";
@@ -12,27 +12,29 @@ const TILT = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const { about } = await getSettings();
-  return pageMetadata({ path: "/par-mums", title: "Par mums", description: about.intro, image: about.image });
+  return pageMetadata({ path: "/par-mums", title: t("Par mums"), description: about.intro, image: about.image });
 }
 
 
 export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const [{ about }, team] = await Promise.all([getSettings(), getTeam()]);
 
   return (
     <>
       <StageHero
-        eyebrow="Par mums"
+        eyebrow={t("Par mums")}
         title={about.title}
         text={about.intro}
-        crumbs={[{ name: "Par mums", path: "/par-mums" }]}
+        crumbs={[{ name: t("Par mums"), path: "/par-mums" }]}
         photos={[
-          { src: about.image, caption: "Smaidu Darbnīcas komanda" },
-          { src: "/media/smaidu-darbnica/smaidu-darbnica-07.webp", caption: "Tēli" },
-          { src: "/media/ziemassvetki-2025/ziemassvetki-2025-23.webp", caption: "Izrādes" },
+          { src: about.image, caption: t("Smaidu Darbnīcas komanda") },
+          { src: "/media/smaidu-darbnica/smaidu-darbnica-07.webp", caption: t("Tēli") },
+          { src: "/media/ziemassvetki-2025/ziemassvetki-2025-23.webp", caption: t("Izrādes") },
         ]}
       />
 
@@ -40,7 +42,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
       {team.length > 0 && (
         <Section>
           <Container>
-            <StageHeading eyebrow="Komanda" title={about.teamTitle} text={about.teamText} />
+            <StageHeading eyebrow={t("Komanda")} title={about.teamTitle} text={about.teamText} />
             <ul className="mt-14 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
               {team.map((m, i) => (
                 <li key={m.id ?? `${m.name}-${i}`} data-reveal style={{ "--reveal-delay": `${(i % 4) * 70}ms` } as React.CSSProperties}>

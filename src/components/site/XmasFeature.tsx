@@ -3,6 +3,7 @@ import type { HomeSettings, Service } from "@/lib/content/types";
 import Photo from "./Photo";
 import { ServiceIcon } from "./icons";
 import { ButtonLink, Container } from "./ui";
+import { getT } from "@/lib/i18n/server";
 
 /*
  * Ziemassvētku sezonas bloki. Ieslēdz/izslēdz panelī (Sākumlapa → "Rādīt Ziemassvētku reklāmu").
@@ -22,6 +23,7 @@ const stars = {
 };
 
 export function XmasBanner({ home }: { home: HomeSettings }) {
+  const t = getT();
   if (!home.xmasEnabled) return null;
   const photo = home.xmasPhotos[0];
 
@@ -49,7 +51,7 @@ export function XmasBanner({ home }: { home: HomeSettings }) {
             <p className="mt-3 max-w-2xl leading-7 text-white/80">{home.xmasShort}</p>
           </div>
           <span className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 font-extrabold whitespace-nowrap text-ink transition-transform group-hover:translate-x-1">
-            Ziemassvētku piedāvājumi →
+            {t("Ziemassvētku piedāvājumi →")}
           </span>
         </Link>
       </Container>
@@ -129,6 +131,7 @@ function Points({ home }: { home: HomeSettings }) {
 
 /** Ziemassvētku bloks lapā "Uzņēmumiem": tumšs fons ar sniegpārsliņām — teksts + fotogrāfija, zem tiem piedāvājumu kartītes. */
 export function XmasFeature({ home, services }: FeatureProps) {
+  const t = getT();
   if (!home.xmasEnabled) return null;
   return (
     <section id="ziemassvetki" aria-labelledby="ziemassvetki-virsraksts" className="xmas-red relative isolate scroll-mt-20 overflow-hidden bg-ink py-16 text-white md:py-24">
@@ -137,16 +140,16 @@ export function XmasFeature({ home, services }: FeatureProps) {
         <div data-reveal>
           <p className="inline-flex rounded-full bg-brand px-4 py-1.5 text-xs font-extrabold tracking-[0.12em] text-ink uppercase">{home.xmasEyebrow}</p>
           <h2 id="ziemassvetki-virsraksts" className="display mt-6 text-4xl sm:text-5xl lg:text-6xl">
-            Ziemassvētku <span className="sticker-light">piedāvājumi</span>
+            {t("Ziemassvētku")} <span className="sticker-light">{t("piedāvājumi")}</span>
           </h2>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/80">{home.xmasText}</p>
           <Points home={home} />
           <div className="mt-10 flex flex-wrap gap-3">
             <ButtonLink href={INQUIRY} size="lg" arrow>
-              Pieprasīt piedāvājumu
+              {t("Pieprasīt piedāvājumu")}
             </ButtonLink>
             <ButtonLink href={XMAS_PAGE} size="lg" variant="ghostLight">
-              Uzzināt vairāk
+              {t("Uzzināt vairāk")}
             </ButtonLink>
           </div>
         </div>
@@ -169,12 +172,13 @@ export function XmasFeature({ home, services }: FeatureProps) {
  * (virsraksts paliek tikai ekrāna lasītājiem). Rāda arī tad, ja sezonas reklāma ir izslēgta.
  */
 export function XmasOffers({ home, services }: FeatureProps) {
+  const t = getT();
   return (
     <section id="piedavajumi" aria-labelledby="piedavajumi-virsraksts" className="xmas-red relative isolate scroll-mt-20 overflow-hidden bg-ink py-16 text-white md:py-24">
       <div aria-hidden className="absolute inset-0 -z-10 opacity-60" style={stars} />
       <Container>
         <h2 id="piedavajumi-virsraksts" className="sr-only">
-          Ziemassvētku piedāvājumi
+          {t("Ziemassvētku piedāvājumi")}
         </h2>
         <Cards home={home} services={services} />
       </Container>

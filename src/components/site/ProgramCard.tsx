@@ -4,21 +4,23 @@ import type { Service } from "@/lib/content/types";
 import { programPlusVat } from "@/lib/bookings";
 import { fromPrice } from "@/lib/pricing";
 import Photo from "./Photo";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * Izklaides programmas kartīte: bilde augšā, zem tās — nosaukums, īss apraksts
  * un uzreiz redzama cena, ilgums un vecums.
  */
 export default function ProgramCard({ program, index = 0 }: { program: Service; index?: number }) {
+  const t = getT();
   const price = fromPrice(program.pricing);
   // Cena par katru bērnu (piem. izrāde bērnudārziem) — "4 € / bērnam", nevis "no 4 €"
-  const perChild = program.pricing.length === 1 && program.pricing[0].options.length === 1 && /par katru bērnu/i.test(program.pricing[0].options[0].label);
-  const vat = programPlusVat(program.slug) ? " + PVN" : "";
+  const perChild = program.pricing.length === 1 && program.pricing[0].options.length === 1 && /par katru bērnu|per child|за каждого ребёнка/i.test(program.pricing[0].options[0].label);
+  const vat = programPlusVat(program.slug) ? ` + ${t("PVN")}` : "";
   const facts = [
     // Izklaides programmu cenas ir bez PVN
-    { icon: Euro, label: "Cena", value: price !== null && perChild ? `${price} € / bērnam${vat}` : price !== null ? `no ${price} €${vat}` : "pēc vienošanās" },
-    { icon: Clock, label: "Ilgums", value: program.duration.replace(/\s*\(.*\)/, "") }, // bez piezīmes iekavās
-    { icon: Baby, label: "Vecums", value: program.age },
+    { icon: Euro, label: t("Cena"), value: price !== null && perChild ? t("{price} € / bērnam", { price }) + vat : price !== null ? t("no {price} €", { price }) + vat : t("pēc vienošanās") },
+    { icon: Clock, label: t("Ilgums"), value: program.duration.replace(/\s*\(.*\)/, "") }, // bez piezīmes iekavās
+    { icon: Baby, label: t("Vecums"), value: program.age },
   ].filter((f) => f.value);
 
   return (
@@ -50,13 +52,13 @@ export default function ProgramCard({ program, index = 0 }: { program: Service; 
                   <Icon className="size-3.5 shrink-0" aria-hidden />
                   {label}
                 </dt>
-                <dd className={`mt-1 text-[15px] leading-5 font-extrabold ${label === "Cena" ? "text-ink" : ""}`}>{value}</dd>
+                <dd className={`mt-1 text-[15px] leading-5 font-extrabold ${label === t("Cena") ? "text-ink" : ""}`}>{value}</dd>
               </div>
             ))}
           </dl>
 
           <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-extrabold tracking-wide uppercase">
-            Skatīt programmu
+            {t("Skatīt programmu")}
             <span className="grid size-8 place-items-center rounded-full bg-brand transition-transform group-hover:translate-x-1">→</span>
           </span>
         </div>

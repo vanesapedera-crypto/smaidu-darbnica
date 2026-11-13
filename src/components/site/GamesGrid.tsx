@@ -1,6 +1,7 @@
 import Photo from "./Photo";
 import { StageHeading } from "./stage";
 import { Container } from "./ui";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * Visu lielformāta spēļu režģis (pakalpojuma "Lielformāta spēles" lapā).
@@ -8,14 +9,15 @@ import { Container } from "./ui";
  * ja bildes vēl nav — tumšu kartīti ar numuru un nosaukumu.
  */
 export default function GamesGrid({ games }: { games: { name: string; image: string }[] }) {
+  const t = getT();
   return (
     <section id="speles" className="scroll-mt-20 bg-surface py-16 md:py-24">
       <Container>
         <StageHeading
-          eyebrow="Lielformāta spēles"
-          title="Visas"
-          highlight="spēles"
-          text="No šīm spēlēm kopā ar jums izvēlamies pasākumam piemērotāko kombināciju."
+          eyebrow={t("Lielformāta spēles")}
+          title={t("Visas")}
+          highlight={t("spēles")}
+          text={t("No šīm spēlēm kopā ar jums izvēlamies pasākumam piemērotāko kombināciju.")}
         />
         <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {games.map((g, i) => {

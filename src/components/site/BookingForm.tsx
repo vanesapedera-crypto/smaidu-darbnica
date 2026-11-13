@@ -50,6 +50,7 @@ import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
 import { PRICE_UNKNOWN_TEXT } from "@/lib/pricing";
 import TimeSelect from "./TimeSelect";
+import { useLocaleTag, useT } from "@/components/site/LocaleProvider";
 
 type Program = { slug: string; title: string; image?: string; pricing: PriceGroup[]; note?: string; extras?: Extra[]; smallMax?: number };
 
@@ -118,6 +119,10 @@ export default function BookingForm({
   /** Programmai "Pārsteiguma tēls" — pieejamie tēli ar bildēm (no paneļa: Iestatījumi → Izklaides programmas → Pārsteiguma tēli) */
   characters?: { name: string; image: string }[];
 }) {
+  const t = useT();
+  const tag = useLocaleTag();
+  // Kļūdu teksti klienta valodā (pārbaude formā un servera atbilde)
+  const tErrors = (e: Record<string, string>) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, v ? t(v) : v]));
   // Sākuma stāvoklis: iestādes formā programma un izbraukums ir noteikti jau iepriekš
   const start = {
     ...initial,
@@ -186,9 +191,9 @@ export default function BookingForm({
   const windowError =
     windows && form.eventTime
       ? !atWindows.length
-        ? outsideWindowsText(program?.slug, form.eventDate)
+        ? t(outsideWindowsText(program?.slug, form.eventDate))
         : !freeAt.length
-          ? WINDOW_TAKEN_TEXT
+          ? t(WINDOW_TAKEN_TEXT)
           : undefined
       : undefined;
   // Ja šajā laikā pieejams tikai viens variants (piem. vakarā — "Divi rūķi"), tas tiek izvēlēts automātiski (sk. `variant`)
@@ -199,15 +204,15 @@ export default function BookingForm({
   const slotLabel = (t: string) => `${t}–${String(Number(t.slice(0, 2)) + (venue?.hours ?? 1)).padStart(2, "0")}${t.slice(2)}`;
   // Programmai neder šī nedēļas diena (sk. ALLOWED_WEEKDAYS), piem. tikai pirmdienas–ceturtdienas
   const dayBlocked = isWeekdayBlocked(program?.slug, form.eventDate);
-  const dateError = dateBooked ? FULLY_BOOKED_TEXT : dayBlocked ? WEEKDAY_TEXT : undefined;
+  const dateError = dateBooked ? t(FULLY_BOOKED_TEXT) : dayBlocked ? t(WEEKDAY_TEXT) : undefined;
   const dateHint = [
-    allowedWeekdays(program?.slug) && WEEKDAY_HINT,
-    bookedDates.length > 0 && `Aizņemts: ${bookedDates.map((d) => dateWords(d)).join(", ")}.`,
+    allowedWeekdays(program?.slug) && t(WEEKDAY_HINT),
+    bookedDates.length > 0 && `${t("Aizņemts:")} ${bookedDates.map((d) => dateWords(d)).join(", ")}.`,
   ]
     .filter(Boolean)
     .join(" ");
   // Izklaides programmu cenas ir bez PVN — rāda kā "150 € + PVN" (PVN netiek pieskaitīts)
-  const vat = programPlusVat(form.program) ? " + PVN" : "";
+  const vat = programPlusVat(form.program) ? ` + ${t("PVN")}` : "";
   // Varianti: pēc noklusējuma izvēlēts pirmais
   const variants = program ? priceVariants(program.pricing) : [];
   const variant =
@@ -215,7 +220,7 @@ export default function BookingForm({
     variants.find((g) => g.title === variantChoice)?.title ??
     variants[0]?.title;
   // Izvēlētais variants šajā laikā nav pieejams (piem. 14. decembrī vakarā — tikai "Divi rūķi")
-  const variantError = freeVariants.length && variant && !freeVariants.some((f) => sameVariant(f, variant)) ? variantNotFreeText(freeVariants) : undefined;
+  const variantError = freeVariants.length && variant && !freeVariants.some((f) => sameVariant(f, variant)) ? t(variantNotFreeText(freeVariants)) : undefined;
   const programPrice = program
     ? estimateProgramPrice(program.pricing, Number(form.childrenCount), travelling, variant)
     : null;
@@ -267,8 +272,8 @@ export default function BookingForm({
     x.flat !== undefined
       ? eur(x.flat)
       : x.perChild !== undefined
-        ? `${eur(x.perChild)} / bērnam`
-        : `${x.smallLabel ?? "Mazā grupa"} — ${eur(x.small ?? 0)} · ${x.largeLabel ?? "Lielā grupa"} — ${eur(x.large ?? 0)}`;
+        ? `${eur(x.perChild)} / ${t("bērnam")}`
+        : `${t(x.smallLabel ?? "Mazā grupa")} — ${eur(x.small ?? 0)} · ${t(x.largeLabel ?? "Lielā grupa")} — ${eur(x.large ?? 0)}`;
 
   /**
    * Ceļa izdevumu aprēķins (pa ceļiem no Pasta ielas 25, Tukumā, turp un atpakaļ).
@@ -282,9 +287,9 @@ export default function BookingForm({
     try {
       const res = await fetch(`/api/travel?${new URLSearchParams({ address })}`);
       const data = await res.json();
-      setTravel(data.ok ? { status: "ok", address, quote: data } : { status: "error", address, error: data.error });
+      setTravel(data.ok ? { status: "ok", address, quote: data } : { status: "error", address, error: t(data.error) });
     } catch {
-      setTravel({ status: "error", address, error: "Neizdevās aprēķināt. Ceļa izdevumus aprēķināsim, apstiprinot rezervāciju." });
+      setTravel({ status: "error", address, error: t("Neizdevās aprēķināt. Ceļa izdevumus aprēķināsim, apstiprinot rezervāciju.") });
     }
   }
 
@@ -338,8 +343,8 @@ export default function BookingForm({
     if (!form.consent) missing.consent = "Nepieciešama piekrišana datu apstrādei.";
     const first = Object.keys(missing)[0];
     if (first) {
-      setErrors(missing);
-      setMessage("Lūdzu, aizpildiet iezīmētos laukus.");
+      setErrors(tErrors(missing));
+      setMessage(t("Lūdzu, aizpildiet iezīmētos laukus."));
       setState("error");
       // Aizritina līdz pirmajam neaizpildītajam laukam
       const el = document.getElementById(first === "eventTime" && inStudio ? "time-label" : first);
@@ -385,18 +390,18 @@ export default function BookingForm({
         setCharacter("");
         return;
       }
-      setErrors(data.errors ?? {});
-      setMessage(data.error ?? "Lūdzu, pārbaudiet iezīmētos laukus.");
+      setErrors(tErrors(data.errors ?? {}));
+      setMessage(t(data.error ?? "Lūdzu, pārbaudiet iezīmētos laukus."));
       setState("error");
     } catch {
-      setMessage("Neizdevās nosūtīt. Pārbaudiet interneta savienojumu vai zvaniet mums.");
+      setMessage(t("Neizdevās nosūtīt. Pārbaudiet interneta savienojumu vai zvaniet mums."));
       setState("error");
     }
   }
 
   // Kopsavilkuma rindas biļetē: datums, laiks, vieta (rādām tikai to, kas jau izvēlēts)
   const dateLabel = form.eventDate
-    ? new Date(`${form.eventDate}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })
+    ? new Date(`${form.eventDate}T12:00:00`).toLocaleDateString(tag, { weekday: "long", day: "numeric", month: "long" })
     : "";
   const timeLabel = inStudio
     ? (VENUE_SLOTS.find((t) => t.value === form.eventTime)?.label ?? "")
@@ -418,11 +423,11 @@ export default function BookingForm({
           <CircleCheck className="size-8" aria-hidden />
         </span>
         <h2 className="display mt-7 text-3xl md:text-4xl">
-          Pieteikums <span className="sticker">saņemts</span>
+          {t("Pieteikums")} <span className="sticker">{t("saņemts")}</span>
         </h2>
-        <p className="mt-5 max-w-md leading-7 text-ink-soft">Paldies! Sazināsimies ar jums, lai apstiprinātu rezervāciju.</p>
+        <p className="mt-5 max-w-md leading-7 text-ink-soft">{t("Paldies! Sazināsimies ar jums, lai apstiprinātu rezervāciju.")}</p>
         <button type="button" className={cn(buttonClass("outline"), "mt-8")} onClick={() => setState("idle")}>
-          Jauns pieteikums
+          {t("Jauns pieteikums")}
         </button>
       </div>
     );
@@ -435,14 +440,14 @@ export default function BookingForm({
       <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand font-display text-lg font-extrabold">
         {n}
       </span>
-      <span className="font-display text-xl font-extrabold tracking-tight uppercase sm:text-2xl">{title}</span>
+      <span className="font-display text-xl font-extrabold tracking-tight uppercase sm:text-2xl">{t(title)}</span>
     </legend>
   );
   // Biļetes rinda: etiķete + vērtība
   const ticketRow = (label: string, value: React.ReactNode) => (
     <div className="flex justify-between gap-4">
-      <dt className="text-white/60">{label}</dt>
-      <dd className="text-right font-semibold">{value}</dd>
+      <dt className="text-white/60">{t(label)}</dt>
+      <dd className="text-right font-semibold">{typeof value === "string" ? t(value) : value}</dd>
     </div>
   );
 
@@ -453,10 +458,10 @@ export default function BookingForm({
       <div className="space-y-6">
         {/* 1. solis — izklaides programma (vai "Nebūs nepieciešama", ja vajag tikai telpas); iestādes formā — tikai varianta izvēle */}
         <fieldset className={step}>
-          {stepHead("01", institution ? "Programma" : "Izklaides programma")}
+          {stepHead("01", institution ? "Programma" : t("Izklaides programma"))}
           <div className="clear-both grid gap-5">
             {!institution && (
-            <Field id="program" label="Izklaides programma" required error={errors.program}>
+            <Field id="program" label={t("Izklaides programma")} required error={errors.program}>
               <select
                 {...fieldProps("program")}
                 onChange={(e) => {
@@ -466,12 +471,12 @@ export default function BookingForm({
                   setErrors((er) => ({ ...er, program: "" }));
                 }}
               >
-                <option value="">Izvēlieties izklaides programmu</option>
-                <option value={NO_PROGRAM}>Nebūs nepieciešama</option>
+                <option value="">{t("Izvēlieties izklaides programmu")}</option>
+                <option value={NO_PROGRAM}>{t("Nebūs nepieciešama")}</option>
                 {programs.map((p) => (
                   <option key={p.slug} value={p.slug}>
-                    {p.title}
-                    {fromPrice(p.pricing) !== null ? ` — no ${fromPrice(p.pricing)} €${programPlusVat(p.slug) ? " + PVN" : ""}` : ""}
+                    {t(p.title)}
+                    {fromPrice(p.pricing) !== null ? ` — ${t("no {price} €", { price: fromPrice(p.pricing) ?? 0 })}${programPlusVat(p.slug) ? ` + ${t("PVN")}` : ""}` : ""}
                   </option>
                 ))}
               </select>
@@ -481,8 +486,7 @@ export default function BookingForm({
             {/* Telpu noma bez programmas — citu animatoru programmas mūsu telpās nav paredzētas */}
             {!institution && inStudio && form.program === NO_PROGRAM && (
               <p className="rounded-2xl bg-brand/25 p-4 text-sm leading-6">
-                <strong>Lūdzu, ņemiet vērā:</strong> mūsu telpās nav paredzēts vadīt izklaides programmas citiem animatoriem. Izklaides
-                programmas piedāvājam mēs paši — tās varat izvēlēties šeit augstāk. Par šī noteikuma neievērošanu — sods 50 €.
+                <strong>{t("Lūdzu, ņemiet vērā:")}</strong> {t("mūsu telpās nav paredzēts vadīt izklaides programmas citiem animatoriem. Izklaides programmas piedāvājam mēs paši — tās varat izvēlēties šeit augstāk. Par šī noteikuma neievērošanu — sods 50 €.")}
               </p>
             )}
 
@@ -492,7 +496,7 @@ export default function BookingForm({
             {program && variants.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-bold" id="variant-label">
-                  Izvēlieties<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                  {t("Izvēlieties")}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
                 </p>
                 <div role="radiogroup" aria-labelledby="variant-label" className="grid gap-3 sm:grid-cols-2">
                   {variants.map((g) => {
@@ -513,12 +517,12 @@ export default function BookingForm({
                           onChange={() => setVariantChoice(g.title)}
                           className="sr-only"
                         />
-                        <span className="block leading-snug font-extrabold">{g.title}</span>
+                        <span className="block leading-snug font-extrabold">{t(g.title)}</span>
                         <span className="mt-2 block space-y-1">
                           {g.options.map((o) => (
                             <span key={o.label} className="flex justify-between gap-3">
-                              <span className={active ? "text-ink/75" : "text-ink-soft"}>{o.label}</span>
-                              <span className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : `${eur(o.price)}${vat}`}</span>
+                              <span className={active ? "text-ink/75" : "text-ink-soft"}>{t(o.label)}</span>
+                              <span className="font-bold whitespace-nowrap">{o.price === null ? t("pēc vienošanās") : `${eur(o.price)}${vat}`}</span>
                             </span>
                           ))}
                         </span>
@@ -526,25 +530,25 @@ export default function BookingForm({
                     );
                   })}
                 </div>
-                {shownNote && <p className="text-sm text-ink-soft">{shownNote}</p>}
+                {shownNote && <p className="text-sm text-ink-soft">{t(shownNote)}</p>}
               </div>
             )}
             {program && variants.length === 0 && program.pricing.length > 0 && (
               <div className={cn("grid gap-4 rounded-2xl bg-surface p-5 text-sm", shownPricing.length > 1 && "sm:grid-cols-2")}>
                 {shownPricing.map((g) => (
                   <div key={g.title}>
-                    <p className="font-extrabold">{g.title}</p>
+                    <p className="font-extrabold">{t(g.title)}</p>
                     <dl className="mt-2 space-y-1">
                       {g.options.map((o) => (
                         <div key={o.label} className="flex justify-between gap-3">
-                          <dt className="text-ink-soft">{o.label}</dt>
-                          <dd className="font-bold whitespace-nowrap">{o.price === null ? "pēc vienošanās" : `${eur(o.price)}${vat}`}</dd>
+                          <dt className="text-ink-soft">{t(o.label)}</dt>
+                          <dd className="font-bold whitespace-nowrap">{o.price === null ? t("pēc vienošanās") : `${eur(o.price)}${vat}`}</dd>
                         </div>
                       ))}
                     </dl>
                   </div>
                 ))}
-                {shownNote && <p className={cn("text-ink-soft", shownPricing.length > 1 && "sm:col-span-2")}>{shownNote}</p>}
+                {shownNote && <p className={cn("text-ink-soft", shownPricing.length > 1 && "sm:col-span-2")}>{t(shownNote)}</p>}
               </div>
             )}
 
@@ -552,7 +556,7 @@ export default function BookingForm({
             {choice && (
               <div className="space-y-2">
                 <p className="text-sm font-bold" id="choice">
-                  {choice.title ?? choice.label}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                  {t(choice.title ?? choice.label)}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
                 </p>
                 <div role="radiogroup" aria-labelledby="choice" className="grid gap-3 sm:grid-cols-2">
                   {choice.options.map((o) => {
@@ -593,7 +597,7 @@ export default function BookingForm({
             {showCharacters && (
               <div className="space-y-2">
                 <p className="text-sm font-bold" id="character">
-                  Izvēlieties tēlu<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                  {t("Izvēlieties tēlu")}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
                 </p>
                 <div role="radiogroup" aria-labelledby="character" className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                   {characters.map((c) => {
@@ -629,7 +633,7 @@ export default function BookingForm({
                             />
                           )}
                         </span>
-                        <span className={cn("px-2 py-2 text-center text-xs font-extrabold uppercase", active && "bg-brand")}>{c.name}</span>
+                        <span className={cn("px-2 py-2 text-center text-xs font-extrabold uppercase", active && "bg-brand")}>{t(c.name)}</span>
                       </label>
                     );
                   })}
@@ -645,7 +649,7 @@ export default function BookingForm({
             {/* Papildu iespējas (ja programmai tādas ir) */}
             {program?.extras && program.extras.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-bold" id="extras-label">Papildu iespējas</p>
+                <p className="text-sm font-bold" id="extras-label">{t("Papildu iespējas")}</p>
                 <div role="group" aria-labelledby="extras-label" className="grid gap-2 sm:grid-cols-2">
                   {program.extras.map((x) => {
                     const checked = extras.includes(x.label);
@@ -664,7 +668,7 @@ export default function BookingForm({
                           className="mt-0.5 size-5 shrink-0 accent-ink"
                         />
                         <span>
-                          <span className="block font-bold">{x.label}</span>
+                          <span className="block font-bold">{t(x.label)}</span>
                           {/* Cenas pēc grupas lieluma — katra savā rindā */}
                           {extraHint(x).split(" · ").map((line) => (
                             <span key={line} className={cn("block", checked ? "text-ink/75" : "text-ink-soft")}>{line}</span>
@@ -684,7 +688,7 @@ export default function BookingForm({
           {stepHead("02", "Vieta un laiks")}
           <div className="clear-both grid gap-5 sm:grid-cols-2">
             {institution && (
-              <Field id="companyName" label={institution.nameLabel} required error={errors.companyName} className="sm:col-span-2">
+              <Field id="companyName" label={t(institution.nameLabel)} required error={errors.companyName} className="sm:col-span-2">
                 <input {...fieldProps("companyName")} autoComplete="organization" />
               </Field>
             )}
@@ -692,20 +696,20 @@ export default function BookingForm({
               <p className="flex items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-6 sm:col-span-2">
                 <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
                 <span>
-                  <strong>Norises vieta:</strong> {venue.name}
+                  <strong>{t("Norises vieta:")}</strong> {venue.name}
                 </span>
               </p>
             )}
             {!institution && !venue && (
             <div className="space-y-2 sm:col-span-2">
               <p className="text-sm font-bold" id="location-label">
-                Norises vieta<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                {t("Norises vieta")}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
               </p>
               <div role="radiogroup" aria-labelledby="location-label" className="grid grid-cols-2 gap-3">
                 {(
                   [
                     [LOCATIONS.studio, DoorOpen, "Pasta iela 25, Tukums"],
-                    [LOCATIONS.travel, Car, "Pie jums"],
+                    [LOCATIONS.travel, Car, t("Pie jums")],
                   ] as const
                 ).map(([loc, Icon, sub]) => {
                   const active = form.location === loc;
@@ -729,8 +733,8 @@ export default function BookingForm({
                         <Icon className="size-5" aria-hidden />
                       </span>
                       <span>
-                        <span className="block leading-tight font-extrabold">{loc}</span>
-                        <span className={cn("mt-0.5 block text-sm", active ? "text-white/70" : "text-ink-soft")}>{sub}</span>
+                        <span className="block leading-tight font-extrabold">{t(loc)}</span>
+                        <span className={cn("mt-0.5 block text-sm", active ? "text-white/70" : "text-ink-soft")}>{t(sub)}</span>
                       </span>
                     </label>
                   );
@@ -741,23 +745,22 @@ export default function BookingForm({
 
             {inStudio ? (
               <p className="rounded-2xl bg-surface p-4 text-sm leading-6 sm:col-span-2">
-                <strong>Telpu noma (3 h):</strong> pirmdiena–ceturtdiena {prices.venueWeekday} €, piektdiena–svētdiena {prices.venueWeekend} €.
+                <strong>{t("Telpu noma (3 h):")}</strong> {t("pirmdiena–ceturtdiena")} {prices.venueWeekday} €, {t("piektdiena–svētdiena")} {prices.venueWeekend} €.
               </p>
             ) : travelling ? (
               <>
                 {/* Izbraukumā — programmas citās ballīšu telpās Tukumā nevadām (izņemot sejas apgleznošanu) */}
                 {!institution && form.program !== "sejas-apgleznosana" && (
                   <p className="rounded-2xl bg-brand/25 p-4 text-sm leading-6 sm:col-span-2">
-                    <strong>Lūdzu, ņemiet vērā:</strong> izklaides programmas nevadām citās ballīšu telpās, kas atrodas Tukumā. Izņēmums — sejas
-                    apgleznošana.
+                    <strong>{t("Lūdzu, ņemiet vērā:")}</strong> {t("izklaides programmas nevadām citās ballīšu telpās, kas atrodas Tukumā. Izņēmums — sejas apgleznošana.")}
                   </p>
                 )}
                 <Field
                   id="address"
-                  label={institution?.addressLabel ?? "Ballītes adrese"}
+                  label={t(institution?.addressLabel ?? "Ballītes adrese")}
                   required
                   error={errors.address}
-                  hint="Ar pasta indeksu, piem.: Rīgas iela 5, Tukums, LV-3101 vai “Dreijeri”, Krimuldas pag., LV-2145"
+                  hint={t("Ar pasta indeksu, piem.: Rīgas iela 5, Tukums, LV-3101 vai “Dreijeri”, Krimuldas pag., LV-2145")}
                   className="sm:col-span-2"
                 >
                   <div className="flex gap-2">
@@ -765,14 +768,14 @@ export default function BookingForm({
                       {...fieldProps("address")}
                       onBlur={calculateTravel}
                       autoComplete="street-address"
-                      placeholder="Iela, mājas nr., pilsēta"
+                      placeholder={t("Iela, mājas nr., pilsēta")}
                     />
                     <button
                       type="button"
                       onClick={calculateTravel}
                       className="shrink-0 rounded-2xl border-2 border-ink px-4 text-sm font-bold transition-colors hover:bg-ink hover:text-white"
                     >
-                      Aprēķināt
+                      {t("Aprēķināt")}
                     </button>
                   </div>
                 </Field>
@@ -782,7 +785,7 @@ export default function BookingForm({
                   <div aria-live="polite" className="flex items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-6 sm:col-span-2">
                     {travel.status === "loading" ? (
                       <>
-                        <LoaderCircle className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden /> Aprēķina attālumu…
+                        <LoaderCircle className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden /> {t("Aprēķina attālumu…")}
                       </>
                     ) : travel.status === "error" ? (
                       <p>{travel.error}</p>
@@ -792,25 +795,25 @@ export default function BookingForm({
                         <div>
                           {travel.quote.oneWayKm <= prices.freeTravelKm ? (
                             <p>
-                              <strong>Ceļa izdevumi: 0 €</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km vienā virzienā.
+                              <strong>{t("Ceļa izdevumi: 0 €")}</strong> — {travel.quote.oneWayKm.toLocaleString(tag)} {t("km vienā virzienā.")}{" "}
                               {institution
-                                ? `Adresēm līdz ${prices.freeTravelKm} km ceļa izdevumus nerēķinām.`
-                                : `Adresēm līdz ${prices.freeTravelKm} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.`}
+                                ? t("Adresēm līdz {km} km ceļa izdevumus nerēķinām.", { km: prices.freeTravelKm })
+                                : t("Adresēm līdz {km} km izbraukuma piemaksu un ceļa izdevumus nerēķinām.", { km: prices.freeTravelKm })}
                             </p>
                           ) : (
                             <>
                               <p>
-                                <strong>Ceļa izdevumi: {eur(travel.quote.cost)}</strong> — {travel.quote.oneWayKm.toLocaleString("lv-LV")} km
-                                vienā virzienā, {travel.quote.roundTripKm.toLocaleString("lv-LV")} km turp un atpakaļ.
+                                <strong>{t("Ceļa izdevumi:")} {eur(travel.quote.cost)}</strong> —{" "}
+                                {t("{one} km vienā virzienā, {round} km turp un atpakaļ.", { one: travel.quote.oneWayKm.toLocaleString(tag), round: travel.quote.roundTripKm.toLocaleString(tag) })}
                               </p>
                               <p className="mt-1">
                                 {institution
-                                  ? `Adresēm tālāk par ${prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīti ceļa izdevumi — ${eur(prices.travelRate)} par km turp un atpakaļ.`
-                                  : `Izbraukuma ballītēm tālāk par ${prices.freeTravelKm} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīta izbraukuma piemaksa ${eur(prices.travelSurcharge)} un ceļa izdevumi — ${eur(prices.travelRate)} par km turp un atpakaļ.`}
+                                  ? t("Adresēm tālāk par {km} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīti ceļa izdevumi — {rate} par km turp un atpakaļ.", { km: prices.freeTravelKm, rate: eur(prices.travelRate) })
+                                  : t("Izbraukuma ballītēm tālāk par {km} km no Smaidu Darbnīcas (Pasta iela 25, Tukums) tiek pieskaitīta izbraukuma piemaksa {surcharge} un ceļa izdevumi — {rate} par km turp un atpakaļ.", { km: prices.freeTravelKm, surcharge: eur(prices.travelSurcharge), rate: eur(prices.travelRate) })}
                               </p>
                             </>
                           )}
-                          <p className="mt-1 text-ink-soft">Atrastā adrese: {travel.quote.address}</p>
+                          <p className="mt-1 text-ink-soft">{t("Atrastā adrese:")} {travel.quote.address}</p>
                         </div>
                       </>
                     )}
@@ -823,20 +826,20 @@ export default function BookingForm({
             {slots ? (
               <div className="space-y-3 sm:col-span-2" id="eventDate">
                 <p className="text-sm font-bold">
-                  Pieejamie laiki<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                  {t("Pieejamie laiki")}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
                 </p>
                 {slots.map((d) => (
                   <div key={d.date}>
                     <p className="mb-2 text-sm font-extrabold first-letter:uppercase">
-                      {new Date(`${d.date}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long", day: "numeric", month: "long" })}
+                      {new Date(`${d.date}T12:00:00`).toLocaleDateString(tag, { weekday: "long", day: "numeric", month: "long" })}
                     </p>
                     <div role="radiogroup" aria-label={d.date} className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(d.times.length, 3)}, minmax(0, 1fr))` }}>
-                      {d.times.map((t) => {
-                        const taken = slotTaken.includes(`${d.date} ${t}`);
-                        const active = form.eventDate === d.date && form.eventTime === t && !taken;
+                      {d.times.map((tm) => {
+                        const taken = slotTaken.includes(`${d.date} ${tm}`);
+                        const active = form.eventDate === d.date && form.eventTime === tm && !taken;
                         return (
                           <label
-                            key={t}
+                            key={tm}
                             className={cn(
                               "flex flex-col items-center rounded-2xl border-2 px-2 py-3 text-center transition-colors",
                               taken
@@ -849,17 +852,17 @@ export default function BookingForm({
                             <input
                               type="radio"
                               name="slot"
-                              value={`${d.date} ${t}`}
+                              value={`${d.date} ${tm}`}
                               checked={active}
                               disabled={taken}
                               onChange={() => {
-                                setForm((f) => ({ ...f, eventDate: d.date, eventTime: t }));
+                                setForm((f) => ({ ...f, eventDate: d.date, eventTime: tm }));
                                 setErrors((er) => ({ ...er, eventDate: "" }));
                               }}
                               className="sr-only"
                             />
-                            <span className={cn("text-sm font-extrabold whitespace-nowrap sm:text-base", taken && "line-through")}>{slotLabel(t)}</span>
-                            {taken && <span className="mt-0.5 text-xs font-semibold">aizņemts</span>}
+                            <span className={cn("text-sm font-extrabold whitespace-nowrap sm:text-base", taken && "line-through")}>{slotLabel(tm)}</span>
+                            {taken && <span className="mt-0.5 text-xs font-semibold">{t("aizņemts")}</span>}
                           </label>
                         );
                       })}
@@ -875,7 +878,7 @@ export default function BookingForm({
             ) : onlyDates ? (
               <div className="space-y-2 sm:col-span-2" id="eventDate">
                 <p className="text-sm font-bold" id="date-label">
-                  Pieejamie datumi<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                  {t("Pieejamie datumi")}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
                 </p>
                 <div role="radiogroup" aria-labelledby="date-label" className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                   {onlyDates.map((d) => {
@@ -909,27 +912,27 @@ export default function BookingForm({
                           className="sr-only"
                         />
                         <span className="text-sm font-extrabold first-letter:uppercase">
-                          {new Date(`${d}T12:00:00`).toLocaleDateString("lv-LV", { weekday: "long" })}
+                          {new Date(`${d}T12:00:00`).toLocaleDateString(tag, { weekday: "long" })}
                         </span>
-                        <span className="text-sm">{new Date(`${d}T12:00:00`).toLocaleDateString("lv-LV", { day: "numeric", month: "long" })}</span>
+                        <span className="text-sm">{new Date(`${d}T12:00:00`).toLocaleDateString(tag, { day: "numeric", month: "long" })}</span>
                         {full ? (
-                          <span className="text-xs font-semibold">Aizņemts</span>
+                          <span className="text-xs font-semibold">{t("Aizņemts")}</span>
                         ) : (
-                          dayWindows(program?.slug, d) && <span className="text-xs font-semibold">noteikti laiki</span>
+                          dayWindows(program?.slug, d) && <span className="text-xs font-semibold">{t("noteikti laiki")}</span>
                         )}
                       </label>
                     );
                   })}
                 </div>
-                {onlyDates.length === 0 && <p className="text-sm font-semibold">Brīvu datumu vairs nav.</p>}
+                {onlyDates.length === 0 && <p className="text-sm font-semibold">{t("Brīvu datumu vairs nav.")}</p>}
                 {windows && !dayFull(form.eventDate) && (
                   <div className="rounded-2xl bg-surface p-4 text-sm leading-6">
-                    <p className="font-extrabold">Pieejamie laiki šajā datumā:</p>
+                    <p className="font-extrabold">{t("Pieejamie laiki šajā datumā:")}</p>
                     <ul className="mt-1 space-y-1">
                       {dayRuleLines(program?.slug, form.eventDate, takenVariants).map((line) => (
                         <li key={line} className="flex gap-2">
                           <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-ink" />
-                          {line}
+                          {t(line)}
                         </li>
                       ))}
                     </ul>
@@ -944,7 +947,7 @@ export default function BookingForm({
             ) : (
             <Field
               id="eventDate"
-              label="Vēlamais datums"
+              label={t("Vēlamais datums")}
               required
               error={dateError ?? errors.eventDate}
               hint={dateHint || undefined}
@@ -957,10 +960,10 @@ export default function BookingForm({
             {!inStudio && !slots && (
               <Field
                 id="eventTime"
-                label="Vēlamais laiks"
+                label={t("Vēlamais laiks")}
                 required
                 error={windowError ?? variantError ?? errors.eventTime}
-                hint={freeVariants.length ? `Šajā laikā: ${freeVariants.map((v) => `“${v}”`).join(" vai ")}.` : undefined}
+                hint={freeVariants.length ? `${t("Šajā laikā:")} ${freeVariants.map((v) => `“${t(v)}”`).join(` ${t("vai")} `)}.` : undefined}
               >
                 <TimeSelect
                   id="eventTime"
@@ -982,9 +985,9 @@ export default function BookingForm({
                   <Clock className="size-4" aria-hidden />
                 </span>
                 <div className="space-y-2">
-                  <p className="font-display font-extrabold uppercase">Svarīgi!</p>
+                  <p className="font-display font-extrabold uppercase">{t("Svarīgi!")}</p>
                   {notice.split(/\n{2,}/).map((para) => (
-                    <p key={para}>{para}</p>
+                    <p key={para}>{t(para)}</p>
                   ))}
                 </div>
               </div>
@@ -994,15 +997,15 @@ export default function BookingForm({
             {inStudio && (
               <div className="space-y-2 sm:col-span-2">
                 <p className="text-sm font-bold" id="time-label">
-                  Vēlamais laiks<span className="ml-0.5 text-destructive" aria-hidden> *</span>
+                  {t("Vēlamais laiks")}<span className="ml-0.5 text-destructive" aria-hidden> *</span>
                 </p>
                 <div role="radiogroup" aria-labelledby="time-label" className="grid grid-cols-3 gap-2 sm:gap-3">
-                  {VENUE_SLOTS.map((t) => {
-                    const taken = takenTimes.includes(t.value);
-                    const active = form.eventTime === t.value && !taken;
+                  {VENUE_SLOTS.map((slot) => {
+                    const taken = takenTimes.includes(slot.value);
+                    const active = form.eventTime === slot.value && !taken;
                     return (
                       <label
-                        key={t.value}
+                        key={slot.value}
                         className={cn(
                           "flex flex-col items-center rounded-2xl border-2 px-2 py-3 text-center transition-colors",
                           taken
@@ -1015,21 +1018,21 @@ export default function BookingForm({
                         <input
                           type="radio"
                           name="eventTime"
-                          value={t.value}
+                          value={slot.value}
                           checked={active}
                           disabled={taken}
-                          onChange={() => setForm((f) => ({ ...f, eventTime: t.value }))}
+                          onChange={() => setForm((f) => ({ ...f, eventTime: slot.value }))}
                           className="sr-only"
                         />
-                        <span className={cn("text-sm font-extrabold whitespace-nowrap sm:text-base", taken && "line-through")}>{t.label}</span>
-                        {taken && <span className="mt-0.5 text-xs font-semibold">aizņemts</span>}
+                        <span className={cn("text-sm font-extrabold whitespace-nowrap sm:text-base", taken && "line-through")}>{slot.label}</span>
+                        {taken && <span className="mt-0.5 text-xs font-semibold">{t("aizņemts")}</span>}
                       </label>
                     );
                   })}
                 </div>
                 {(allTaken || timeTaken) && (
                   <p role="alert" className="text-sm font-semibold text-destructive">
-                    {allTaken ? "Šajā datumā visi laiki ir aizņemti — lūdzu, izvēlieties citu datumu." : "Šis laiks šajā datumā jau ir aizņemts — izvēlieties citu."}
+                    {allTaken ? t("Šajā datumā visi laiki ir aizņemti — lūdzu, izvēlieties citu datumu.") : t("Šis laiks šajā datumā jau ir aizņemts — izvēlieties citu.")}
                   </p>
                 )}
                 {errors.eventTime && (
@@ -1042,7 +1045,7 @@ export default function BookingForm({
 
             <Field
               id="childrenCount"
-              label="Bērnu skaits"
+              label={t("Bērnu skaits")}
               required={headcount || Boolean(institution)}
               error={errors.childrenCount}
               className={institution ? "sm:col-span-2" : undefined}
@@ -1050,7 +1053,7 @@ export default function BookingForm({
               <input {...fieldProps("childrenCount")} type="number" inputMode="numeric" min={1} />
             </Field>
             {!institution && (
-              <Field id="childAge" label="Gaviļnieka vecums" required={headcount} error={errors.childAge}>
+              <Field id="childAge" label={t("Gaviļnieka vecums")} required={headcount} error={errors.childAge}>
                 <input {...fieldProps("childAge")} />
               </Field>
             )}
@@ -1061,32 +1064,32 @@ export default function BookingForm({
         <fieldset className={step}>
           {stepHead("03", "Kontakti")}
           <div className="clear-both grid gap-5 sm:grid-cols-2">
-            <Field id="parentName" label={institution ? "Kontaktpersona" : "Vārds"} required error={errors.parentName}>
+            <Field id="parentName" label={institution ? t("Kontaktpersona") : t("Vārds")} required error={errors.parentName}>
               <input {...fieldProps("parentName")} autoComplete="name" required />
             </Field>
-            <Field id="phone" label="Telefons" required error={errors.phone}>
+            <Field id="phone" label={t("Telefons")} required error={errors.phone}>
               <input {...fieldProps("phone")} type="tel" autoComplete="tel" placeholder="+371" required />
             </Field>
             {/* Apstiprinājums un visa turpmākā saziņa notiek pa e-pastu — tāpēc tas ir obligāts */}
             <Field
               id="email"
-              label="E-pasts"
+              label={t("E-pasts")}
               required
               error={errors.email}
-              hint="Uz šo e-pastu nosūtīsim rezervācijas apstiprinājumu."
+              hint={t("Uz šo e-pastu nosūtīsim rezervācijas apstiprinājumu.")}
               className="sm:col-span-2"
             >
               <input {...fieldProps("email")} type="email" autoComplete="email" required />
             </Field>
-            <Field id="message" label="Papildu informācija" error={errors.message} className="sm:col-span-2">
-              <textarea {...fieldProps("message")} rows={4} placeholder={institution ? undefined : "Pastāstiet par ballīti…"} />
+            <Field id="message" label={t("Papildu informācija")} error={errors.message} className="sm:col-span-2">
+              <textarea {...fieldProps("message")} rows={4} placeholder={institution ? undefined : t("Pastāstiet par ballīti…")} />
             </Field>
           </div>
         </fieldset>
       </div>
 
       {/* Biļete: izvēlētā programma, datums, izmaksas un pieteikšanas poga (lielā ekrānā paliek redzama ritinot) */}
-      <aside className="overflow-hidden rounded-3xl bg-ink text-white ring-1 ring-white/15 lg:sticky lg:top-28" aria-label="Rezervācijas kopsavilkums">
+      <aside className="overflow-hidden rounded-3xl bg-ink text-white ring-1 ring-white/15 lg:sticky lg:top-28" aria-label={t("Rezervācijas kopsavilkums")}>
         {program?.image && (
           <div className="relative aspect-[16/10]">
             <Image
@@ -1101,9 +1104,9 @@ export default function BookingForm({
           </div>
         )}
         <div className={cn("p-6 sm:p-7", program?.image && "relative -mt-10")}>
-          <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Jūsu rezervācija</p>
+          <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">{t("Jūsu rezervācija")}</p>
           {(program || form.program === NO_PROGRAM) && (
-            <p className="mt-2 font-display text-2xl leading-tight font-extrabold uppercase">{program?.title ?? "Telpu noma"}</p>
+            <p className="mt-2 font-display text-2xl leading-tight font-extrabold uppercase">{t(program?.title ?? "Telpu noma")}</p>
           )}
 
           <dl className="mt-5 space-y-2 text-sm">
@@ -1113,7 +1116,7 @@ export default function BookingForm({
             {placeLabel && ticketRow("Vieta", placeLabel)}
             {choice && picked && ticketRow(choice.label, picked)}
             {showCharacters && character && ticketRow("Tēls", character)}
-            {form.childrenCount && ticketRow("Bērnu skaits", form.childrenCount)}
+            {form.childrenCount && ticketRow(t("Bērnu skaits"), form.childrenCount)}
           </dl>
 
           {/* Biļetes "perforācija" */}
@@ -1126,16 +1129,16 @@ export default function BookingForm({
             <p className="text-xs font-extrabold tracking-[0.14em] text-white/60 uppercase">Izmaksas</p>
             {hasCosts ? (
               <dl className="mt-3 space-y-2 text-sm">
-                {program && ticketRow(variant ?? program.title, programPrice === null ? (form.childrenCount ? "pēc vienošanās" : "norādiet bērnu skaitu") : `${eur(programPrice)}${vat}`)}
+                {program && ticketRow(variant ?? program.title, programPrice === null ? (form.childrenCount ? t("pēc vienošanās") : t("norādiet bērnu skaitu")) : `${eur(programPrice)}${vat}`)}
                 {chosenExtras.map((x) => (
                   <div key={x.label} className="flex justify-between gap-4">
-                    <dt className="text-white/60">{x.label}</dt>
-                    <dd className="text-right font-semibold whitespace-nowrap">{x.price === null ? "norādiet bērnu skaitu" : eur(x.price)}</dd>
+                    <dt className="text-white/60">{t(x.label)}</dt>
+                    <dd className="text-right font-semibold whitespace-nowrap">{x.price === null ? t("norādiet bērnu skaitu") : eur(x.price)}</dd>
                   </div>
                 ))}
                 {roomPrice !== null && ticketRow("Telpu noma", eur(roomPrice))}
                 {surcharge > 0 && ticketRow("Izbraukuma piemaksa", eur(surcharge))}
-                {travelQuote && ticketRow(`Ceļa izdevumi (${travelQuote.roundTripKm.toLocaleString("lv-LV")} km)`, eur(travelQuote.cost))}
+                {travelQuote && ticketRow(`${t("Ceļa izdevumi")} (${travelQuote.roundTripKm.toLocaleString(tag)} km)`, eur(travelQuote.cost))}
                 {travelFailed && ticketRow("Ceļa izdevumi", "aprēķināsim, apstiprinot")}
                 <div className="flex items-end justify-between gap-4 border-t border-white/15 pt-4">
                   <dt className="font-extrabold">Kopā</dt>
@@ -1143,11 +1146,11 @@ export default function BookingForm({
                 </div>
               </dl>
             ) : (
-              <p className="mt-3 text-sm leading-6 text-white/60">Izvēlieties programmu un datumu — šeit parādīsies izmaksas.</p>
+              <p className="mt-3 text-sm leading-6 text-white/60">{t("Izvēlieties programmu un datumu — šeit parādīsies izmaksas.")}</p>
             )}
-            {program && vat && hasCosts && <p className="mt-3 text-sm text-white/60">{VAT_NOTE}</p>}
+            {program && vat && hasCosts && <p className="mt-3 text-sm text-white/60">{t(VAT_NOTE)}</p>}
             {travelling && !travelQuote && hasCosts && (
-              <p className="mt-3 text-sm text-white/60">Ievadiet {institution ? "adresi" : "ballītes adresi"}, lai aprēķinātu ceļa izdevumus.</p>
+              <p className="mt-3 text-sm text-white/60">{t(institution ? "Ievadiet adresi, lai aprēķinātu ceļa izdevumus." : "Ievadiet ballītes adresi, lai aprēķinātu ceļa izdevumus.")}</p>
             )}
           </div>
 
@@ -1163,9 +1166,9 @@ export default function BookingForm({
                 aria-describedby={errors.consent ? "consent-error" : undefined}
               />
               <span>
-                Piekrītu datu apstrādei rezervācijas veikšanai.{" "}
+                {t("Piekrītu datu apstrādei rezervācijas veikšanai.")}{" "}
                 <Link href="/privatuma-politika" className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4">
-                  Privātuma politika
+                  {t("Privātuma politika")}
                 </Link>
                 {inStudio && (
                   <>
@@ -1175,7 +1178,7 @@ export default function BookingForm({
                       target="_blank"
                       className="font-semibold text-white underline decoration-brand decoration-2 underline-offset-4"
                     >
-                      Telpu lietošanas noteikumi
+                      {t("Telpu lietošanas noteikumi")}
                     </Link>
                   </>
                 )}
@@ -1200,7 +1203,7 @@ export default function BookingForm({
             className={cn(buttonClass("primary", "lg"), "mt-6 w-full disabled:opacity-60")}
           >
             {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-            {state === "sending" ? "Sūta…" : institution ? "Rezervēt" : form.program === NO_PROGRAM ? "Rezervēt telpas" : "Pieteikt ballīti"}
+            {state === "sending" ? t("Sūta…") : institution ? t("Rezervēt") : form.program === NO_PROGRAM ? t("Rezervēt telpas") : t("Pieteikt ballīti")}
           </button>
         </div>
       </aside>

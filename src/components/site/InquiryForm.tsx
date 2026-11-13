@@ -6,6 +6,7 @@ import { CircleCheck, LoaderCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonClass } from "./ui";
 import { Field, Honeypot, inputClass } from "./form";
+import { useT } from "@/components/site/LocaleProvider";
 
 type ServiceOption = { slug: string; title: string };
 
@@ -41,6 +42,7 @@ export default function InquiryForm({
   defaultService?: string;
   kindergarten?: boolean;
 }) {
+  const t = useT();
   const [form, setForm] = useState({ ...initial, serviceSlug: defaultService });
   const [website, setWebsite] = useState("");
   const [startedAt] = useState(() => Date.now());
@@ -60,9 +62,9 @@ export default function InquiryForm({
     setForm((f) => ({
       ...f,
       serviceSlug: slug && services.some((x) => x.slug === slug) ? slug : f.serviceSlug,
-      message: show && !f.message ? `Vēlamies rezervēt izrādi: ${show}` : f.message,
+      message: show && !f.message ? `${t("Vēlamies rezervēt izrādi:")} ${show}` : f.message,
     }));
-  }, [services]);
+  }, [services, t]);
 
   const set = (field: keyof typeof initial) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -95,11 +97,11 @@ export default function InquiryForm({
         setForm({ ...initial, serviceSlug: defaultService });
         return;
       }
-      setErrors(data.errors ?? {});
-      setMessage(data.error ?? "Lūdzu, pārbaudiet iezīmētos laukus.");
+      setErrors(Object.fromEntries(Object.entries((data.errors ?? {}) as Record<string, string>).map(([k, v]) => [k, t(v)])));
+      setMessage(t(data.error ?? "Lūdzu, pārbaudiet iezīmētos laukus."));
       setState("error");
     } catch {
-      setMessage("Neizdevās nosūtīt. Pārbaudiet interneta savienojumu vai zvaniet mums.");
+      setMessage(t("Neizdevās nosūtīt. Pārbaudiet interneta savienojumu vai zvaniet mums."));
       setState("error");
     }
   }
@@ -110,12 +112,12 @@ export default function InquiryForm({
         <span className="grid size-16 place-items-center rounded-full bg-brand">
           <CircleCheck className="size-8" aria-hidden />
         </span>
-        <h3 className="mt-6 text-2xl font-extrabold">Paldies! Pieprasījums saņemts.</h3>
+        <h3 className="mt-6 text-2xl font-extrabold">{t("Paldies! Pieprasījums saņemts.")}</h3>
         <p className="mt-3 max-w-md leading-7 text-ink-soft">
-          Sazināsimies ar jums tuvākās darba dienas laikā, lai precizētu detaļas un nosūtītu piedāvājumu.
+          {t("Sazināsimies ar jums tuvākās darba dienas laikā, lai precizētu detaļas un nosūtītu piedāvājumu.")}
         </p>
         <button type="button" className={cn(buttonClass("outline"), "mt-8")} onClick={() => setState("idle")}>
-          Nosūtīt vēl vienu pieprasījumu
+          {t("Nosūtīt vēl vienu pieprasījumu")}
         </button>
       </div>
     );
@@ -126,56 +128,56 @@ export default function InquiryForm({
       <Honeypot value={website} onChange={setWebsite} />
 
       <fieldset className="grid gap-5 sm:grid-cols-2">
-        <legend className="mb-5 text-lg font-extrabold">Kontaktinformācija</legend>
-        <Field id="companyName" label={kindergarten ? "Bērnudārzs" : "Uzņēmums vai iestāde"} required error={errors.companyName}>
+        <legend className="mb-5 text-lg font-extrabold">{t("Kontaktinformācija")}</legend>
+        <Field id="companyName" label={kindergarten ? t("Bērnudārzs") : t("Uzņēmums vai iestāde")} required error={errors.companyName}>
           <input {...fieldProps("companyName")} autoComplete="organization" required />
         </Field>
-        <Field id="parentName" label="Kontaktpersona" required error={errors.parentName}>
+        <Field id="parentName" label={t("Kontaktpersona")} required error={errors.parentName}>
           <input {...fieldProps("parentName")} autoComplete="name" required />
         </Field>
-        <Field id="phone" label="Telefons" required error={errors.phone}>
+        <Field id="phone" label={t("Telefons")} required error={errors.phone}>
           <input {...fieldProps("phone")} type="tel" autoComplete="tel" placeholder="+371" required />
         </Field>
-        <Field id="email" label="E-pasts" required error={errors.email}>
+        <Field id="email" label={t("E-pasts")} required error={errors.email}>
           <input {...fieldProps("email")} type="email" autoComplete="email" required />
         </Field>
       </fieldset>
 
       <fieldset className="mt-10 grid gap-5 sm:grid-cols-2">
-        <legend className="mb-5 text-lg font-extrabold">{kindergarten ? "Par izrādi" : "Par pasākumu"}</legend>
+        <legend className="mb-5 text-lg font-extrabold">{kindergarten ? t("Par izrādi") : t("Par pasākumu")}</legend>
         {!kindergarten && (
-        <Field id="serviceSlug" label="Pakalpojums" error={errors.serviceSlug} className="sm:col-span-2">
+        <Field id="serviceSlug" label={t("Pakalpojums")} error={errors.serviceSlug} className="sm:col-span-2">
           <select {...fieldProps("serviceSlug")}>
-            <option value="">Vēl nezinu / vairāki pakalpojumi</option>
+            <option value="">{t("Vēl nezinu / vairāki pakalpojumi")}</option>
             {services.map((s) => (
               <option key={s.slug} value={s.slug}>
-                {s.title}
+                {t(s.title)}
               </option>
             ))}
           </select>
         </Field>
         )}
-        <Field id="eventDate" label="Plānotais datums" error={errors.eventDate}>
+        <Field id="eventDate" label={t("Plānotais datums")} error={errors.eventDate}>
           <input {...fieldProps("eventDate")} type="date" min={today} />
         </Field>
-        <Field id="eventCity" label={kindergarten ? "Bērnudārza adrese" : "Norises vieta"} error={errors.eventCity}>
-          <input {...fieldProps("eventCity")} placeholder={kindergarten ? "Iela, pilsēta" : "Pilsēta vai adrese"} />
+        <Field id="eventCity" label={kindergarten ? t("Bērnudārza adrese") : t("Norises vieta")} error={errors.eventCity}>
+          <input {...fieldProps("eventCity")} placeholder={kindergarten ? t("Iela, pilsēta") : t("Pilsēta vai adrese")} />
         </Field>
-        <Field id="participants" label={kindergarten ? "Bērnu skaits" : "Dalībnieku skaits"} error={errors.participants}>
-          <input {...fieldProps("participants")} type="number" inputMode="numeric" min={1} placeholder={kindergarten ? "piem., 25" : "piem., 80"} />
+        <Field id="participants" label={kindergarten ? t("Bērnu skaits") : t("Dalībnieku skaits")} error={errors.participants}>
+          <input {...fieldProps("participants")} type="number" inputMode="numeric" min={1} placeholder={kindergarten ? t("piem., 25") : t("piem., 80")} />
         </Field>
         {!kindergarten && (
-        <Field id="budgetRange" label="Aptuvenais budžets" error={errors.budgetRange}>
+        <Field id="budgetRange" label={t("Aptuvenais budžets")} error={errors.budgetRange}>
           <select {...fieldProps("budgetRange")}>
-            <option value="">Izvēlieties</option>
+            <option value="">{t("Izvēlieties")}</option>
             {BUDGETS.map((b) => (
-              <option key={b}>{b}</option>
+              <option key={b} value={b}>{t(b)}</option>
             ))}
           </select>
         </Field>
         )}
-        <Field id="message" label={kindergarten ? "Papildu informācija" : "Pastāstiet vairāk"} error={errors.message} className="sm:col-span-2">
-          <textarea {...fieldProps("message")} rows={5} placeholder={kindergarten ? "Vēlamais laiks, grupas, bērnu vecums, jautājumi…" : "Pasākuma mērķis, auditorija, vēlmes…"} />
+        <Field id="message" label={kindergarten ? t("Papildu informācija") : t("Pastāstiet vairāk")} error={errors.message} className="sm:col-span-2">
+          <textarea {...fieldProps("message")} rows={5} placeholder={kindergarten ? t("Vēlamais laiks, grupas, bērnu vecums, jautājumi…") : t("Pasākuma mērķis, auditorija, vēlmes…")} />
         </Field>
       </fieldset>
 
@@ -191,9 +193,9 @@ export default function InquiryForm({
             required
           />
           <span>
-            Piekrītu, ka mani dati tiek apstrādāti, lai sagatavotu piedāvājumu.{" "}
+            {t("Piekrītu, ka mani dati tiek apstrādāti, lai sagatavotu piedāvājumu.")}{" "}
             <Link href="/privatuma-politika" className="link-underline">
-              Privātuma politika
+              {t("Privātuma politika")}
             </Link>
           </span>
         </label>
@@ -212,7 +214,7 @@ export default function InquiryForm({
 
       <button type="submit" disabled={state === "sending"} className={cn(buttonClass("primary", "lg"), "mt-8 w-full sm:w-auto disabled:opacity-60")}>
         {state === "sending" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-        {state === "sending" ? "Sūta…" : "Nosūtīt pieprasījumu"}
+        {state === "sending" ? t("Sūta…") : t("Nosūtīt pieprasījumu")}
       </button>
     </form>
   );

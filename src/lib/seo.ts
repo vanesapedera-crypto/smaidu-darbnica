@@ -36,7 +36,9 @@ type PageMetaInput = {
  * Prioritāte: page_seo ieraksts administrēšanas panelī → lapas dati → noklusējums.
  */
 export async function pageMetadata(input: PageMetaInput): Promise<Metadata> {
-  const [settings, override] = await Promise.all([getSettings(), getPageSeo(input.path)]);
+  const [settings, lvOverride] = await Promise.all([getSettings(), getPageSeo(input.path)]);
+  // Paneļa SEO teksti ir latviski — EN/RU lapās tos neizmanto (izņemot "neindeksēt" un bildi)
+  const override = getLocale() === DEFAULT_LOCALE ? lvOverride : lvOverride && { ...lvOverride, title: "", description: "" };
   const seo = settings.seo;
 
   const title = override?.title || input.title;

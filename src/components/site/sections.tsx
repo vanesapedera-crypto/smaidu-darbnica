@@ -4,6 +4,7 @@ import { faqSchema } from "@/lib/schema";
 import JsonLd from "./JsonLd";
 import { ButtonLink, Container, Section } from "./ui";
 import { Smile, StageHeading } from "./stage";
+import { getT } from "@/lib/i18n/server";
 
 /* ------------------------------------------------------------------ */
 /* Aicinājuma josla (CTA) lapu beigās                                 */
@@ -21,6 +22,7 @@ export function CtaBand({
   href?: string;
   label?: string;
 }) {
+  const t = getT();
   return (
     <Section className="py-16 md:py-20">
       <Container>
@@ -32,7 +34,7 @@ export function CtaBand({
               <p className="mt-5 max-w-xl text-lg leading-8 text-white/75">{text}</p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <ButtonLink href={href} size="lg" arrow>
-                  {label}
+                  {t(label)}
                 </ButtonLink>
               </div>
             </div>
@@ -43,7 +45,7 @@ export function CtaBand({
                     <Phone className="size-5" aria-hidden />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm text-white/60">Zvaniet — {contact.phoneBusinessPerson}</span>
+                    <span className="block text-sm text-white/60">{t("Zvaniet")} — {contact.phoneBusinessPerson}</span>
                     <span className="text-lg font-bold">{contact.phoneBusiness}</span>
                   </span>
                 </a>
@@ -54,7 +56,7 @@ export function CtaBand({
                     <Mail className="size-5" aria-hidden />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm text-white/60">Rakstiet</span>
+                    <span className="block text-sm text-white/60">{t("Rakstiet")}</span>
                     <span className="block truncate text-lg font-bold">{contact.email}</span>
                   </span>
                 </a>
@@ -71,10 +73,11 @@ export function CtaBand({
 /* Biežāk uzdotie jautājumi (ar FAQPage strukturētajiem datiem)       */
 /* ------------------------------------------------------------------ */
 export function FaqList({ items, title = "Biežāk uzdotie jautājumi" }: { items: Faq[]; title?: string }) {
+  const t = getT();
   if (items.length === 0) return null;
   return (
     <div>
-      <h2 className="display text-2xl md:text-4xl">{title}</h2>
+      <h2 className="display text-2xl md:text-4xl">{t(title)}</h2>
       <div className="mt-8 divide-y divide-line border-y border-line">
         {items.map((f) => (
           <details key={f.question} className="group py-5">
@@ -97,11 +100,12 @@ export function FaqList({ items, title = "Biežāk uzdotie jautājumi" }: { item
 /* Klientu atsauksmes                                                 */
 /* ------------------------------------------------------------------ */
 export function Testimonials({ items }: { items: Testimonial[] }) {
+  const t = getT();
   if (items.length === 0) return null;
   return (
     <Section tone="surface">
       <Container>
-        <StageHeading eyebrow="Atsauksmes" title="Ko saka mūsu" highlight="klienti" />
+        <StageHeading eyebrow={t("Atsauksmes")} title={t("Ko saka mūsu")} highlight={t("klienti")} />
         <ul className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {items.map((t, i) => (
             <li
@@ -140,6 +144,7 @@ export function Partners({
   items: Client[];
   quote?: string;
 }) {
+  const t = getT();
   const logos = items.filter((c) => c.logo);
   if (logos.length === 0) return null;
   return (
@@ -147,11 +152,11 @@ export function Partners({
       <Container>
         <div data-reveal className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase" id="partneri">
-            Mums uzticas
+            {t("Mums uzticas")}
           </p>
           <blockquote className="mt-5 text-2xl leading-snug font-semibold text-balance md:text-3xl md:leading-snug">
             <span aria-hidden className="text-brand-strong">“</span>
-            {quote}
+            {t(quote)}
             <span aria-hidden className="text-brand-strong">”</span>
           </blockquote>
         </div>

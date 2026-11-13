@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import ServiceCard from "@/components/site/ServiceCard";
 import { CtaBand, Partners } from "@/components/site/sections";
@@ -12,12 +12,13 @@ import { businessHref } from "@/lib/utils";
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   return pageMetadata({
     path: "/uznemumiem",
-    title: "Pasākumi uzņēmumiem un pašvaldībām",
+    title: t("Pasākumi uzņēmumiem un pašvaldībām"),
     description:
-      "Lielformāta spēles, radošās darbnīcas, pasākumu vadīšana un organizēšana, mazuļu zona, sejas apgleznošana, putu ballīte, sporta spēles un izrādes uzņēmumiem visā Latvijā.",
+      t("Lielformāta spēles, radošās darbnīcas, pasākumu vadīšana un organizēšana, mazuļu zona, sejas apgleznošana, putu ballīte, sporta spēles un izrādes uzņēmumiem visā Latvijā."),
   });
 }
 
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
  * klientu logotipi un kontakti. Pakalpojumi un to secība — panelī "Pakalpojumi".
  */
 export default async function BusinessPage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const [services, settings, clients] = await Promise.all([getServices("business"), getSettings(), getClients()]);
   const { business, contact, home } = settings;
@@ -33,25 +35,25 @@ export default async function BusinessPage({ params }: { params: Promise<{ lang:
   return (
     <>
       <StageHero
-        eyebrow="Uzņēmumiem · pašvaldībām · skolām"
+        eyebrow={t("Uzņēmumiem · pašvaldībām · skolām")}
         title={business.heroTitle}
         highlight={business.heroHighlight}
         text={business.heroText}
-        crumbs={[{ name: "Uzņēmumiem", path: "/uznemumiem" }]}
-        photos={[{ src: business.heroImage, caption: "Pasākums" }]}
+        crumbs={[{ name: t("Uzņēmumiem"), path: "/uznemumiem" }]}
+        photos={[{ src: business.heroImage, caption: t("Pasākums") }]}
       >
         <ButtonLink href="/kontakti#pieprasijums" size="lg" arrow>
-          Pieprasīt piedāvājumu
+          {t("Pieprasīt piedāvājumu")}
         </ButtonLink>
         <ButtonLink href="#piedavajumi" size="lg" variant="ghostLight">
-          Ko piedāvājam
+          {t("Ko piedāvājam")}
         </ButtonLink>
       </StageHero>
 
       {/* Visi piedāvājumi vienā režģī */}
       <Section id="piedavajumi" className="scroll-mt-20">
         <Container>
-          <StageHeading eyebrow={`${services.length} piedāvājumi`} title="Ko varam" highlight="piedāvāt" className="mb-12" />
+          <StageHeading eyebrow={t("{n} piedāvājumi", { n: services.length })} title={t("Ko varam")} highlight={t("piedāvāt")} className="mb-12" />
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {services.map((s, i) => (
               <ServiceCard key={s.slug} service={s} href={businessHref(s.slug)} index={i} />
@@ -66,8 +68,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ lang:
       <Partners items={clients} />
 
       <CtaBand
-        title="Plānojat pasākumu?"
-        text="Pastāstiet par savu ideju — ieteiksim piemērotāko programmu un sagatavosim piedāvājumu."
+        title={t("Plānojat pasākumu?")}
+        text={t("Pastāstiet par savu ideju — ieteiksim piemērotāko programmu un sagatavosim piedāvājumu.")}
         contact={contact}
       />
     </>

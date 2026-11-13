@@ -104,7 +104,7 @@ function pickGroup(pricing: PriceGroup[], travelling: boolean, variant?: string)
 export function fromPrice(pricing: PriceGroup[]): number | null {
   const prices = pricing
     .flatMap((g) => g.options)
-    .filter((o) => o.price !== null && !/nākam|€\/km|ceļa/i.test(o.label))
+    .filter((o) => o.price !== null && !/nākam|€\/km|ceļa|additional|travel|следующ|транспорт|\/км/i.test(o.label))
     .map((o) => o.price as number);
   return prices.length ? Math.min(...prices) : null;
 }
@@ -268,7 +268,7 @@ export function parseExtras(body: string): Extra[] {
  * rāda programmas lapā pie rezervācijas formas un apstiprinājuma e-pastā. Labojams panelī kopā ar aprakstu.
  */
 export function parseNotice(body: string): string {
-  return body.match(/(?:^|\n)##\s*Svarīgi[^\n]*\n([\s\S]*?)(?=\n##\s|$)/)?.[1]?.trim() ?? "";
+  return body.match(/(?:^|\n)##\s*(?:Svarīgi|Important|Важно)[^\n]*\n([\s\S]*?)(?=\n##\s|$)/)?.[1]?.trim() ?? "";
 }
 
 /** Mazās grupas lielākais bērnu skaits pēc programmas cenrāža (piem. "Mazā grupa (1–6 bērni)" → 6) */

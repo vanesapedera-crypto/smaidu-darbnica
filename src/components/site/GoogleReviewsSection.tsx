@@ -2,6 +2,8 @@ import { Star } from "lucide-react";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { StageHeading } from "./stage";
 import { Container, Section } from "./ui";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { LOCALE_TAG } from "@/lib/i18n/config";
 
 const Stars = ({ value, className = "size-5" }: { value: number; className?: string }) => (
   <span className="flex gap-0.5" aria-label={`${value} no 5`}>
@@ -26,19 +28,20 @@ const GoogleG = ({ className = "size-5" }: { className?: string }) => (
  * Ja nav GOOGLE_PLACES_API_KEY vai Google neatbild — sadaļu nerāda.
  */
 export default async function GoogleReviewsSection({ writeUrl, tone = "white" }: { writeUrl: string; tone?: "white" | "surface" }) {
+  const t = getT();
   const data = await getGoogleReviews();
   if (!data || data.reviews.length === 0) return null;
   const count = data.count;
-  const word = count % 10 === 1 && count % 100 !== 11 ? "atsauksme" : "atsauksmes";
+  const word = t(count % 10 === 1 && count % 100 !== 11 ? "atsauksme" : "atsauksmes");
 
   return (
     <Section tone={tone}>
       <Container>
-        <StageHeading eyebrow="Google atsauksmes" title="Ko saka mūsu" highlight="klienti" />
+        <StageHeading eyebrow={t("Google atsauksmes")} title={t("Ko saka mūsu")} highlight={t("klienti")} />
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <p className="flex items-center gap-3">
             <GoogleG className="size-7" />
-            <span className="font-display text-4xl font-extrabold">{data.rating.toLocaleString("lv-LV", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+            <span className="font-display text-4xl font-extrabold">{data.rating.toLocaleString(LOCALE_TAG[getLocale()], { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
             <Stars value={data.rating} className="size-6" />
           </p>
           <a href={data.url} target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-brand decoration-2 underline-offset-4">
@@ -84,7 +87,7 @@ export default async function GoogleReviewsSection({ writeUrl, tone = "white" }:
             className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 font-extrabold transition-colors hover:bg-brand-strong"
           >
             <Star className="size-5" aria-hidden />
-            Uzrakstīt atsauksmi Google
+            {t("Uzrakstīt atsauksmi Google")}
           </a>
           <a
             href={data.url}

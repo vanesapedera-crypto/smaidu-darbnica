@@ -5,6 +5,7 @@ import Link from "@/components/site/Link";
 import { Check, Copy, LoaderCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Field, Honeypot, inputClass } from "./form";
+import { useT } from "@/components/site/LocaleProvider";
 
 /**
  * Atsauksmes forma lapā "Atsauksmes". Pēc nosūtīšanas — pateicība un poga "Iekopēt arī Google":
@@ -12,6 +13,7 @@ import { Field, Honeypot, inputClass } from "./form";
  * Pogu rāda visiem — neatkarīgi no vērtējuma (tā prasa Google noteikumi).
  */
 export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
+  const t = useT();
   const [form, setForm] = useState({ author: "", event: "", text: "", rating: 0, consent: false, website: "" });
   const [hover, setHover] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -22,9 +24,9 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const missing: Record<string, string> = {};
-    if (!form.author.trim()) missing.author = "Norādiet vārdu.";
-    if (form.text.trim().length < 5) missing.text = "Uzrakstiet atsauksmi.";
-    if (!form.consent) missing.consent = "Nepieciešama piekrišana.";
+    if (!form.author.trim()) missing.author = t("Norādiet vārdu.");
+    if (form.text.trim().length < 5) missing.text = t("Uzrakstiet atsauksmi.");
+    if (!form.consent) missing.consent = t("Nepieciešama piekrišana.");
     setErrors(missing);
     if (Object.keys(missing).length) return;
     setState("sending");
@@ -32,14 +34,14 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
       const res = await fetch("/api/testimonials", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setErrors(data.errors ?? {});
-        setMessage(data.error ?? "Lūdzu, pārbaudiet iezīmētos laukus.");
+        setErrors(Object.fromEntries(Object.entries((data.errors ?? {}) as Record<string, string>).map(([k, v]) => [k, t(v)])));
+        setMessage(t(data.error ?? "Lūdzu, pārbaudiet iezīmētos laukus."));
         setState("error");
         return;
       }
       setState("sent");
     } catch {
-      setMessage("Neizdevās nosūtīt. Lūdzu, mēģiniet vēlreiz.");
+      setMessage(t("Neizdevās nosūtīt. Lūdzu, mēģiniet vēlreiz."));
       setState("error");
     }
   }
@@ -60,9 +62,9 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-brand">
           <Check className="size-7" strokeWidth={3} aria-hidden />
         </span>
-        <p className="mt-5 font-display text-2xl font-extrabold uppercase">Paldies par atsauksmi!</p>
+        <p className="mt-5 font-display text-2xl font-extrabold uppercase">{t("Paldies par atsauksmi!")}</p>
         <p className="mx-auto mt-3 max-w-lg text-ink-soft">
-          Mēs to izlasīsim un drīzumā publicēsim. Būsim ļoti pateicīgi, ja to pašu atsauksmi atstāsiet arī Google — tā mūs atradīs vēl vairāk ģimeņu.
+          {t("Mēs to izlasīsim un drīzumā publicēsim. Būsim ļoti pateicīgi, ja to pašu atsauksmi atstāsiet arī Google — tā mūs atradīs vēl vairāk ģimeņu.")}
         </p>
         <button
           type="button"
@@ -70,12 +72,12 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 font-extrabold transition-colors hover:bg-brand-strong"
         >
           <Copy className="size-5" aria-hidden />
-          Iekopēt arī Google
+          {t("Iekopēt arī Google")}
         </button>
         <p className="mx-auto mt-4 max-w-md text-sm text-ink-soft">
           {copied
-            ? "Teksts nokopēts! Google logā ielīmējiet to (turiet pirkstu laukā → “Ielīmēt” vai Ctrl+V / Cmd+V) un izvēlieties zvaigznes."
-            : "Atsauksmes teksts tiks nokopēts, un atvērsies Google logs — atliek tikai ielīmēt."}
+            ? t("Teksts nokopēts! Google logā ielīmējiet to (turiet pirkstu laukā → “Ielīmēt” vai Ctrl+V / Cmd+V) un izvēlieties zvaigznes.")
+            : t("Atsauksmes teksts tiks nokopēts, un atvērsies Google logs — atliek tikai ielīmēt.")}
         </p>
       </div>
     );
@@ -88,7 +90,7 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
 
       <div className="space-y-2">
         <p className="text-sm font-bold" id="rating-label">
-          Jūsu vērtējums
+          {t("Jūsu vērtējums")}
         </p>
         <div role="radiogroup" aria-labelledby="rating-label" className="flex gap-1" onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map((n) => (
@@ -97,7 +99,7 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
               type="button"
               role="radio"
               aria-checked={form.rating === n}
-              aria-label={`${n} no 5`}
+              aria-label={t("{n} no 5", { n })}
               onMouseEnter={() => setHover(n)}
               onClick={() => setForm((f) => ({ ...f, rating: n }))}
               className="p-1"
@@ -108,20 +110,20 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
         </div>
       </div>
 
-      <Field id="text" label="Atsauksme" required error={errors.text}>
+      <Field id="text" label={t("Atsauksme")} required error={errors.text}>
         <textarea
           id="text"
           rows={5}
           value={form.text}
           onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
-          placeholder="Kā Jums patika svētki, animatori, programma vai telpas?"
+          placeholder={t("Kā Jums patika svētki, animatori, programma vai telpas?")}
           aria-invalid={errors.text ? true : undefined}
           className={inputClass}
         />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="author" label="Vārds" required error={errors.author}>
+        <Field id="author" label={t("Vārds")} required error={errors.author}>
           <input
             id="author"
             value={form.author}
@@ -131,12 +133,12 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
             className={inputClass}
           />
         </Field>
-        <Field id="event" label="Pasākums" hint="Nav obligāti">
+        <Field id="event" label={t("Pasākums")} hint={t("Nav obligāti")}>
           <input
             id="event"
             value={form.event}
             onChange={(e) => setForm((f) => ({ ...f, event: e.target.value }))}
-            placeholder="piem. Frozen ballīte"
+            placeholder={t("piem. Frozen ballīte")}
             className={inputClass}
           />
         </Field>
@@ -151,9 +153,9 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
           aria-invalid={errors.consent ? true : undefined}
         />
         <span>
-          Piekrītu, ka atsauksme ar manu vārdu tiek publicēta Smaidu Darbnīcas mājaslapā.{" "}
+          {t("Piekrītu, ka atsauksme ar manu vārdu tiek publicēta Smaidu Darbnīcas mājaslapā.")}{" "}
           <Link href="/privatuma-politika" className="font-semibold underline decoration-brand decoration-2 underline-offset-4">
-            Privātuma politika
+            {t("Privātuma politika")}
           </Link>
         </span>
       </label>
@@ -175,7 +177,7 @@ export default function TestimonialForm({ googleUrl }: { googleUrl: string }) {
         className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 font-extrabold text-white transition-colors hover:bg-black disabled:opacity-60"
       >
         {state === "sending" && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
-        {state === "sending" ? "Sūta…" : "Nosūtīt atsauksmi"}
+        {state === "sending" ? t("Sūta…") : t("Nosūtīt atsauksmi")}
       </button>
     </form>
   );

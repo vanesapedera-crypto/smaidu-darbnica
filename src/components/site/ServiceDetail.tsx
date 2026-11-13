@@ -12,6 +12,8 @@ import { CtaBand } from "./sections";
 import RichText from "./RichText";
 import { StageHeading, StageHero } from "./stage";
 import { ButtonLink, Container, Section } from "./ui";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { LOCALE_TAG } from "@/lib/i18n/config";
 
 /** Pakalpojumi, kuru lapas galvenē lielais virsraksts ir programmas nosaukums (piem. "Party Trip") */
 const HERO_BRAND: Record<string, string> = { "lielformata-speles": "Party Trip" };
@@ -30,6 +32,7 @@ export default function ServiceDetail({
   /** Vietnes iestatījumi: kontakti, spēļu un tēlu saraksti, pakalpojumu bildes, izbraukuma cenas */
   settings: SiteSettings;
 }) {
+  const t = getT();
   const { contact, business, programs } = settings;
   const isBusiness = service.audience === "business";
   const base = isBusiness ? "/uznemumiem" : "/izklaides-programmas";
@@ -37,7 +40,7 @@ export default function ServiceDetail({
   const ctaHref = isBusiness
     ? `/kontakti?pakalpojums=${service.slug}#pieprasijums`
     : `/izklaides-programmas/pieteikt?program=${service.slug}`;
-  const ctaLabel = isBusiness ? "Saņemt piedāvājumu" : "Rezervēt ballīti";
+  const ctaLabel = isBusiness ? t("Saņemt piedāvājumu") : t("Rezervēt ballīti");
   const phone = isBusiness ? contact.phoneBusiness : contact.phonePrivate;
 
   // Pilnais bloks (apraksts + sānu kartīte) — tikai, ja ir apraksts, galvenie punkti vai cenas.
@@ -46,13 +49,13 @@ export default function ServiceDetail({
   const compactSteps = !hasMain && service.activities.length > 0;
 
   const facts = [
-    { icon: Clock, label: "Ilgums", value: service.duration },
-    { icon: Users, label: "Dalībnieki", value: service.participants },
-    { icon: Baby, label: "Vecums", value: service.age },
+    { icon: Clock, label: t("Ilgums"), value: service.duration },
+    { icon: Users, label: t("Dalībnieki"), value: service.participants },
+    { icon: Baby, label: t("Vecums"), value: service.age },
   ].filter((f) => f.value);
   // Uzņēmumu pakalpojumiem ilgumu un apjomu saskaņo ar katru klientu individuāli
   if (service.audience === "business" && !service.duration && !service.participants) {
-    facts.unshift({ icon: Clock, label: "Ilgums un apjoms", value: "Saskaņojam ar jums" });
+    facts.unshift({ icon: Clock, label: t("Ilgums un apjoms"), value: t("Saskaņojam ar jums") });
   }
 
   // Galvenē: pakalpojuma bilde + divas no tā galerijas
@@ -63,12 +66,12 @@ export default function ServiceDetail({
 
   const photos = isBusiness ? (business.servicePhotos[service.slug] ?? []) : [];
   // Piezīme par izbraukuma izmaksām (ballītēm) — no paneļa cenām; rāda, ja programmai nav savas piezīmes
-  const money = (n: number) => `${n.toLocaleString("lv-LV", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} €`;
+  const money = (n: number) => `${n.toLocaleString(LOCALE_TAG[getLocale()], { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} €`;
   const pricingNote =
     service.pricingNote ||
     (isBusiness
       ? ""
-      : `Izbraukuma ballītēm tālāk par ${programs.freeTravelKm} km no Smaidu Darbnīcas tiek pieskaitīta izbraukuma piemaksa ${money(programs.travelSurcharge)} un ceļa izdevumi ${money(programs.travelRate)}/km.`);
+      : t("Izbraukuma ballītēm tālāk par {km} km no Smaidu Darbnīcas tiek pieskaitīta izbraukuma piemaksa {surcharge} un ceļa izdevumi {rate}/km.", { km: programs.freeTravelKm, surcharge: money(programs.travelSurcharge), rate: money(programs.travelRate) }));
   const portrait = SERVICE_PHOTOS_PORTRAIT.has(service.slug);
   const square = SERVICE_PHOTOS_SQUARE.has(service.slug);
 
@@ -106,13 +109,13 @@ export default function ServiceDetail({
   return (
     <>
       <StageHero
-        eyebrow={brand ? service.title : isBusiness ? "Uzņēmumiem" : "Izklaides programma"}
+        eyebrow={brand ? service.title : isBusiness ? t("Uzņēmumiem") : t("Izklaides programma")}
         title={brand ?? service.title}
         text={service.excerpt}
         video={SERVICE_HERO_VIDEO[service.slug]}
         photos={heroPhotos.length ? heroPhotos : [{ src: "/media/smaidu-darbnica/smaidu-darbnica-09.webp" }]}
         crumbs={[
-          isBusiness ? { name: "Uzņēmumiem", path: "/uznemumiem" } : { name: "Izklaides programmas", path: "/izklaides-programmas" },
+          isBusiness ? { name: t("Uzņēmumiem"), path: "/uznemumiem" } : { name: t("Izklaides programmas"), path: "/izklaides-programmas" },
           { name: service.title, path },
         ]}
       >
@@ -161,7 +164,7 @@ export default function ServiceDetail({
             {service.activities.length > 0 && (
               <div data-reveal className="mt-10">
                 <h2 className="text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase">
-                  {isBusiness ? "Kā tas notiek" : "Ballītes gaita"}
+                  {isBusiness ? t("Kā tas notiek") : t("Ballītes gaita")}
                 </h2>
                 <ol className="mt-5 divide-y divide-line border-y border-line">
                   {service.activities.map((a, i) => (
@@ -195,8 +198,8 @@ export default function ServiceDetail({
                         <Gift className="size-5" aria-hidden />
                       </span>
                       <span>
-                        <span className="block text-xs font-extrabold tracking-[0.12em] uppercase">Dāvanā</span>
-                        <span className="text-lg font-extrabold">{h.replace(/^🎁\s*/, "").replace(/^Dāvanā\s*/i, "").replace(/^—\s*/, "")}</span>
+                        <span className="block text-xs font-extrabold tracking-[0.12em] uppercase">{t("Dāvanā")}</span>
+                        <span className="text-lg font-extrabold">{h.replace(/^🎁\s*/, "").replace(/^(Dāvanā|Gift|В подарок)\s*/i, "").replace(/^—\s*/, "")}</span>
                       </span>
                     </li>
                   ) : (
@@ -240,8 +243,8 @@ export default function ServiceDetail({
                           <div key={o.label} className="flex items-baseline justify-between gap-4 py-2 text-sm">
                             <dt className="text-white/80">{o.label}</dt>
                             <dd className="font-extrabold whitespace-nowrap">{o.price === null
-                              ? "Pēc vienošanās"
-                              : `${Number.isInteger(o.price) ? o.price : o.price.toFixed(2).replace(".", ",")} €${isBusiness ? "" : " + PVN"}`}</dd>
+                              ? t("Pēc vienošanās")
+                              : `${Number.isInteger(o.price) ? o.price : o.price.toFixed(2).replace(".", ",")} €${isBusiness ? "" : ` + ${t("PVN")}`}`}</dd>
                           </div>
                         ))}
                       </dl>
@@ -253,7 +256,7 @@ export default function ServiceDetail({
 
               {isBusiness && service.suitableFor.length > 0 && (
                 <div className="mt-7 border-t border-white/10 pt-6">
-                  <p className="text-sm text-white/60">Piemērots</p>
+                  <p className="text-sm text-white/60">{t("Piemērots")}</p>
                   <ul className="mt-3 flex flex-wrap gap-2">
                     {service.suitableFor.map((s) => (
                       <li key={s} className="rounded-full bg-white/10 px-3 py-1.5 text-sm">
@@ -290,7 +293,7 @@ export default function ServiceDetail({
       {!isBusiness && !hasCharacters && images.length > 0 && (
         <section className="overflow-hidden bg-surface pt-20 pb-12 md:pt-28">
           <Container>
-            <StageHeading eyebrow="Foto" title="No mūsu" highlight="ballītēm" />
+            <StageHeading eyebrow={t("Foto")} title={t("No mūsu")} highlight={t("ballītēm")} />
           </Container>
           <PhotoReel images={toReel(images)} />
         </section>
@@ -299,8 +302,8 @@ export default function ServiceDetail({
       {/* Uzņēmumiem — īss bloks ar pogu; pati forma ir lapā "Kontakti" (ar priekšatlasītu pakalpojumu) */}
       {isBusiness && (
         <CtaBand
-          title="Plānojat pasākumu?"
-          text={`Pastāstiet par savu pasākumu — sagatavosim programmu un cenu piedāvājumu: ${service.title.toLowerCase()}.`}
+          title={t("Plānojat pasākumu?")}
+          text={t("Pastāstiet par savu pasākumu — sagatavosim programmu un cenu piedāvājumu: {service}.", { service: service.title.toLowerCase() })}
           contact={contact}
           href={ctaHref}
           label={ctaLabel}

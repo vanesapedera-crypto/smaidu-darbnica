@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import { Mail, MapPin, Phone } from "lucide-react";
 import InquiryForm from "@/components/site/InquiryForm";
@@ -20,16 +20,18 @@ const EXTRA_OPTIONS = [
 ];
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   return pageMetadata({
     path: "/kontakti",
-    title: "Kontakti un piedāvājuma pieprasījums",
+    title: t("Kontakti un piedāvājuma pieprasījums"),
     description:
-      "Sazinieties ar Smaidu Darbnīcu: pieprasiet piedāvājumu uzņēmuma vai pašvaldības pasākumam. Pasta iela 25, Tukums. Tālr. +371 26 705 817.",
+      t("Sazinieties ar Smaidu Darbnīcu: pieprasiet piedāvājumu uzņēmuma vai pašvaldības pasākumam. Pasta iela 25, Tukums. Tālr. +371 26 705 817."),
   });
 }
 
 export default async function ContactPage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const [{ contact }, services] = await Promise.all([getSettings(), getServices("business")]);
   const tel = (p: string) => `tel:${p.replace(/\s/g, "")}`;
@@ -44,19 +46,19 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
   return (
     <>
       <StageHero
-        eyebrow="Kontakti"
-        title="Parunāsim par"
-        highlight="jūsu"
-        after="pasākumu"
-        text="Aizpildiet pieprasījumu vai zvaniet — sagatavosim programmu un cenu piedāvājumu."
-        crumbs={[{ name: "Kontakti", path: "/kontakti" }]}
-        photos={[{ src: contact.heroImage, caption: "Smaidu Darbnīcas komanda" }]}
+        eyebrow={t("Kontakti")}
+        title={t("Parunāsim par")}
+        highlight={t("jūsu")}
+        after={t("pasākumu")}
+        text={t("Aizpildiet pieprasījumu vai zvaniet — sagatavosim programmu un cenu piedāvājumu.")}
+        crumbs={[{ name: t("Kontakti"), path: "/kontakti" }]}
+        photos={[{ src: contact.heroImage, caption: t("Smaidu Darbnīcas komanda") }]}
       />
 
       <Section id="pieprasijums" tone="surface" className="scroll-mt-20">
         <Container className="grid grid-cols-1 gap-12 lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-16">
           <aside className="space-y-4">
-            <ContactCard icon={Phone} title="Uzņēmumiem un pašvaldībām" text={contact.phoneBusinessPerson}>
+            <ContactCard icon={Phone} title={t("Uzņēmumiem un pašvaldībām")} text={contact.phoneBusinessPerson}>
               <a href={tel(contact.phoneBusiness)} className="text-xl font-extrabold hover:underline">
                 {contact.phoneBusiness}
               </a>
@@ -69,7 +71,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 {contact.email}
               </a>
             </ContactCard>
-            <ContactCard icon={Phone} title="Privātpersonām" text={contact.phonePrivatePerson}>
+            <ContactCard icon={Phone} title={t("Privātpersonām")} text={contact.phonePrivatePerson}>
               <a href={tel(contact.phonePrivate)} className="text-xl font-extrabold hover:underline">
                 {contact.phonePrivate}
               </a>
@@ -83,14 +85,14 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
                 </a>
               )}
             </ContactCard>
-            <ContactCard icon={MapPin} title="Telpu nomas adrese">
+            <ContactCard icon={MapPin} title={t("Telpu nomas adrese")}>
               <address className="font-bold not-italic">
                 {contact.address}, {contact.city}, {contact.postalCode}
               </address>
             </ContactCard>
 
             <div className="rounded-3xl bg-white p-6 ring-1 ring-line">
-              <p className="text-sm font-bold">Sekojiet mums</p>
+              <p className="text-sm font-bold">{t("Sekojiet mums")}</p>
               <ul className="mt-4 flex gap-3">
                 {socials.map(({ href, label, Icon }) => (
                   <li key={label}>
@@ -110,15 +112,15 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
 
             {/* Rekvizīti — rāda tikai aizpildītos laukus (panelī: Kontakti) */}
             <div className="rounded-3xl bg-white p-6 ring-1 ring-line">
-              <p className="text-sm font-bold">Rekvizīti</p>
+              <p className="text-sm font-bold">{t("Rekvizīti")}</p>
               <dl className="mt-3 space-y-1.5 text-sm">
                 {[
-                  ["Nosaukums", contact.legalName || contact.company],
-                  ["Reģ. nr.", contact.regNr],
-                  ["PVN nr.", contact.vatNr],
-                  ["Juridiskā adrese", contact.legalAddress],
-                  ["Banka", contact.bank],
-                  ["Konts", contact.iban],
+                  [t("Nosaukums"), contact.legalName || contact.company],
+                  [t("Reģ. nr."), contact.regNr],
+                  [t("PVN nr."), contact.vatNr],
+                  [t("Juridiskā adrese"), contact.legalAddress],
+                  [t("Banka"), contact.bank],
+                  [t("Konts"), contact.iban],
                 ]
                   .filter(([, v]) => v)
                   .map(([k, v]) => (
@@ -132,16 +134,16 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
           </aside>
 
           <div>
-            <h2 className="display text-3xl md:text-4xl">Pieprasīt <span className="sticker">piedāvājumu</span></h2>
+            <h2 className="display text-3xl md:text-4xl">{t("Pieprasīt")} <span className="sticker">{t("piedāvājumu")}</span></h2>
             <p className="mt-3 mb-8 text-lg leading-8 text-ink-soft">
-              Jo vairāk pastāstīsiet par pasākumu, jo precīzāku piedāvājumu sagatavosim.
+              {t("Jo vairāk pastāstīsiet par pasākumu, jo precīzāku piedāvājumu sagatavosim.")}
             </p>
             <InquiryForm services={[...services.map(({ slug, title }) => ({ slug, title })), ...EXTRA_OPTIONS]} />
           </div>
         </Container>
       </Section>
 
-      <section aria-label="Karte" className="h-[420px] bg-surface">
+      <section aria-label={t("Karte")} className="h-[420px] bg-surface">
         <iframe
           src={mapSrc}
           title={`Smaidu Darbnīca karte — ${contact.address}, ${contact.city}`}
@@ -165,7 +167,7 @@ function ContactCard({
   text?: string;
   children: React.ReactNode;
 }) {
-  return (
+    return (
     <div className="flex gap-4 rounded-3xl bg-white p-6 ring-1 ring-line">
       <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand">
         <Icon className="size-5" />

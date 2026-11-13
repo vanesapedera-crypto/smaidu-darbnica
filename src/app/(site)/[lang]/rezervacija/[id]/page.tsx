@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import Link from "@/components/site/Link";
 import { CircleCheck, CircleX } from "lucide-react";
@@ -6,7 +6,7 @@ import { Smile } from "@/components/site/stage";
 import { ButtonLink, Container, buttonClass } from "@/components/site/ui";
 import { atStudio, fixedVenueAddress, isGroupProgram, needsHeadcount } from "@/lib/bookings";
 import { clientBooking } from "@/lib/client-booking";
-import { getServices, getSettings } from "@/lib/content/queries";
+import { getServicesRaw, getSettingsRaw } from "@/lib/content/queries";
 import { dateWords, timeLabel } from "@/lib/dates";
 import { VAT_NOTE, amountText, bookingCosts, bookingPrices, eur, priceVariants } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -25,10 +25,11 @@ type Props = { params: Promise<{ id: string; lang: string }>; searchParams: Prom
  * Nekas nenotiek, tikai atverot saiti: vajag nospiest pogu.
  */
 export default async function ClientBookingPage({ params, searchParams }: Props) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   // `atcelt=1` — klients e-pastā uzspieda "Atcelt rezervāciju": atcelšanas bloks uzreiz ir atvērts (pati saite neko neatceļ)
   const [{ id }, { k = "", atcelt }] = await Promise.all([params, searchParams]);
-  const [b, programs, settings] = await Promise.all([clientBooking(id, k), getServices("private"), getSettings()]);
+  const [b, programs, settings] = await Promise.all([clientBooking(id, k), getServicesRaw("private"), getSettingsRaw()]);
   const { contact } = settings;
   const phone = contact.phonePrivate;
   const tel = phone.replace(/\s/g, "");
@@ -64,13 +65,13 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
 
   const rows: [string, string][] = valid
     ? [
-        ["Datums", dateWords(b!.event_date)],
-        ["Laiks", timeLabel(b!.event_time, b!.location)],
-        ["Vieta", inVenue ? `Smaidu Darbnīca, ${contact.address}, ${contact.city}` : (fixedVenueAddress(b!.location) ?? b!.address ?? "")],
-        ["Izklaides programma", variant ?? program?.title ?? ""],
-        ["Papildu iespējas", extras],
-        ["Bērnu skaits", (needsHeadcount(b!.program) || isGroupProgram(b!.program)) && b!.children_count ? String(b!.children_count) : ""],
-        ["Gaviļnieka vecums", needsHeadcount(b!.program) && !isGroupProgram(b!.program) ? (b!.child_age ?? "") : ""],
+        [t("Datums"), dateWords(b!.event_date)],
+        [t("Laiks"), timeLabel(b!.event_time, b!.location)],
+        [t("Vieta"), inVenue ? `Smaidu Darbnīca, ${contact.address}, ${contact.city}` : (fixedVenueAddress(b!.location) ?? b!.address ?? "")],
+        [t("Izklaides programma"), t(variant ?? program?.title ?? "")],
+        [t("Papildu iespējas"), extras],
+        [t("Bērnu skaits"), (needsHeadcount(b!.program) || isGroupProgram(b!.program)) && b!.children_count ? String(b!.children_count) : ""],
+        [t("Gaviļnieka vecums"), needsHeadcount(b!.program) && !isGroupProgram(b!.program) ? (b!.child_age ?? "") : ""],
       ]
     : [];
 
@@ -82,15 +83,15 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
         <h1 className="display mt-5 text-4xl sm:text-5xl md:text-6xl">
           {confirmed ? (
             <>
-              Rezervācija <span className="sticker-light">apstiprināta</span>
+              {t("Rezervācija")} <span className="sticker-light">{t("apstiprināta")}</span>
             </>
           ) : cancelled ? (
             <>
-              Rezervācija <span className="sticker-light">atcelta</span>
+              {t("Rezervācija")} <span className="sticker-light">{t("atcelta")}</span>
             </>
           ) : (
             <>
-              Jūsu <span className="sticker-light">rezervācija</span>
+              {t("Jūsu")} <span className="sticker-light">{t("rezervācija")}</span>
             </>
           )}
         </h1>
@@ -98,7 +99,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
         <div className="mt-10 rounded-3xl bg-white p-6 text-ink sm:p-8">
           {!valid ? (
             <p className="leading-7">
-              Šī saite nav derīga vai ir novecojusi. Lūdzu, zvaniet mums:{" "}
+              {t("Šī saite nav derīga vai ir novecojusi. Lūdzu, zvaniet mums:")}{" "}
               <a href={`tel:${tel}`} className="link-underline whitespace-nowrap">
                 {phone}
               </a>
@@ -106,15 +107,15 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
             </p>
           ) : (
             <>
-              {b!.name && <p className="text-lg font-extrabold">Sveiki, {b!.name.trim().split(/\s+/)[0]}!</p>}
+              {b!.name && <p className="text-lg font-extrabold">{t("Sveiki, {name}!", { name: b!.name.trim().split(/\s+/)[0] })}</p>}
 
               {/* Rezultāts — ja lēmums jau pieņemts */}
               {confirmed && (
                 <div role="status" className="mt-5 flex items-start gap-4 rounded-2xl bg-brand p-5">
                   <CircleCheck className="mt-0.5 size-7 shrink-0" aria-hidden />
                   <div>
-                    <p className="font-extrabold">Paldies! Rezervācija ir apstiprināta.</p>
-                    <p className="mt-1 leading-6">Tiekamies, lai radītu smaidu!</p>
+                    <p className="font-extrabold">{t("Paldies! Rezervācija ir apstiprināta.")}</p>
+                    <p className="mt-1 leading-6">{t("Tiekamies, lai radītu smaidu!")}</p>
                   </div>
                 </div>
               )}
@@ -122,9 +123,9 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
                 <div role="status" className="mt-5 flex items-start gap-4 rounded-2xl bg-surface p-5">
                   <CircleX className="mt-0.5 size-7 shrink-0" aria-hidden />
                   <div>
-                    <p className="font-extrabold">{cancelledByClient ? "Rezervācija ir atcelta." : "Šī rezervācija vairs nav spēkā."}</p>
+                    <p className="font-extrabold">{cancelledByClient ? t("Rezervācija ir atcelta.") : t("Šī rezervācija vairs nav spēkā.")}</p>
                     <p className="mt-1 leading-6">
-                      Ja tā ir kļūda vai vēlaties rezervēt no jauna, zvaniet mums:{" "}
+                      {t("Ja tā ir kļūda vai vēlaties rezervēt no jauna, zvaniet mums:")}{" "}
                       <a href={`tel:${tel}`} className="font-bold whitespace-nowrap underline">
                         {phone}
                       </a>
@@ -149,25 +150,25 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
               {/* Izmaksas — tās pašas, kas apstiprinājuma e-pastā */}
               {costs && !cancelled && (
                 <div className="mt-6 rounded-2xl bg-surface p-5">
-                  <p className="text-xs font-extrabold tracking-[0.14em] text-ink-soft uppercase">Izmaksas</p>
+                  <p className="text-xs font-extrabold tracking-[0.14em] text-ink-soft uppercase">{t("Izmaksas")}</p>
                   <dl className="mt-3 space-y-2 text-sm">
                     {costLines.map((l) => (
                       <div key={l.label} className="flex justify-between gap-4">
                         <dt>
-                          {l.kind === "program" ? `Izklaides programma “${l.label}”` : l.label}
-                          {l.kind === "program" && l.note && <span className="block text-xs text-ink-soft">{l.note}</span>}
+                          {l.kind === "program" ? `${t("Izklaides programma")} “${t(l.label)}”` : t(l.label)}
+                          {l.kind === "program" && l.note && <span className="block text-xs text-ink-soft">{t(l.note)}</span>}
                         </dt>
                         <dd className="font-bold whitespace-nowrap">{amountText(l)}</dd>
                       </div>
                     ))}
                     {costLines.length > 1 && costs.exact && (
                       <div className="flex items-end justify-between gap-4 border-t border-line pt-3">
-                        <dt className="text-base font-extrabold">Kopā</dt>
+                        <dt className="text-base font-extrabold">{t("Kopā")}</dt>
                         <dd className="font-display text-2xl leading-none font-extrabold">{eur(costs.total)}</dd>
                       </div>
                     )}
                   </dl>
-                  {costs.plusVat && <p className="mt-3 text-sm text-ink-soft">{VAT_NOTE}</p>}
+                  {costs.plusVat && <p className="mt-3 text-sm text-ink-soft">{t(VAT_NOTE)}</p>}
                 </div>
               )}
 
@@ -176,22 +177,22 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
                 <div className="mt-6">
                   <form action={confirmBooking.bind(null, id, k)}>
                     <button type="submit" className={cn(buttonClass("primary", "lg"), "w-full")}>
-                      Apstiprinu rezervāciju
+                      {t("Apstiprinu rezervāciju")}
                     </button>
                   </form>
                   <details open={atcelt === "1"} className="group mt-4 text-center">
                     <summary className="inline-block cursor-pointer list-none text-sm font-semibold text-ink-soft underline underline-offset-4 hover:text-ink [&::-webkit-details-marker]:hidden">
-                      Atcelt rezervāciju
+                      {t("Atcelt rezervāciju")}
                     </summary>
                     <div className="mt-4 rounded-2xl bg-red-50 p-5 text-left text-sm leading-6 ring-1 ring-red-200">
-                      <p className="font-extrabold text-red-800">Vai tiešām atcelt rezervāciju?</p>
-                      <p className="mt-1 text-red-800">Rezervētais laiks tiks atbrīvots, un to varēs aizņemt cits.</p>
+                      <p className="font-extrabold text-red-800">{t("Vai tiešām atcelt rezervāciju?")}</p>
+                      <p className="mt-1 text-red-800">{t("Rezervētais laiks tiks atbrīvots, un to varēs aizņemt cits.")}</p>
                       <form action={cancelBooking.bind(null, id, k)} className="mt-4">
                         <button
                           type="submit"
                           className="rounded-full bg-red-700 px-5 py-2.5 text-sm font-extrabold text-white transition-colors hover:bg-red-800"
                         >
-                          Jā, atcelt rezervāciju
+                          {t("Jā, atcelt rezervāciju")}
                         </button>
                       </form>
                     </div>
@@ -201,9 +202,9 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
 
               {inVenue && !cancelled && (
                 <p className="mt-6 text-sm leading-6">
-                  Lūdzam iepazīties ar{" "}
+                  {t("Lūdzam iepazīties ar")}{" "}
                   <Link href="/telpu-noma#noteikumi" target="_blank" className="link-underline">
-                    telpu lietošanas noteikumiem
+                    {t("telpu lietošanas noteikumiem")}
                   </Link>
                   .
                 </p>
@@ -212,8 +213,8 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
               {!cancelled && (
                 <p className={cn("text-sm leading-6 text-ink-soft", inVenue ? "mt-2" : "mt-6")}>
                   {confirmed
-                    ? "Ja kas mainās vai rezervācija jāatceļ, lūdzu, sūtiet SMS uz tālr. "
-                    : "Jautājumu gadījumā zvaniet vai sūtiet SMS uz tālr. "}
+                    ? t("Ja kas mainās vai rezervācija jāatceļ, lūdzu, sūtiet SMS uz tālr. ")
+                    : t("Jautājumu gadījumā zvaniet vai sūtiet SMS uz tālr. ")}
                   <a href={`sms:${tel}`} className="font-semibold whitespace-nowrap text-ink">
                     {phone}
                   </a>
@@ -226,7 +227,7 @@ export default async function ClientBookingPage({ params, searchParams }: Props)
 
         {(confirmed || cancelled) && (
           <ButtonLink href="/" variant="ghostLight" className="mt-8">
-            Uz sākumlapu
+            {t("Uz sākumlapu")}
           </ButtonLink>
         )}
       </Container>

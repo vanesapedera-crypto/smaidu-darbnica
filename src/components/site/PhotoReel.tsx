@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { isOptimizable } from "@/lib/images";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/site/LocaleProvider";
 
 const Lightbox = dynamic(() => import("./Lightbox"), { ssr: false });
 
@@ -33,6 +34,7 @@ export default function PhotoReel({
   /** Tīrs karuselis: bildes bez baltā rāmja, pagrieziena un paraksta, vienā augstumā (platums pēc bildes proporcijas) */
   plain?: boolean;
 }) {
+  const t = useT();
   const track = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(-1);
 
@@ -56,7 +58,7 @@ export default function PhotoReel({
               <button
                 type="button"
                 onClick={() => setOpen(i)}
-                aria-label={`Atvērt attēlu: ${img.alt}`}
+                aria-label={`${t("Atvērt attēlu:")} ${img.alt}`}
                 className="group relative block h-[240px] overflow-hidden rounded-2xl bg-surface sm:h-[300px] md:h-[360px]"
                 style={{ aspectRatio: `${img.width ?? 4} / ${img.height ?? 3}` }}
               >
@@ -77,7 +79,7 @@ export default function PhotoReel({
               <button
                 type="button"
                 onClick={() => setOpen(i)}
-                aria-label={`Atvērt attēlu: ${img.caption ?? img.alt}`}
+                aria-label={`${t("Atvērt attēlu:")} ${img.caption ?? img.alt}`}
                 className={cn(
                   "tilt-card block w-[64vw] max-w-[300px] rounded-[20px] bg-white p-2.5 pb-3 text-left shadow-[0_24px_40px_-26px_rgba(31,41,55,0.55)] sm:w-[280px]",
                   ROTATIONS[i % ROTATIONS.length],
@@ -108,10 +110,10 @@ export default function PhotoReel({
 
       {images.length > 3 && (
         <div className="mx-auto flex max-w-7xl justify-end gap-2 px-4 sm:px-6 lg:px-8">
-          <button type="button" onClick={() => scroll(-1)} aria-label="Iepriekšējās bildes" className="grid size-12 place-items-center rounded-full border-2 border-ink transition-colors hover:bg-ink hover:text-white">
+          <button type="button" onClick={() => scroll(-1)} aria-label={t("Iepriekšējās bildes")} className="grid size-12 place-items-center rounded-full border-2 border-ink transition-colors hover:bg-ink hover:text-white">
             <ArrowLeft className="size-5" />
           </button>
-          <button type="button" onClick={() => scroll(1)} aria-label="Nākamās bildes" className="grid size-12 place-items-center rounded-full bg-ink text-white transition-colors hover:bg-black">
+          <button type="button" onClick={() => scroll(1)} aria-label={t("Nākamās bildes")} className="grid size-12 place-items-center rounded-full bg-ink text-white transition-colors hover:bg-black">
             <ArrowRight className="size-5" />
           </button>
         </div>

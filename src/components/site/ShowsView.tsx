@@ -5,16 +5,18 @@ import { ButtonLink, Container } from "./ui";
 import { SHOW_PHOTOS } from "@/lib/content/defaults/service-media";
 import { mediaInfo } from "@/lib/content/media";
 import { getServices, getSettings } from "@/lib/content/queries";
+import { getT } from "@/lib/i18n/server";
 
 /** Lapas "Izrādes" saturs: galvene, izrāžu atskaņotājs un bilžu karuselis */
 export default async function ShowsView() {
+  const t = getT();
   const [{ shows }, services] = await Promise.all([getSettings(), getServices("business")]);
   // Bilžu karuselis lapas apakšā — bilžu saraksts no paneļa (Izrādes → "Bilžu karuselis").
   // Platums un augstums (bildes proporcijai): zināmajām bildēm no service-media.ts, pārējām no bilžu saraksta.
   const known = new Map(SHOW_PHOTOS.map((p) => [p.src, p]));
   const reel = shows.photos.map((src) => {
     const size = known.get(src) ?? mediaInfo(src);
-    return { src, alt: "Smaidu Darbnīcas izrāde", blur: null, width: size?.width ?? null, height: size?.height ?? null };
+    return { src, alt: t("Smaidu Darbnīcas izrāde"), blur: null, width: size?.width ?? null, height: size?.height ?? null };
   });
 
   // Rezervācija notiek pieprasījuma formā lapā "Kontakti" (ar priekšatlasītu pakalpojumu)
@@ -30,18 +32,18 @@ export default async function ShowsView() {
   return (
     <>
       <StageHero
-        eyebrow="Izrādes · uzņēmumiem un pašvaldībām"
+        eyebrow={t("Izrādes · uzņēmumiem un pašvaldībām")}
         title={shows.heroTitle}
         highlight={shows.heroHighlight}
         text={shows.heroText}
-        crumbs={[{ name: "Izrādes", path: "/izrades" }]}
-        photos={[{ src: shows.heroImage, caption: "Izrāde" }]}
+        crumbs={[{ name: t("Izrādes"), path: "/izrades" }]}
+        photos={[{ src: shows.heroImage, caption: t("Izrāde") }]}
       >
         <ButtonLink href="#video" size="lg" arrow>
-          Skatīties video
+          {t("Skatīties video")}
         </ButtonLink>
         <ButtonLink href={bookHref()} size="lg" variant="ghostLight">
-          Rezervēt izrādi
+          {t("Rezervēt izrādi")}
         </ButtonLink>
       </StageHero>
 
@@ -49,10 +51,10 @@ export default async function ShowsView() {
         <section id="video" className="scroll-mt-20 py-20 md:py-28">
           <Container>
             <StageHeading
-              eyebrow={`${shows.videos.length} izrādes`}
+              eyebrow={t("{n} izrādes", { n: shows.videos.length })}
               title={shows.videosTitle}
-              highlight="izrādes"
-              text="Noskatieties fragmentus un izvēlieties savam pasākumam piemērotāko."
+              highlight={t("izrādes")}
+              text={t("Noskatieties fragmentus un izvēlieties savam pasākumam piemērotāko.")}
               className="mb-14 md:mb-20"
             />
             <VideoShowcase videos={shows.videos} bookHref={shows.videos.map((v) => bookHref(v.title))} />
@@ -64,7 +66,7 @@ export default async function ShowsView() {
       {reel.length > 0 && (
         <section className="overflow-hidden bg-surface pt-16 pb-12 md:pt-20">
           <Container>
-            <StageHeading eyebrow="Foto" title="Mirkļi no" highlight="izrādēm" className="mb-8" />
+            <StageHeading eyebrow={t("Foto")} title={t("Mirkļi no")} highlight={t("izrādēm")} className="mb-8" />
           </Container>
           <PhotoReel images={reel} plain />
         </section>

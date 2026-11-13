@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/site/LocaleProvider";
 
 const HOURS = Array.from({ length: 17 }, (_, i) => String(i + 6).padStart(2, "0")); // 06–22
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0")); // 00, 05 … 55
@@ -27,6 +28,7 @@ export default function TimeSelect({
   className?: string;
   invalid?: boolean;
 }) {
+  const t = useT();
   const [own, setOwn] = useState(defaultValue);
   const value = controlled ?? own;
   const [h = "", m = ""] = value ? value.split(":") : [];
@@ -42,7 +44,7 @@ export default function TimeSelect({
       {name && <input type="hidden" name={name} value={value} />}
       <select
         id={id}
-        aria-label="Stunda"
+        aria-label={t("Stunda")}
         value={h}
         onChange={(e) => update(e.target.value, m)}
         aria-invalid={invalid || undefined}
@@ -61,7 +63,7 @@ export default function TimeSelect({
         :
       </span>
       <select
-        aria-label="Minūtes"
+        aria-label={t("Minūtes")}
         value={m}
         onChange={(e) => update(h, e.target.value)}
         disabled={!h}

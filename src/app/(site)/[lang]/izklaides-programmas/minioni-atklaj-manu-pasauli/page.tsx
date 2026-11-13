@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import { notFound } from "next/navigation";
 import Link from "@/components/site/Link";
@@ -40,6 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
  * Pieteikšanās — pieprasījuma forma (InquiryForm `kindergarten`), pieprasījumi nonāk panelī un e-pastā.
  */
 export default async function MinionsShowPage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const program = await getService("private", SLUG);
   if (!program) notFound();
@@ -52,8 +53,8 @@ export default async function MinionsShowPage({ params }: { params: Promise<{ la
   });
   const [quote, ...closing] = program.suitableFor;
   const facts = [
-    { label: "Izrādes ilgums", value: program.duration },
-    price !== null && { label: "Samaksa", value: `${eur(price)} + PVN no bērna` },
+    { label: t("Izrādes ilgums"), value: program.duration },
+    price !== null && { label: t("Samaksa"), value: t("{price} + PVN no bērna", { price: eur(price) }) },
   ].filter(Boolean) as { label: string; value: string }[];
 
   return (
@@ -66,10 +67,10 @@ export default async function MinionsShowPage({ params }: { params: Promise<{ la
         />
         <Container className="grid items-center gap-10 pt-10 pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:pt-14">
           <div className="pb-6 lg:pb-20">
-            <nav aria-label="Navigācija" className="mb-8 flex flex-wrap items-center gap-1 text-sm text-white/60">
-              <Link href="/" className="hover:text-white">Sākums</Link>
+            <nav aria-label={t("Navigācija")} className="mb-8 flex flex-wrap items-center gap-1 text-sm text-white/60">
+              <Link href="/" className="hover:text-white">{t("Sākums")}</Link>
               <ChevronRight className="size-3.5" aria-hidden />
-              <Link href="/izklaides-programmas" className="hover:text-white">Izklaides programmas</Link>
+              <Link href="/izklaides-programmas" className="hover:text-white">{t("Izklaides programmas")}</Link>
               <ChevronRight className="size-3.5" aria-hidden />
               <span className="text-white">{program.title}</span>
             </nav>
@@ -88,10 +89,10 @@ export default async function MinionsShowPage({ params }: { params: Promise<{ la
             </dl>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="#pieteikt" size="lg" arrow>
-                Pieteikt izrādi
+                {t("Pieteikt izrādi")}
               </ButtonLink>
               <ButtonLink href="#par-izradi" size="lg" variant="ghostLight">
-                Par izrādi
+                {t("Par izrādi")}
               </ButtonLink>
             </div>
           </div>
@@ -99,7 +100,7 @@ export default async function MinionsShowPage({ params }: { params: Promise<{ la
             <div aria-hidden className="absolute inset-x-[6%] top-[8%] aspect-square rounded-full bg-[radial-gradient(circle_at_40%_35%,#ffe27a,#ffd54a_55%,#f5c518)]" />
             <Photo
               src={CUTOUT}
-              alt="Minioni — Smaidu Darbnīcas izrāde"
+              alt={t("Minioni — Smaidu Darbnīcas izrāde")}
               width={1062}
               height={1235}
               priority
@@ -114,7 +115,7 @@ export default async function MinionsShowPage({ params }: { params: Promise<{ la
       <Section id="par-izradi" className="scroll-mt-20">
         <Container>
           <p className="max-w-3xl text-xl leading-9">{program.body}</p>
-          <h2 className="mt-12 font-display text-sm font-extrabold tracking-[0.12em] uppercase">Ko bērni iepazīs izrādes laikā?</h2>
+          <h2 className="mt-12 font-display text-sm font-extrabold tracking-[0.12em] uppercase">{t("Ko bērni iepazīs izrādes laikā?")}</h2>
           <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {senses.map((s, i) => (
               <li
@@ -146,7 +147,7 @@ export default async function MinionsShowPage({ params }: { params: Promise<{ la
 
       <Section id="pieteikt" className="scroll-mt-20 bg-surface">
         <Container className="max-w-4xl">
-          <StageHeading title="Pieteikt izrādi" highlight="bērnudārzā" text="Aicinām pieteikt izrādi savā bērnudārzā! Sazināsimies, lai vienotos par Jums ērtāko laiku." className="mb-10" />
+          <StageHeading title={t("Pieteikt izrādi")} highlight={t("bērnudārzā")} text={t("Aicinām pieteikt izrādi savā bērnudārzā! Sazināsimies, lai vienotos par Jums ērtāko laiku.")} className="mb-10" />
           <InquiryForm kindergarten defaultService={SLUG} services={[{ slug: SLUG, title: program.title }]} />
         </Container>
       </Section>

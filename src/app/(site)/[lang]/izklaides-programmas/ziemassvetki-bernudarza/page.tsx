@@ -1,12 +1,13 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getLocale, getT, messagesWith, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import { notFound } from "next/navigation";
 import { Check } from "lucide-react";
+import { LocaleProvider } from "@/components/site/LocaleProvider";
 import BookingForm from "@/components/site/BookingForm";
 import Photo from "@/components/site/Photo";
 import { StageHeading, StageHero } from "@/components/site/stage";
 import { ButtonLink, Container, Section } from "@/components/site/ui";
-import { getAlbumImages, getService, getSettings } from "@/lib/content/queries";
+import { getAlbumImages, getService, getServicesRaw, getSettings, getSettingsRaw } from "@/lib/content/queries";
 import { bookingPrices, eur, parseNotice } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/seo";
 
@@ -40,9 +41,18 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
  * Rezervācija: forma iestādēm (sk. BookingForm `institution`) — tikai izbraukums, cena bez PVN, bez izbraukuma piemaksas.
  */
 export default async function KindergartenXmasPage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
-  const [program, settings, photos] = await Promise.all([getService("private", SLUG), getSettings(), getAlbumImages([SLUG], 6)]);
+  const [program, settings, photos, rawPrograms, rawSettings] = await Promise.all([
+    getService("private", SLUG),
+    getSettings(),
+    getAlbumImages([SLUG], 6),
+    // Formai — latviskie dati (pieteikums panelī nonāk latviski)
+    getServicesRaw("private"),
+    getSettingsRaw(),
+  ]);
   if (!program) notFound();
+  const raw = rawPrograms.find((p) => p.slug === SLUG) ?? program;
   // Variantu kartīšu fona bildes — albuma bildes bez tās, kas jau ir lapas galvenē
   const gallery = photos.filter((p) => p.src !== HERO_IMAGE);
 
@@ -64,16 +74,16 @@ export default async function KindergartenXmasPage({ params }: { params: Promise
         highlight={highlight}
         text={program.intro}
         crumbs={[
-          { name: "Izklaides programmas", path: "/izklaides-programmas" },
+          { name: t("Izklaides programmas"), path: "/izklaides-programmas" },
           { name: program.title, path: PATH },
         ]}
         photos={[{ src: HERO_IMAGE, caption: program.title }]}
       >
         <ButtonLink href="#rezervacija" size="lg" arrow>
-          Rezervēt
+          {t("Rezervēt")}
         </ButtonLink>
         <ButtonLink href="#programma" size="lg" variant="ghostLight">
-          Programma un cenas
+          {t("Programma un cenas")}
         </ButtonLink>
       </StageHero>
 
@@ -141,13 +151,15 @@ export default async function KindergartenXmasPage({ params }: { params: Promise
               className="mb-10 md:mb-12"
             />
           )}
-          <BookingForm
-            defaultProgram={SLUG}
-            institution={{ nameLabel: "Bērnudārza nosaukums", ticketLabel: "Bērnudārzs", addressLabel: "Bērnudārza adrese" }}
-            notice={notice}
-            prices={bookingPrices(settings)}
-            programs={[{ slug: program.slug, title: program.title, image: program.heroImage, pricing: program.pricing }]}
-          />
+          <LocaleProvider locale={getLocale()} messages={messagesWith(raw)}>
+            <BookingForm
+              defaultProgram={SLUG}
+              institution={{ nameLabel: "Bērnudārza nosaukums", ticketLabel: "Bērnudārzs", addressLabel: "Bērnudārza adrese" }}
+              notice={notice}
+              prices={bookingPrices(rawSettings)}
+              programs={[{ slug: raw.slug, title: raw.title, image: raw.heroImage, pricing: raw.pricing }]}
+            />
+          </LocaleProvider>
         </Container>
       </Section>
     </>

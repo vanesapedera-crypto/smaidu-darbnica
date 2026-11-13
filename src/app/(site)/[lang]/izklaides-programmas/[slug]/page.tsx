@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import { notFound } from "next/navigation";
 import ServiceDetail from "@/components/site/ServiceDetail";
@@ -17,13 +17,14 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const { slug } = await params;
   const program = await getService("private", slug);
   if (!program) return {};
   return pageMetadata({
     path: `/izklaides-programmas/${slug}`,
-    title: program.seoTitle || `${program.title} — izklaides programma`,
+    title: program.seoTitle || `${program.title} — ${t("izklaides programma")}`,
     description: program.seoDescription || program.excerpt,
     image: program.heroImage,
   });

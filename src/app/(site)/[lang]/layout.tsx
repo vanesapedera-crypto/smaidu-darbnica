@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { UI_MESSAGES, setLocale } from "@/lib/i18n/server";
 import { LOCALES, asLocale, isLocale } from "@/lib/i18n/config";
 import { notFound } from "next/navigation";
 import { LocaleProvider } from "@/components/site/LocaleProvider";
@@ -23,7 +23,7 @@ export default async function SiteLayout({ children, params }: { children: React
   const [settings, services] = await Promise.all([getSettings(), getServices("business")]);
 
   return (
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={UI_MESSAGES[locale]}>
       <div lang={locale} className="contents">
       <Navbar
         services={[

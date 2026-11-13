@@ -1,3 +1,4 @@
+import type { TFn } from "@/lib/i18n/translate";
 import { Baby, Clock, Coffee, Disc3, Gamepad2, MapPin, Mountain, ScrollText, Sparkles } from "lucide-react";
 import OpenOnHash from "./OpenOnHash";
 import PhotoReel from "./PhotoReel";
@@ -8,6 +9,7 @@ import { toReel } from "@/lib/content/media";
 import { getCategoryImages, getSettings } from "@/lib/content/queries";
 import type { GalleryImage, VenueSettings } from "@/lib/content/types";
 import { VENUE_SLOTS } from "@/lib/pricing";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * Sadaļa "Telpu noma": galvene, apraksts ar aprīkojumu, cenu kartīte ar noteikumiem un foto lente.
@@ -18,15 +20,16 @@ import { VENUE_SLOTS } from "@/lib/pricing";
 const ICONS = [Sparkles, Gamepad2, Baby, Disc3, Mountain, Coffee];
 
 /** Cenu rindas — cenas rediģē panelī (Telpu noma → Cenas) */
-const prices = (venue: VenueSettings) => [
-  { title: "Pirmdiena–ceturtdiena", note: "3 stundas", price: `${venue.priceWeekday} €` },
-  { title: "Piektdiena–svētdiena", note: "3 stundas", price: `${venue.priceWeekend} €` },
-  { title: "Papildu stunda", note: "Iepriekš vienojoties", price: `${venue.priceExtraHour} €` },
+const prices = (venue: VenueSettings, t: TFn) => [
+  { title: t("Pirmdiena–ceturtdiena"), note: t("3 stundas"), price: `${venue.priceWeekday} €` },
+  { title: t("Piektdiena–svētdiena"), note: t("3 stundas"), price: `${venue.priceWeekend} €` },
+  { title: t("Papildu stunda"), note: t("Iepriekš vienojoties"), price: `${venue.priceExtraHour} €` },
 ];
 
 const BOOK = "/izklaides-programmas/pieteikt";
 
 export default async function VenueView() {
+  const t = getT();
   const [photos, { venue, contact }] = await Promise.all([getCategoryImages(["telpas"], 24), getSettings()]);
   const address = `${contact.address}, ${contact.city}, ${contact.postalCode}`;
 
@@ -39,13 +42,13 @@ export default async function VenueView() {
         after={venue.heroAfter}
         text={venue.heroText}
         crumbs={[{ name: "Telpu noma", path: "/telpu-noma" }]}
-        photos={[{ src: venue.heroImage, caption: "Smaidu Darbnīcas telpas" }]}
+        photos={[{ src: venue.heroImage, caption: t("Smaidu Darbnīcas telpas") }]}
       >
         <ButtonLink href={BOOK} size="lg" arrow>
-          Rezervēt telpas
+          {t("Rezervēt telpas")}
         </ButtonLink>
         <ButtonLink href="#cenas" size="lg" variant="ghostLight">
-          Cenas
+          {t("Cenas")}
         </ButtonLink>
       </StageHero>
 
@@ -82,13 +85,14 @@ function Features({ venue }: { venue: VenueSettings }) {
 
 /** Noteikumi — atveramā sadaļā */
 function Rules({ venue }: { venue: VenueSettings }) {
+  const t = getT();
   if (!venue.rules.trim()) return null;
   return (
     <details id="noteikumi" className="group scroll-mt-24 rounded-2xl bg-white ring-1 ring-line">
       <OpenOnHash id="noteikumi" />
       <summary className="flex cursor-pointer list-none items-center gap-3 p-5 font-extrabold [&::-webkit-details-marker]:hidden">
         <ScrollText className="size-5 shrink-0" aria-hidden />
-        <span className="flex-1">Telpu lietošanas noteikumi</span>
+        <span className="flex-1">{t("Telpu lietošanas noteikumi")}</span>
         <span className="grid size-8 place-items-center rounded-full bg-brand text-lg transition-transform group-open:rotate-45" aria-hidden>
           +
         </span>
@@ -102,13 +106,14 @@ function Rules({ venue }: { venue: VenueSettings }) {
 
 /* ── Apraksts un cenas ─────────────────────────────────────────────── */
 function Content({ venue, address }: { venue: VenueSettings; address: string }) {
+  const t = getT();
   return (
     <section className="py-16 md:py-24">
       <Container>
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:gap-16">
           {/* Kreisajā pusē: apraksts, adrese, aprīkojums, noteikumi */}
           <div>
-            <StageHeading eyebrow="Svinību telpas" title={venue.aboutTitle} />
+            <StageHeading eyebrow={t("Svinību telpas")} title={venue.aboutTitle} />
             <RichText text={venue.about} className="prose-sd mt-5" />
             {/* Adrese — mazā rindā zem apraksta */}
             <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-ink-soft">
@@ -123,9 +128,9 @@ function Content({ venue, address }: { venue: VenueSettings; address: string }) 
           {/* Labajā pusē: kompakta cenu kartīte (ritinot paliek redzama) */}
           <aside id="cenas" className="scroll-mt-24 md:sticky md:top-28 md:self-start">
             <div className="rounded-[1.5rem] bg-ink p-6 text-white md:p-7">
-              <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">Cenas</p>
+              <p className="text-xs font-extrabold tracking-[0.14em] text-brand uppercase">{t("Cenas")}</p>
               <dl className="mt-2 divide-y divide-white/10">
-                {prices(venue).map((p) => (
+                {prices(venue, t).map((p) => (
                   <div key={p.title} className="flex items-center justify-between gap-4 py-3">
                     <dt>
                       <span className="block font-bold">{p.title}</span>
@@ -137,10 +142,10 @@ function Content({ venue, address }: { venue: VenueSettings; address: string }) 
               </dl>
               <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-white/65">
                 <Clock className="mt-1 size-4 shrink-0 text-brand" aria-hidden />
-                <span>Iespējamie laiki: {VENUE_SLOTS.map((t) => t.label).join(", ")}</span>
+                <span>{t("Iespējamie laiki:")} {VENUE_SLOTS.map((s) => s.label).join(", ")}</span>
               </p>
               <ButtonLink href={BOOK} size="lg" arrow className="mt-6 w-full justify-center">
-                Rezervēt telpas
+                {t("Rezervēt telpas")}
               </ButtonLink>
             </div>
             <div className="mt-4">
@@ -155,11 +160,12 @@ function Content({ venue, address }: { venue: VenueSettings; address: string }) 
 
 /** Foto lente */
 function Gallery({ photos }: { photos: GalleryImage[] }) {
+  const t = getT();
   if (photos.length === 0) return null;
   return (
     <section className="overflow-hidden bg-surface pt-16 pb-10 md:pt-20">
       <Container>
-        <StageHeading eyebrow="Foto" title="Ieskaties" highlight="telpās" />
+        <StageHeading eyebrow={t("Foto")} title={t("Ieskaties")} highlight={t("telpās")} />
       </Container>
       <PhotoReel images={toReel(photos)} />
     </section>

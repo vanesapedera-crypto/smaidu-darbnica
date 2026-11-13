@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import JsonLd from "./JsonLd";
 import Photo from "./Photo";
 import { Container } from "./ui";
+import { getT } from "@/lib/i18n/server";
 
 /*
  * "Skatuves" dizaina pamatelementi: logo smaida grafika, lapas galvene ar fotogrāfiju
@@ -67,7 +68,8 @@ export function StageHero({
   children?: React.ReactNode;
   as?: "h1" | "h2";
 }) {
-  const trail = crumbs ? [{ name: "Sākums", path: "/" }, ...crumbs] : null;
+  const t = getT();
+  const trail = crumbs ? [{ name: t("Sākums"), path: "/" }, ...crumbs] : null;
 
   const photo = photos[0];
   // Galvenes fonam — lielā bildes versija, ja tāda ir (sk. defaults/service-media.ts)
@@ -140,7 +142,7 @@ export function StageHero({
       <Container className="w-full pt-16 pb-14 md:pb-20">
         <div className="max-w-3xl">
           {trail && (
-            <nav aria-label="Atrašanās vieta" className="mb-6">
+            <nav aria-label={t("Atrašanās vieta")} className="mb-6">
               <ol className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-white/70">
                 {trail.map((c, i) => (
                   <li key={c.path} className="flex items-center gap-1.5">

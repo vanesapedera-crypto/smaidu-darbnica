@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Clock, Play } from "lucide-react";
 import RichText from "./RichText";
 import type { Video } from "@/lib/content/types";
+import { useT } from "@/components/site/LocaleProvider";
 
 /** YouTube / Vimeo saites atpazīšana. */
 function parse(src: string): { kind: "youtube" | "vimeo" | "file"; id?: string } {
@@ -34,9 +35,10 @@ function Duration({ value }: { value?: string }) {
 }
 
 function BookButton({ to }: { to: string }) {
+  const t = useT();
   return (
     <a href={to} className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-extrabold text-white transition-transform hover:-translate-y-0.5">
-      Rezervēt izrādi <span aria-hidden>→</span>
+      {t("Rezervēt izrādi")} <span aria-hidden>→</span>
     </a>
   );
 }
@@ -46,6 +48,7 @@ function BookButton({ to }: { to: string }) {
  * YouTube/Vimeo atskaņotājs tiek ielādēts tikai pēc klikšķa (līdz tam — vāciņa attēls).
  */
 export default function VideoShowcase({ videos, bookHref = [] }: Props) {
+  const t = useT();
   const [active, setActive] = useState(0);
   const v = videos[active];
   if (!v) return null;
@@ -65,7 +68,7 @@ export default function VideoShowcase({ videos, bookHref = [] }: Props) {
         </div>
       </div>
 
-      <ol data-reveal className="space-y-3 md:sticky md:top-28 md:self-start" aria-label="Izrādes">
+      <ol data-reveal className="space-y-3 md:sticky md:top-28 md:self-start" aria-label={t("Izrādes")}>
         {videos.map((x, i) => (
           <li key={`${x.src}-${i}`}>
             <button
@@ -86,7 +89,7 @@ export default function VideoShowcase({ videos, bookHref = [] }: Props) {
               </span>
               <span>
                 <span className="block text-xs font-extrabold tracking-[0.12em] uppercase opacity-60">
-                  Izrāde {String(i + 1).padStart(2, "0")}
+                  {t("Izrāde")} {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="mt-1 block font-bold leading-snug">{x.title}</span>
                 {x.duration && <span className="mt-1 block text-sm opacity-70">{x.duration}</span>}
@@ -109,6 +112,7 @@ function Thumb({ video }: { video: Video }) {
 }
 
 function VideoCard({ video }: { video: Video }) {
+  const t = useT();
   const [playing, setPlaying] = useState(false);
   const { kind, id } = parse(video.src);
   // YouTube vāciņš: vispirms 1280×720 (maxres); ja tāda nav, krītam uz 640×480 (sd) un 480×360 (hq)
@@ -147,7 +151,7 @@ function VideoCard({ video }: { video: Video }) {
   }
 
   return (
-    <button type="button" onClick={() => setPlaying(true)} aria-label={`Atskaņot: ${video.title}`} className={`${frame} group block w-full`}>
+    <button type="button" onClick={() => setPlaying(true)} aria-label={`${t("Atskaņot:")} ${video.title}`} className={`${frame} group block w-full`}>
       {poster && (
         // eslint-disable-next-line @next/next/no-img-element -- ārēja vāciņa bilde (YouTube)
         <img

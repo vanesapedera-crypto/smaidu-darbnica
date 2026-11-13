@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import Photo from "@/components/site/Photo";
 import { XmasBanner } from "@/components/site/XmasFeature";
@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
  *  3) sezonas reklāma.
  */
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const { home } = await getSettings();
   // Viena galvenes fotogrāfija (panelī: Sākumlapa → "Galvenes fotogrāfija")
@@ -45,7 +46,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <Container className="pt-12 pb-16 md:pb-24">
           <div className="max-w-3xl">
             <p className="fade-up mb-5 text-sm font-extrabold tracking-[0.14em] text-brand uppercase [--d:50ms]">
-              {home.xmasEnabled ? `${home.xmasEyebrow} · rezervācijas atvērtas` : home.heroEyebrow}
+              {home.xmasEnabled ? `${home.xmasEyebrow} · ${t("rezervācijas atvērtas")}` : home.heroEyebrow}
             </p>
             <LineTitle
               className="text-[2.6rem] sm:text-6xl lg:text-7xl xl:text-[5.6rem]"
@@ -69,10 +70,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </p>
             <div className="fade-up mt-9 flex flex-wrap gap-3 [--d:700ms]">
               <ButtonLink href="/uznemumiem" size="lg" arrow>
-                Uzņēmumiem
+                {t("Uzņēmumiem")}
               </ButtonLink>
               <ButtonLink href="/telpu-noma" size="lg" variant="ghostLight">
-                Telpu noma
+                {t("Telpu noma")}
               </ButtonLink>
             </div>
           </div>
@@ -83,9 +84,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section aria-labelledby="sadalas" className="py-16 md:py-24">
         <Container>
           <div data-reveal className="mb-12 md:mb-16">
-            <p className="mb-4 text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase">Sadaļas</p>
+            <p className="mb-4 text-sm font-extrabold tracking-[0.14em] text-ink-soft uppercase">{t("Sadaļas")}</p>
             <h2 id="sadalas" className="display text-4xl sm:text-5xl md:text-6xl">
-              Ko pie mums <span className="sticker">atradīsiet</span>
+              {t("Ko pie mums")} <span className="sticker">{t("atradīsiet")}</span>
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

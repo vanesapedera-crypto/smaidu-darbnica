@@ -1,4 +1,4 @@
-import { setLocale } from "@/lib/i18n/server";
+import { getT, setLocale } from "@/lib/i18n/server";
 import { asLocale } from "@/lib/i18n/config";
 import PhotoReel from "@/components/site/PhotoReel";
 import VideoShowcase from "@/components/site/VideoShowcase";
@@ -17,9 +17,10 @@ const TITLE = "Ziemassvētki uzņēmumiem";
 const ALBUMS = ["ziemassvetki-2025"];
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const { business, home } = await getSettings();
-  return pageMetadata({ path: XMAS_PAGE, title: TITLE, description: business.winterText, image: home.xmasPhotos[0]?.src });
+  return pageMetadata({ path: XMAS_PAGE, title: t(TITLE), description: business.winterText, image: home.xmasPhotos[0]?.src });
 }
 
 /**
@@ -30,11 +31,12 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
  * Lapa ir pieejama visu gadu — arī tad, kad sezonas reklāma sākumlapā ir izslēgta.
  */
 export default async function XmasBusinessPage({ params }: { params: Promise<{ lang: string }> }) {
+  const t = getT();
   setLocale(asLocale((await params).lang));
   const [settings, services, images] = await Promise.all([getSettings(), getServices("business"), getAlbumImages(ALBUMS, 16)]);
   const { business, contact, home, shows } = settings;
 
-  const xmas = /ziemassvētk/i;
+  const xmas = /ziemassvētk|christmas|рождеств/i;
   const videos = shows.videos.filter((v) => xmas.test(v.title) || xmas.test(v.description ?? ""));
   const bookHref = (show: string) => `/kontakti?${new URLSearchParams({ pakalpojums: "izrades", izrade: show })}#pieprasijums`;
 
@@ -42,20 +44,20 @@ export default async function XmasBusinessPage({ params }: { params: Promise<{ l
     <>
       <StageHero
         eyebrow={home.xmasEyebrow}
-        title="Ziemassvētki"
-        highlight="uzņēmumiem"
+        title={t("Ziemassvētki")}
+        highlight={t("uzņēmumiem")}
         text={business.winterText}
         crumbs={[
-          { name: "Uzņēmumiem", path: "/uznemumiem" },
-          { name: TITLE, path: XMAS_PAGE },
+          { name: t("Uzņēmumiem"), path: "/uznemumiem" },
+          { name: t(TITLE), path: XMAS_PAGE },
         ]}
         photos={home.xmasPhotos.slice(0, 1)}
       >
         <ButtonLink href={XMAS_INQUIRY} size="lg" arrow>
-          Pieprasīt piedāvājumu
+          {t("Pieprasīt piedāvājumu")}
         </ButtonLink>
         <ButtonLink href="#piedavajumi" size="lg" variant="ghostLight">
-          Ko piedāvājam
+          {t("Ko piedāvājam")}
         </ButtonLink>
       </StageHero>
 
@@ -65,9 +67,9 @@ export default async function XmasBusinessPage({ params }: { params: Promise<{ l
         <section id="izrades" className="scroll-mt-20 py-20 md:py-28">
           <Container>
             <StageHeading
-              eyebrow={`${videos.length} izrādes`}
-              title="Ziemassvētku"
-              highlight="izrādes"
+              eyebrow={t("{n} izrādes", { n: videos.length })}
+              title={t("Ziemassvētku")}
+              highlight={t("izrādes")}
               className="mb-14 md:mb-20"
             />
             <VideoShowcase videos={videos} bookHref={videos.map((v) => bookHref(v.title))} />
@@ -78,15 +80,15 @@ export default async function XmasBusinessPage({ params }: { params: Promise<{ l
       {images.length > 0 && (
         <section className="overflow-hidden bg-surface pt-20 pb-12 md:pt-28">
           <Container>
-            <StageHeading eyebrow="Foto" title="No mūsu" highlight="pasākumiem" />
+            <StageHeading eyebrow={t("Foto")} title={t("No mūsu")} highlight={t("pasākumiem")} />
           </Container>
           <PhotoReel images={toReel(images)} />
         </section>
       )}
 
       <CtaBand
-        title="Plānojat pasākumu?"
-        text="Pastāstiet par savu ideju — ieteiksim piemērotāko programmu un sagatavosim piedāvājumu."
+        title={t("Plānojat pasākumu?")}
+        text={t("Pastāstiet par savu ideju — ieteiksim piemērotāko programmu un sagatavosim piedāvājumu.")}
         contact={contact}
         href={XMAS_INQUIRY}
       />

@@ -1,6 +1,7 @@
 import Link from "@/components/site/Link";
 import { cn } from "@/lib/utils";
 import Photo from "./Photo";
+import { getT } from "@/lib/i18n/server";
 
 /*
  * Ritināšanas un 3D efektu bloki "Skatuves" dizainā. Visi ir servera komponentes —
@@ -49,6 +50,7 @@ export function DoorCard({
   index?: number;
   className?: string;
 }) {
+  const t = getT();
   return (
     <div data-reveal style={{ "--reveal-delay": `${(index % 4) * 100}ms` } as React.CSSProperties} className={className}>
       <Link href={href} data-tilt className="group relative block overflow-hidden rounded-[1.75rem] bg-ink text-white">
@@ -71,7 +73,7 @@ export function DoorCard({
           <h3 className="display text-2xl xl:text-[1.7rem]">{title}</h3>
           <p className="mt-2 text-sm leading-6 text-white/80">{text}</p>
           <span className="mt-4 inline-flex items-center gap-3 text-xs font-extrabold tracking-wide uppercase">
-            Uzzināt vairāk
+            {t("Uzzināt vairāk")}
             <span className="grid size-10 place-items-center rounded-full bg-brand text-ink transition-transform duration-500 group-hover:translate-x-1">
               →
             </span>

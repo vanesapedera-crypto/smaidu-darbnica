@@ -7,6 +7,7 @@ import { privateServices } from "./defaults/private-services";
 import { defaultClients, defaultTeam, defaultTestimonials } from "./defaults/people";
 import { emptyClient, emptyGalleryImage, emptyPageSeo, emptyService, emptyTeamMember, emptyTestimonial } from "./empty";
 import { fromRow } from "./mappers";
+import { localize } from "@/lib/i18n/server";
 import { manifestGallery } from "./media";
 import type {
   Audience,
@@ -49,7 +50,8 @@ async function select<T extends object>(
   }
 }
 
-export const getSettings = cache(async (): Promise<SiteSettings> => {
+/** Iestatījumi latviski (formām un ziņām, kas nonāk panelī) */
+export const getSettingsRaw = cache(async (): Promise<SiteSettings> => {
   const rows = await select<{ key: string; value: object }>(
     "site_settings",
     { key: "", value: {} },
@@ -67,13 +69,20 @@ export const getSettings = cache(async (): Promise<SiteSettings> => {
   return settings;
 });
 
+/** Iestatījumi pašreizējā valodā (EN/RU — iztulkotie teksti, sk. src/lib/i18n/content) */
+export const getSettings = cache(async (): Promise<SiteSettings> => localize(await getSettingsRaw()));
+
 const defaultServices = [...businessServices, ...privateServices];
 
-export const getServices = cache(async (audience: Audience): Promise<Service[]> =>
+/** Pakalpojumi latviski (formām un ziņām, kas nonāk panelī) */
+export const getServicesRaw = cache(async (audience: Audience): Promise<Service[]> =>
   select("services", emptyService, defaultServices.filter((s) => s.audience === audience), (q) =>
     q.select("*").eq("audience", audience).eq("published", true).order("sort"),
   ),
 );
+
+/** Pakalpojumi pašreizējā valodā */
+export const getServices = cache(async (audience: Audience): Promise<Service[]> => localize(await getServicesRaw(audience)));
 
 export const getService = cache(async (audience: Audience, slug: string): Promise<Service | undefined> => {
   const services = await getServices(audience);
@@ -109,9 +118,9 @@ export async function getAlbumImages(albums: string[], limit = 12): Promise<Gall
 }
 
 export const getTestimonials = cache(async (): Promise<Testimonial[]> =>
-  select("testimonials", emptyTestimonial, defaultTestimonials, (q) =>
+  localize(await select("testimonials", emptyTestimonial, defaultTestimonials, (q) =>
     q.select("*").eq("published", true).order("sort"),
-  ),
+  )),
 );
 
 export const getClients = cache(async (): Promise<Client[]> =>
@@ -119,8 +128,10 @@ export const getClients = cache(async (): Promise<Client[]> =>
 );
 
 export const getTeam = cache(async (): Promise<TeamMember[]> =>
-  select("team_members", emptyTeamMember, defaultTeam, (q) =>
-    q.select("*").eq("published", true).order("sort"),
+  localize(
+    await select("team_members", emptyTeamMember, defaultTeam, (q) =>
+      q.select("*").eq("published", true).order("sort"),
+    ),
   ),
 );
 
