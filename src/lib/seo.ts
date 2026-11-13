@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
 import { getPageSeo, getSettings } from "@/lib/content/queries";
+import { getLocale } from "@/lib/i18n/server";
+import { DEFAULT_LOCALE, LOCALES, localePath } from "@/lib/i18n/config";
+
+/**
+ * Kamēr EN/RU lapu saturs vēl nav iztulkots, tās netiek rādītas Google (noindex).
+ * Kad tulkojumi gatavi — nomainīt uz true (tad pievienojas arī hreflang saites).
+ */
+export const INDEX_TRANSLATIONS = false;
 
 /** Publiskā adrese (bez slīpsvītras beigās). Iestatiet NEXT_PUBLIC_SITE_URL produkcijā. */
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.smaidudarbnica.lv").replace(/\/$/, "");
@@ -34,18 +42,23 @@ export async function pageMetadata(input: PageMetaInput): Promise<Metadata> {
   const title = override?.title || input.title;
   const description = truncate(override?.description || input.description || seo.defaultDescription);
   const image = override?.ogImage || input.image || seo.ogImage;
-  const noindex = override?.noindex || input.noindex;
+  const locale = getLocale();
+  const url = absoluteUrl(localePath(locale, input.path));
+  const noindex = override?.noindex || input.noindex || (locale !== DEFAULT_LOCALE && !INDEX_TRANSLATIONS);
+  const languages = INDEX_TRANSLATIONS
+    ? Object.fromEntries([...LOCALES.map((l) => [l, absoluteUrl(localePath(l, input.path))]), ["x-default", absoluteUrl(input.path)]])
+    : undefined;
 
   return {
     // Sākumlapai (bez title) tiek izmantots pilnais noklusējuma virsraksts
     title: title ? title : { absolute: seo.defaultTitle },
     description,
-    alternates: { canonical: absoluteUrl(input.path) },
+    alternates: { canonical: url, languages },
     openGraph: {
       type: "website",
-      locale: "lv_LV",
+      locale: { lv: "lv_LV", en: "en_GB", ru: "ru_RU" }[locale],
       siteName: seo.siteName,
-      url: absoluteUrl(input.path),
+      url,
       title: title ? `${title} | ${seo.siteName}` : seo.defaultTitle,
       description,
       images: image ? [{ url: absoluteUrl(image) }] : undefined,

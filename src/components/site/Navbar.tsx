@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/site/Link";
+import NextLink from "next/link";
+import { LOCALES, LOCALE_LABEL, localePath, stripLocale } from "@/lib/i18n/config";
+import { dict } from "@/lib/i18n/dict";
+import { useLocale } from "./LocaleProvider";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { businessHref, cn } from "@/lib/utils";
@@ -14,7 +18,11 @@ type NavService = { slug: string; title: string; icon: string };
 
 
 export default function Navbar({ services, phone }: { services: NavService[]; phone: string }) {
-  const pathname = usePathname();
+  const fullPath = usePathname();
+  const locale = useLocale();
+  const t = dict(locale);
+  // Adrese bez valodas prefiksa (/en/kontakti → /kontakti)
+  const pathname = stripLocale(fullPath);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
@@ -57,11 +65,11 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
       )}
     >
       <a href="#saturs" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:font-bold focus:text-white">
-        Pāriet uz saturu
+        {t.skipToContent}
       </a>
 
-      <nav aria-label="Galvenā navigācija" className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:h-20 lg:px-8">
-        <Link href="/" className="shrink-0" aria-label="Smaidu Darbnīca — sākumlapa">
+      <nav aria-label={t.mainNav} className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:h-20 lg:px-8">
+        <Link href="/" className="shrink-0" aria-label={t.homeAria}>
           <Image
             src={dark ? "/brand/logo-light.svg" : "/brand/logo-dark.svg"}
             alt="Smaidu Darbnīca"
@@ -77,7 +85,7 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
             l.href === "/uznemumiem" ? (
               <li key={l.href} className="group relative">
                 <Link href={l.href} aria-haspopup="true" className={cn(linkClass, isActive(l.href) && activeClass)}>
-                  {l.label}
+                  {t.nav[l.href] ?? l.label}
                   <ChevronDown className="size-3.5 transition-transform group-focus-within:rotate-180 group-hover:rotate-180" aria-hidden />
                 </Link>
                 {/* Uzņēmumu pakalpojumi (atveras ar peli vai tastatūru) */}
@@ -99,7 +107,7 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
             ) : (
               <li key={l.href}>
                 <Link href={l.href} className={cn(linkClass, isActive(l.href) && activeClass)}>
-                  {l.label}
+                  {t.nav[l.href] ?? l.label}
                 </Link>
               </li>
             ),
@@ -107,6 +115,7 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
         </ul>
 
         <div className="hidden items-center gap-3 xl:flex">
+          <LangSwitch pathname={pathname} locale={locale} label={t.language} dark={dark} />
           <Link
             href="/kontakti#pieprasijums"
             className={cn(
@@ -114,20 +123,23 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
               dark ? "bg-brand text-ink hover:bg-brand-strong" : "bg-ink text-white hover:bg-black",
             )}
           >
-            Pieprasīt piedāvājumu
+            {t.requestOffer}
           </Link>
         </div>
 
+        <div className="flex items-center gap-2 xl:hidden">
+        <LangSwitch pathname={pathname} locale={locale} label={t.language} dark={dark} />
         <button
           type="button"
           className={cn("grid size-12 place-items-center rounded-full xl:hidden", dark ? "bg-white/10 text-white" : "bg-ink text-white")}
           aria-expanded={open}
           aria-controls="mobila-izvelne"
-          aria-label={open ? "Aizvērt izvēlni" : "Atvērt izvēlni"}
+          aria-label={open ? t.closeMenu : t.openMenu}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
+        </div>
       </nav>
 
       {/* Mobilā izvēlne */}
@@ -140,12 +152,12 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
                 aria-current={isActive(l.href) ? "page" : undefined}
                 className="flex items-center justify-between rounded-2xl px-3 py-3 font-display text-2xl font-extrabold uppercase aria-[current=page]:bg-ink aria-[current=page]:text-brand"
               >
-                {l.label}
+                {t.nav[l.href] ?? l.label}
               </Link>
             </li>
           ))}
         </ul>
-        <p className="mt-8 mb-2 px-3 text-xs font-extrabold tracking-[0.14em] uppercase">Pakalpojumi uzņēmumiem</p>
+        <p className="mt-8 mb-2 px-3 text-xs font-extrabold tracking-[0.14em] uppercase">{t.businessServices}</p>
         <ul className="grid gap-1 sm:grid-cols-2">
           {services.map((s) => (
             <li key={s.slug}>
@@ -158,7 +170,7 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
         </ul>
         <div className="mt-8 grid gap-3">
           <Link href="/kontakti#pieprasijums" className="flex h-14 items-center justify-center rounded-full bg-ink font-extrabold text-white">
-            Pieprasīt piedāvājumu
+            {t.requestOffer}
           </Link>
           <a href={tel} className="flex h-14 items-center justify-center gap-2 rounded-full border-2 border-ink font-extrabold">
             <Phone className="size-4" aria-hidden /> {phone}
@@ -166,6 +178,30 @@ export default function Navbar({ services, phone }: { services: NavService[]; ph
         </div>
       </div>
     </header>
+  );
+}
+
+/** Valodas pārslēdzējs LV · EN · RU — atver to pašu lapu citā valodā */
+function LangSwitch({ pathname, locale, label, dark }: { pathname: string; locale: string; label: string; dark: boolean }) {
+  return (
+    <ul aria-label={label} className={cn("flex items-center rounded-full p-0.5 text-[11px] font-extrabold tracking-[0.06em]", dark ? "bg-white/10" : "bg-ink/[0.06]")}>
+      {LOCALES.map((l) => (
+        <li key={l}>
+          <NextLink
+            href={localePath(l, pathname)}
+            hrefLang={l}
+            lang={l}
+            aria-current={l === locale ? "true" : undefined}
+            className={cn(
+              "grid h-8 min-w-9 place-items-center rounded-full px-2 transition-colors",
+              l === locale ? (dark ? "bg-brand text-ink" : "bg-ink text-white") : "hover:bg-current/[0.08]",
+            )}
+          >
+            {LOCALE_LABEL[l]}
+          </NextLink>
+        </li>
+      ))}
+    </ul>
   );
 }
 

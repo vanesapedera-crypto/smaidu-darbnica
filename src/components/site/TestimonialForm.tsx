@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/site/Link";
 import { Check, Copy, LoaderCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Field, Honeypot, inputClass } from "./form";

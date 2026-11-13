@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/site/Link";
 import type { HomeSettings, Service } from "@/lib/content/types";
 import Photo from "./Photo";
 import { ServiceIcon } from "./icons";

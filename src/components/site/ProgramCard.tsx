@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/site/Link";
 import { Baby, Clock, Euro } from "lucide-react";
 import type { Service } from "@/lib/content/types";
 import { programPlusVat } from "@/lib/bookings";

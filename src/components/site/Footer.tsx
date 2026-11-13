@@ -1,8 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/site/Link";
 import { MapPin, Phone } from "lucide-react";
 import type { ContactSettings, Service } from "@/lib/content/types";
 import { NAV } from "@/lib/nav";
+import { getLocale } from "@/lib/i18n/server";
+import { dict } from "@/lib/i18n/dict";
 import { businessHref } from "@/lib/utils";
 import { Container } from "./ui";
 import { Smile } from "./stage";
@@ -10,6 +12,7 @@ import { FacebookIcon, InstagramIcon, TikTokIcon } from "./icons";
 
 export default function Footer({ contact, services }: { contact: ContactSettings; services: Service[] }) {
   const year = new Date().getFullYear();
+  const t = dict(getLocale());
   const socials = [
     { href: contact.facebook, label: "Facebook", Icon: FacebookIcon },
     { href: contact.instagram, label: "Instagram", Icon: InstagramIcon },
@@ -40,7 +43,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
         </div>
 
         <div className="lg:col-span-3">
-          <h2 className="text-sm font-bold tracking-[0.18em] text-white uppercase">Uzņēmumiem</h2>
+          <h2 className="text-sm font-bold tracking-[0.18em] text-white uppercase">{t.footer.business}</h2>
           <ul className="mt-5 space-y-2.5">
             {services.slice(0, 8).map((s) => (
               <li key={s.slug}>
@@ -53,12 +56,12 @@ export default function Footer({ contact, services }: { contact: ContactSettings
         </div>
 
         <div className="lg:col-span-2">
-          <h2 className="text-sm font-bold tracking-[0.18em] text-white uppercase">Sadaļas</h2>
+          <h2 className="text-sm font-bold tracking-[0.18em] text-white uppercase">{t.footer.sections}</h2>
           <ul className="mt-5 space-y-2.5">
             {NAV.map(({ href, label }) => (
               <li key={href}>
                 <Link href={href} className="transition-colors hover:text-brand">
-                  {label}
+                  {t.nav[href] ?? label}
                 </Link>
               </li>
             ))}
@@ -66,7 +69,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
         </div>
 
         <address className="not-italic lg:col-span-3">
-          <h2 className="text-sm font-bold tracking-[0.18em] text-white uppercase">Kontakti</h2>
+          <h2 className="text-sm font-bold tracking-[0.18em] text-white uppercase">{t.footer.contacts}</h2>
           <ul className="mt-5 space-y-4">
             <li className="flex gap-3">
               <Phone className="mt-1 size-4 shrink-0 text-brand" aria-hidden />
@@ -74,7 +77,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
                 <a href={`tel:${contact.phoneBusiness.replace(/\s/g, "")}`} className="font-semibold text-white hover:text-brand">
                   {contact.phoneBusiness}
                 </a>
-                <span className="block text-sm">Uzņēmumiem · {contact.phoneBusinessPerson}</span>
+                <span className="block text-sm">{t.footer.forBusiness} · {contact.phoneBusinessPerson}</span>
                 <a href={`mailto:${contact.email}`} className="block text-sm break-all hover:text-brand">
                   {contact.email}
                 </a>
@@ -86,7 +89,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
                 <a href={`tel:${contact.phonePrivate.replace(/\s/g, "")}`} className="font-semibold text-white hover:text-brand">
                   {contact.phonePrivate}
                 </a>
-                <span className="block text-sm">Privātpersonām · {contact.phonePrivatePerson}</span>
+                <span className="block text-sm">{t.footer.forPrivate} · {contact.phonePrivatePerson}</span>
                 {contact.emailPrivate && (
                   <a href={`mailto:${contact.emailPrivate}`} className="block text-sm break-all hover:text-brand">
                     {contact.emailPrivate}
@@ -98,7 +101,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
               <MapPin className="mt-1 size-4 shrink-0 text-brand" aria-hidden />
               <span>
                 {contact.address}, {contact.city}, {contact.postalCode}
-                <span className="block text-sm">Telpu noma</span>
+                <span className="block text-sm">{t.footer.venueHire}</span>
               </span>
             </li>
           </ul>
@@ -113,7 +116,7 @@ export default function Footer({ contact, services }: { contact: ContactSettings
             </p>
             {/* Izstrādātāja paraksts — nav saistīts ar kontaktiem iestatījumos */}
             <p className="mt-1 text-xs text-white/50">
-              Mājaslapu izstrādāja: Vanesa Pabērza ·{" "}
+              {t.footer.madeBy}: Vanesa Pabērza ·{" "}
               <a href="tel:+37128193386" className="whitespace-nowrap hover:text-brand">
                 +371 28 193 386
               </a>
@@ -121,10 +124,10 @@ export default function Footer({ contact, services }: { contact: ContactSettings
           </div>
           <div className="flex gap-5">
             <Link href="/atsauksmes" className="hover:text-brand">
-              Atsauksmes
+              {t.footer.reviews}
             </Link>
             <Link href="/privatuma-politika" className="hover:text-brand">
-              Privātuma politika
+              {t.footer.privacy}
             </Link>
           </div>
         </Container>

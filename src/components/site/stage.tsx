@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/site/Link";
 import { ChevronRight } from "lucide-react";
 import { HERO_HD, HERO_MOBILE, HERO_POSITION } from "@/lib/content/defaults/service-media";
 import { breadcrumbSchema } from "@/lib/schema";

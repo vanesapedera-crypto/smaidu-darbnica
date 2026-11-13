@@ -18,6 +18,21 @@ import {
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Mājaslapas valodas (sk. src/lib/i18n/config.ts): /en/… un /ru/… — kā ir; /lv/… → bez prefiksa;
+  // pārējās publiskās adreses iekšēji → /lv/… (latviešu lapas adresē paliek bez prefiksa)
+  if (!/^\/(admin|api)(\/|$)/.test(pathname)) {
+    if (/^\/(en|ru)(\/|$)/.test(pathname)) return NextResponse.next();
+    if (/^\/lv(\/|$)/.test(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname.slice(3) || "/";
+      return NextResponse.redirect(url, 308);
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = `/lv${pathname === "/" ? "" : pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
   if (pathname === "/admin/login") return NextResponse.next();
 
   const isApi = pathname.startsWith("/api/");
@@ -73,5 +88,12 @@ async function refreshSession(refreshToken: string): Promise<RefreshedSession | 
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/bookings/:id+", "/api/google/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/bookings/:id+",
+    "/api/google/:path*",
+    // Mājaslapas lapas (valodas) — bez Next iekšējiem failiem, faila paplašinājumiem, panelim, API,
+    // klientu piedāvājuma saites un īsās apstiprinājuma saites
+    "/((?!_next|admin|api|r/|piedavajums|media/|brand/|images/|admin-app/|.*\\.[a-zA-Z0-9]+$).*)",
+  ],
 };
