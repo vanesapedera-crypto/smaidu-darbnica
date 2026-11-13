@@ -457,3 +457,20 @@ export async function resendAllToGoogle(): Promise<{ error?: string; done?: numb
   }
   return { done, failed };
 }
+
+/**
+ * Poga "Dzēst pieteikumu" — pieteikums tiek izdzēsts neatgriezeniski.
+ * Apstiprinātai rezervācijai ar datumu vispirms notikumu izņem no komandas kalendāriem.
+ * Klientam nekas netiek sūtīts.
+ */
+export async function deleteBooking(id: string): Promise<{ error?: string; ok?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  if (b.event_date && b.status === "Apstiprināta") await removeBookingFromCalendars(db, b).catch(() => false);
+  const { error } = await db.from("bookings").delete().eq("id", id);
+  if (error) return { error: "Neizdevās izdzēst. Mēģiniet vēlreiz." };
+  revalidatePath("/admin");
+  return { ok: true };
+}

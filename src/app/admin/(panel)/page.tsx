@@ -10,6 +10,7 @@ import ClientConfirmation, { ConfirmationBadge } from "@/components/admin/Client
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import TeamEventsPending from "@/components/admin/TeamEventsPending";
+import DeleteBooking from "@/components/admin/DeleteBooking";
 import { googleConnection } from "@/lib/google-calendar";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import StatusSelect from "@/components/admin/StatusSelect";
@@ -61,7 +62,12 @@ export default async function BookingsPage({ searchParams }: Props) {
   const prices = bookingPrices(settings);
   // Izmaksas ballītēm un telpu nomai — tas pats aprēķins, ko klients redz formā un saņem apstiprinājuma e-pastā
   const costsOf = (b: Booking) =>
-    b.inquiry_type === "business" ? null : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
+    b.inquiry_type === "business"
+      ? // Uzņēmumiem automātiska aprēķina nav — tikai panelī ierakstītās izmaksas
+        parseCostOverride(b.message)?.length
+        ? bookingCosts(b, undefined, prices)
+        : null
+      : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
   const bookings = (data ?? []) as Booking[];
   // Pakalpojuma slug → nosaukums (vecajos pieteikumos var būt arī brīvs teksts)
   // Ja pakalpojumi vēl nav datubāzē, nosaukumus ņem no lapas satura (lai panelī un kalendārā nav redzams slug)
@@ -347,14 +353,23 @@ export default async function BookingsPage({ searchParams }: Props) {
                                   Var izlabot vai pierakstīt klāt (piem. klienta vēlmes). Izmaksas un “Programmu vada” labo atsevišķi — tās šeit nav redzamas, bet saglabājas.
                                 </span>
                               </label>
-                              {isPrivate && (
+                              {(
                                 <label className="text-sm text-ink-soft sm:col-span-3">
-                                  Izmaksas {overridden && <span className="font-semibold text-ink">(labotas ar roku)</span>}
+                                  Izmaksas {isPrivate && overridden && <span className="font-semibold text-ink">(labotas ar roku)</span>}
                                   <textarea name="costs" rows={Math.max(3, costsText.split("\n").length + 1)} defaultValue={costsText} className={`${adminInput} font-mono text-[13px]`} />
                                   <input type="hidden" name="costs_shown" value={costsText} />
                                   <span className="mt-1 block text-xs">
-                                    Katrā rindā: nosaukums | cena | +PVN (pēdējais — tikai, ja cena bez PVN). Šīs izmaksas klients saņem apstiprinājuma e-pastā.
-                                    Var mainīt, dzēst vai pievienot rindas (piem. “Sejas apgleznošana | 50”). Lai atkal rēķinātu automātiski — izdzēsiet visu tekstu.
+                                    {isPrivate ? (
+                                      <>
+                                        Katrā rindā: nosaukums | cena | +PVN (pēdējais — tikai, ja cena bez PVN). Šīs izmaksas klients saņem apstiprinājuma e-pastā.
+                                        Var mainīt, dzēst vai pievienot rindas (piem. “Sejas apgleznošana | 50”). Lai atkal rēķinātu automātiski — izdzēsiet visu tekstu.
+                                      </>
+                                    ) : (
+                                      <>
+                                        Katrā rindā: nosaukums | cena | +PVN (pēdējais — ja cena bez PVN), piem. “Lielformāta spēles | 450 | +PVN”.
+                                        Izmaksas redzamas panelī un kalendārā (klientam e-pastā netiek sūtītas). Lai noņemtu — izdzēsiet visu tekstu.
+                                      </>
+                                    )}
                                   </span>
                                 </label>
                               )}
@@ -375,6 +390,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                         Saglabāt piezīmes
                       </button>
                     </form>
+                    <DeleteBooking id={b.id} />
                   </div>
                 </div>
               </details>
