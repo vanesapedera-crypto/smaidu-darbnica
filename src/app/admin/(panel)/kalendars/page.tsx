@@ -249,6 +249,12 @@ export default async function CalendarPage({ searchParams }: Props) {
                       </span>
                     )}
                   </span>
+                  {b.status === "Atcelta" && (
+                    <span className="mt-0.5 block truncate text-xs font-semibold text-red-700">
+                      {b.client_cancelled_at ? "Atcēla klients" : "Atcelta"}
+                      {b.cancel_reason ? ` · Iemesls: ${b.cancel_reason}` : owner ? " · iemesls nav norādīts" : ""}
+                    </span>
+                  )}
                   {/* Programma (telpu nomai) un kas piedalās — visiem pasākumiem ar izklaides programmu vai pakalpojumu */}
                   {(() => {
                     const program = isVenue(b) ? programTitle(b) : null;

@@ -79,6 +79,7 @@ export default function BookingCard({
     ["Apstiprinājums nosūtīts", lvDateTime(b.confirmation_sent_at)],
     ["Klients apstiprināja", lvDateTime(b.client_confirmed_at)],
     ["Klients atcēla", lvDateTime(b.client_cancelled_at)],
+    ["Atcelšanas iemesls", b.cancel_reason],
   ];
 
   return (

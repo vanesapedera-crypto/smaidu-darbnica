@@ -15,7 +15,7 @@ import StatusSelect from "@/components/admin/StatusSelect";
 import TimeSelect from "@/components/site/TimeSelect";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
-import { saveBookingDetails, saveBookingNotes } from "@/app/admin/actions";
+import { saveBookingDetails, saveBookingNotes, saveCancelReason } from "@/app/admin/actions";
 import { cn } from "@/lib/utils";
 
 export type BookingAdminContext = {
@@ -57,6 +57,25 @@ export default function BookingAdminPanel({
           clientEmail={b.email}
         />
       </div>
+      {b.status === "Atcelta" && (
+        <form action={saveCancelReason.bind(null, b.id)} className="space-y-2 border-b border-red-200 bg-red-50 px-4 py-3 sm:px-5">
+          <p className="text-sm font-extrabold text-red-700">
+            ✕ Atcelta
+            {b.client_cancelled_at && (
+              <span className="font-semibold"> — atcēla klients {new Date(b.client_cancelled_at).toLocaleDateString("lv-LV", { timeZone: "Europe/Riga" })}</span>
+            )}
+          </p>
+          <label className="block text-sm text-red-800">
+            Atcelšanas iemesls
+            <span className="mt-1 flex flex-wrap gap-2">
+              <input name="cancel_reason" defaultValue={b.cancel_reason ?? ""} placeholder="Piem. bērns saslima, mainījās plāni…" className={`${adminInput} min-w-60 flex-1`} />
+              <button type="submit" className={adminSecondary}>
+                Saglabāt
+              </button>
+            </span>
+          </label>
+        </form>
+      )}
       {/* 1. Ko klients iesniedza */}
       <div className="space-y-4 p-4 sm:p-5">
         <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">

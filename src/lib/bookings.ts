@@ -39,6 +39,8 @@ export type Booking = {
   client_cancelled_at?: string | null;
   /** Kad klientam nosūtīts atsauksmes pieprasījums (sk. migrāciju 20261012090000) */
   review_requested_at?: string | null;
+  /** Kāpēc atcelta (administratore ieraksta panelī; sk. migrāciju 20261115100000) */
+  cancel_reason?: string | null;
 };
 
 /**

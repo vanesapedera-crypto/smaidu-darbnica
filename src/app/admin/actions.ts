@@ -71,6 +71,14 @@ export async function saveBookingNotes(id: string, form: FormData) {
   revalidatePath("/admin", "layout");
 }
 
+/** Atcelšanas iemesls (pie atceltajām rezervācijām) */
+export async function saveCancelReason(id: string, form: FormData) {
+  const { db } = await requireAdmin();
+  const reason = String(form.get("cancel_reason") ?? "").trim().slice(0, 1000) || null;
+  await db.from("bookings").update({ cancel_reason: reason }).eq("id", id);
+  revalidatePath("/admin", "layout");
+}
+
 /**
  * Rezervācijas labošana panelī: kontakti, programma, datums, laiks, bērni, vieta, ceļa izdevumi un izmaksas.
  * Pārbaudes par pieejamajiem laikiem šeit nav — administrators zina, ko dara.
