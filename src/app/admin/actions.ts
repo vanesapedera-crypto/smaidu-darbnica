@@ -65,7 +65,7 @@ export async function saveBookingNotes(id: string, form: FormData) {
   const { db } = await requireAdmin();
   const notes = String(form.get("admin_notes") ?? "").slice(0, 5000);
   await db.from("bookings").update({ admin_notes: notes }).eq("id", id);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 /**
@@ -139,14 +139,14 @@ export async function saveBookingDetails(id: string, form: FormData) {
   }
 
   await db.from("bookings").update(row).eq("id", id);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 /** Klients apstiprināja citā veidā (pa telefonu, WhatsApp) — atzīmē to panelī ar roku */
 export async function markClientConfirmed(id: string) {
   const { db } = await requireAdmin();
   await db.from("bookings").update({ client_confirmed_at: new Date().toISOString() }).eq("id", id);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 /**
@@ -178,7 +178,7 @@ export async function sendReviewRequest(id: string): Promise<ActionState> {
 
   // Ja datubāzē vēl nav kolonnas review_requested_at (migrācija nav palaista), e-pasts tik un tā ir nosūtīts
   await db.from("bookings").update({ review_requested_at: new Date().toISOString() }).eq("id", id);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return undefined;
 }
 
@@ -389,7 +389,7 @@ export async function createUploadUrl(fileName: string, folder: string, ext: "we
 export async function disconnectGoogle() {
   const { db } = await requireAdmin();
   await db.from("google_calendar").delete().eq("id", 1);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 /**
@@ -471,6 +471,6 @@ export async function deleteBooking(id: string): Promise<{ error?: string; ok?: 
   if (b.event_date && b.status === "Apstiprināta") await removeBookingFromCalendars(db, b).catch(() => false);
   const { error } = await db.from("bookings").delete().eq("id", id);
   if (error) return { error: "Neizdevās izdzēst. Mēģiniet vēlreiz." };
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }

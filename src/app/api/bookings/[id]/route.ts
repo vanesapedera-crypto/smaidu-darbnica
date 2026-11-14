@@ -126,7 +126,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // (arī tie, kas agrāk aizgāja kā .ics ielūgumi — sk. removeBookingFromCalendars)
     if (status === "Atcelta" && before?.status === "Apstiprināta") after(() => removeBookingFromCalendars(admin.db, before));
 
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     return NextResponse.json({ success: true, clientEmail, calendar });
   } catch {
     return NextResponse.json({ success: false, error: "Servera kļūda" }, { status: 500 });

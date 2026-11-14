@@ -4,16 +4,26 @@ import { hostsOf, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS } from "@/lib/calendar";
 import { Star } from "lucide-react";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { bookingCosts, bookingPrices, eur } from "@/lib/pricing";
+import { bookingCosts, bookingPrices, eur, parseCostOverride } from "@/lib/pricing";
 import { timeLabel } from "@/lib/dates";
 import { Suspense } from "react";
 import { listGoogleEvents } from "@/lib/google-calendar";
 import type { MemberContext } from "@/lib/auth";
 import BookingCard, { isTrip, isVenue, stateOf } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
+import BookingAdminPanel, { type BookingAdminContext } from "@/components/admin/BookingAdminPanel";
+import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
+import TeamEventsPending from "@/components/admin/TeamEventsPending";
+import { googleConnection } from "@/lib/google-calendar";
+import { adminInput, adminSecondary } from "@/components/admin/styles";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Kalendārs" };
+// Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
+export const maxDuration = 60;
+
+type Props = { searchParams: Promise<{ q?: string; google?: string }> };
 
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const WEEKDAY_NAMES = ["svētdiena", "pirmdiena", "otrdiena", "trešdiena", "ceturtdiena", "piektdiena", "sestdiena"];
@@ -38,8 +48,10 @@ const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) 
  * no šodienas uz priekšu. Pagājušās rezervācijas — sakļautā sadaļā "Arhīvs". Atceltās nerāda.
  * Uzspiežot uz rezervācijas, zem tās uzreiz atveras visa informācija (bez lapas pārlādes).
  */
-export default async function CalendarPage() {
+export default async function CalendarPage({ searchParams }: Props) {
   const { db, role, email } = await requireSection("kalendars");
+  const { q = "", google } = await searchParams;
+  const owner = role === "owner";
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu vadi"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
   const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me));
@@ -54,9 +66,30 @@ export default async function CalendarPage() {
     getSettings(),
   ]);
 
+  // Administratorei: jaunie pieteikumi (arī bez datuma un uzņēmumu pieprasījumi), atceltie, meklēšana, Google savienojums
+  const term = q.trim().replace(/[,()%*]/g, " ");
+  const [pendingRes, cancelledRes, searchRes, googleConn] = owner
+    ? await Promise.all([
+        db.from("bookings").select("*").eq("status", "Jauns").order("created_at", { ascending: false }),
+        db.from("bookings").select("*").eq("status", "Atcelta").order("event_date", { ascending: false, nullsFirst: false }).limit(100),
+        term
+          ? db.from("bookings").select("*").or(["parent_name", "company_name", "phone", "email"].map((c) => `${c}.ilike.%${term}%`).join(",")).order("event_date", { ascending: false, nullsFirst: false })
+          : Promise.resolve({ data: null }),
+        googleConnection(db),
+      ])
+    : [{ data: null }, { data: null }, { data: null }, null];
+  const pending = (pendingRes.data ?? []) as Booking[];
+  const cancelled = (cancelledRes.data ?? []) as Booking[];
+  const found = (searchRes.data ?? null) as Booking[] | null;
+  const ctx: BookingAdminContext = { programs, settings, googleConnected: Boolean(googleConn) };
+
   const prices = bookingPrices(settings);
   const costsOf = (b: Booking) =>
-    b.inquiry_type === "business" ? null : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
+    b.inquiry_type === "business"
+      ? parseCostOverride(b.message)?.length
+        ? bookingCosts(b, undefined, prices)
+        : null
+      : bookingCosts(b, programs.find((p) => p.slug === (b.program || b.service_slug)), prices);
   const titles = new Map([...business, ...programs].map((s) => [s.slug, s.title]));
   const programTitle = (b: Booking) => {
     const slug = b.service_slug || b.program;
@@ -157,15 +190,9 @@ export default async function CalendarPage() {
     );
   };
 
-  const renderDay = (day: string, items: Booking[], dayEvents: TeamEvent[] = []) => (
-    <div key={day}>
-      <h3 className={cn("text-sm font-extrabold", day === today && "text-ink")}>
-        {day === today ? "Šodien · " : ""}
-        {dayTitle(day)}
-      </h3>
-      <ul className="mt-2 space-y-2">
-        {[
-          ...items.map((b) => ({ min: minuteOf(b.event_time), node: (() => {
+  /** Viena rezervācija sarakstā; uzspiežot atveras — administratorei pārvaldība, komandai tikai skatīšana */
+  const bookingRow = (b: Booking, showDate = false) => {
+
           const st = stateOf(b);
           const c = costsOf(b);
           return (
@@ -180,7 +207,10 @@ export default async function CalendarPage() {
                   "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
                 )}
               >
-                <span className="text-sm font-semibold">{timeLabel(b.event_time, b.location) || "—"}</span>
+                <span className="text-sm font-semibold">
+                  {showDate && (b.event_date ? `${b.event_date.slice(8, 10)}.${b.event_date.slice(5, 7)}. ` : "bez datuma ")}
+                  {timeLabel(b.event_time, b.location) || (showDate ? "" : "—")}
+                </span>
                 <span className="min-w-0 text-sm">
                   <span className="block truncate">
                     {isMine(b) && (
@@ -208,13 +238,27 @@ export default async function CalendarPage() {
                 <span className={cn("w-fit rounded-full px-2.5 py-1 text-xs font-bold ring-1", st.tone)}>{st.label}</span>
                 <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />
               </summary>
-              <ul className="mt-2">
-                <BookingCard b={b} label={label(b)} costs={c} />
-              </ul>
+              {owner ? (
+                <BookingAdminPanel b={b} labelText={label(b)} costs={c} ctx={ctx} />
+              ) : (
+                <ul className="mt-2">
+                  <BookingCard b={b} label={label(b)} costs={c} />
+                </ul>
+              )}
               </details>
             </li>
           );
-        })() })),
+  };
+
+  const renderDay = (day: string, items: Booking[], dayEvents: TeamEvent[] = []) => (
+    <div key={day}>
+      <h3 className={cn("text-sm font-extrabold", day === today && "text-ink")}>
+        {day === today ? "Šodien · " : ""}
+        {dayTitle(day)}
+      </h3>
+      <ul className="mt-2 space-y-2">
+        {[
+          ...items.map((b) => ({ min: minuteOf(b.event_time), node: bookingRow(b) })),
           ...dayEvents.map((e) => ({ min: minuteOf(e.time), node: eventRow(e) })),
         ]
           .sort((x, y) => x.min - y.min)
@@ -225,7 +269,37 @@ export default async function CalendarPage() {
 
   return (
     <>
-      <PageHeader title="Kalendārs" />
+      <PageHeader
+        title="Kalendārs"
+        description={owner ? "Visi pieteikumi un pasākumi vienuviet. Uzspiežot uz pasākuma — apstiprināšana, kas piedalās, labošana." : undefined}
+      />
+
+      {owner && (
+        <>
+          <GoogleCalendarCard db={db} message={google} />
+          <form className="mt-6 flex flex-wrap gap-2" action="/admin/kalendars">
+            <label className="relative min-w-60 flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" aria-hidden />
+              <input name="q" defaultValue={q} placeholder="Meklēt vārdu, uzņēmumu, telefonu…" className={`${adminInput} pl-9`} />
+            </label>
+            <button className={adminSecondary}>Meklēt</button>
+          </form>
+          {found && (
+            <section className="mt-6">
+              <h2 className="text-base font-extrabold">Atrasts: {found.length}</h2>
+              <ul className="mt-2 space-y-2">{found.map((b) => bookingRow(b, true))}</ul>
+            </section>
+          )}
+          {!q && <TeamEventsPending db={db} />}
+          {!q && pending.length > 0 && (
+            <section className="mt-6 rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200 sm:p-5">
+              <h2 className="text-base font-extrabold">Gaida apstiprinājumu ({pending.length})</h2>
+              <p className="text-sm text-ink-soft">Atveriet pieteikumu, pārbaudiet datus, atzīmējiet, kas vada, un nomainiet statusu uz “Apstiprināta”.</p>
+              <ul className="mt-3 space-y-2">{pending.map((b) => bookingRow(b, true))}</ul>
+            </section>
+          )}
+        </>
+      )}
 
       {error && <p className="mt-4 text-sm font-semibold text-destructive">Neizdevās ielādēt rezervācijas: {error.message}</p>}
 
@@ -247,6 +321,13 @@ export default async function CalendarPage() {
         <Suspense fallback={<p className="mt-8 text-sm text-ink-soft">Ielādē Google kalendāru…</p>}>
           <GoogleEvents db={db} from={today} to={addDays(today, 120)} dayTitle={dayTitle} />
         </Suspense>
+      )}
+
+      {owner && cancelled.length > 0 && (
+        <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
+          <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Atceltie pieteikumi ({cancelled.length})</summary>
+          <ul className="mt-4 space-y-2 opacity-80">{cancelled.map((b) => bookingRow(b, true))}</ul>
+        </details>
       )}
 
       {archiveDays.length > 0 && (
