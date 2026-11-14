@@ -70,8 +70,8 @@ export default async function CalendarPage({ searchParams }: Props) {
 
   const [{ data, error }, { data: eventRows }, business, programs, settings] = await Promise.all([
     db.from("bookings").select("*").not("event_date", "is", null).neq("status", "Atcelta").order("event_date").order("event_time", { nullsFirst: true }),
-    // Komandas grafiks (sadaļa "Komandas grafiks"); komanda redz tikai "Rādīt kalendārā" (to nosaka datubāzes RLS)
-    db.from("team_events").select("*").order("event_date"),
+    // Izbraukumi un pasākumi, kas ievadīti ar roku (tabula team_events) — visa komanda redz visus (lasa ar servera atslēgu)
+    ((owner ? db : (supabaseAdmin() ?? db)) as typeof db).from("team_events").select("*").order("event_date"),
     getServices("business"),
     getServices("private"),
     getSettings(),
@@ -162,7 +162,7 @@ export default async function CalendarPage({ searchParams }: Props) {
           <summary
             className={cn(
               "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
-              "border-l-4 border-sky-400",
+              "border-l-4 border-purple-400",
               "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
               mine && MINE_ROW,
             )}
@@ -180,11 +180,7 @@ export default async function CalendarPage({ searchParams }: Props) {
               </span>
               {e.team && <span className="mt-0.5 block truncate text-xs text-ink-soft">Piedalās: {e.team}</span>}
             </span>
-            {role === "owner" && !e.published ? (
-              <span className="w-fit rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-ink-soft ring-1 ring-line">Komanda neredz</span>
-            ) : (
-              <span />
-            )}
+            <span />
             <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />
           </summary>
           <div className="mt-2 rounded-2xl bg-white p-4 text-sm ring-1 ring-line sm:p-5">
@@ -411,9 +407,6 @@ export default async function CalendarPage({ searchParams }: Props) {
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-brand-strong bg-white ring-1 ring-line" /> Telpu noma</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-purple-400 bg-white ring-1 ring-line" /> Izbraukuma ballīte</span>
-        {events.length > 0 && (
-          <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-sky-400 bg-white ring-1 ring-line" /> Komandas grafiks</span>
-        )}
       </div>
 
       <section className="mt-6 space-y-6">

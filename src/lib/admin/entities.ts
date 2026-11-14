@@ -219,10 +219,9 @@ export const entities: Record<EntityKey, EntityConfig> = {
   grafiks: {
     key: "grafiks",
     table: "team_events",
-    title: "Komandas grafiks",
-    singular: "pasākums",
-    description:
-      "Pasākumi, kas nav mājaslapas pieteikumi (izrādes, egļu iedegšanas u. c.). Komanda tos redz sadaļā “Kalendārs” tikai tad, kad ieslēgts “Rādīt kalendārā”.",
+    title: "Izbraukumi",
+    singular: "izbraukums",
+    description: "Izbraukumi un pasākumi, kas nav mājaslapas pieteikumi (izrādes, egļu iedegšanas u. c.). Kalendārā — lillā, visa komanda tos redz.",
     empty: { eventDate: "", time: "", title: "", place: "", team: "", details: "", published: false },
     listTitle: "title",
     listSubtitle: "event_date",
