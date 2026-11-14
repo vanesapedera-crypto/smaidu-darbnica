@@ -157,6 +157,8 @@ const sender = () => process.env.NOTIFY_FROM || "Smaidu Darbnīca <onboarding@re
 export const BOSS_EMAIL = "smaidu.darbnica@gmail.com";
 /** Administratore + priekšniece (bez atkārtojumiem) */
 const teamInbox = (primary?: string) => [...new Set([primary || process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com", BOSS_EMAIL])];
+/** Kopija (slēpta) administratorei un Kristīnei no katra klientam sūtītā e-pasta — lai Gmail redz, kas un kā aizgāja */
+const clientCopy = (to: string) => teamInbox().filter((e) => e.toLowerCase() !== to.trim().toLowerCase());
 const senderEmail = () => sender().match(/<([^>]+)>/)?.[1] ?? sender();
 
 /**
@@ -302,6 +304,7 @@ ${footer}
       body: JSON.stringify({
         from: sender(),
         to: [to],
+        bcc: clientCopy(to),
         reply_to: info.replyTo,
         subject: info.confirmUrl ? "Lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca" : "Rezervācija apstiprināta — Smaidu Darbnīca",
         html,
@@ -483,7 +486,7 @@ ${escape(info.footer.address)}<br>
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: sender(), to: [info.to.trim()], reply_to: info.replyTo, subject: info.subject, html }),
+      body: JSON.stringify({ from: sender(), to: [info.to.trim()], bcc: clientCopy(info.to), reply_to: info.replyTo, subject: info.subject, html }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
@@ -542,7 +545,7 @@ ${escape(info.footer.address)}<br>
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: sender(), to: [info.to.trim()], reply_to: info.replyTo, subject: info.subject, html }),
+      body: JSON.stringify({ from: sender(), to: [info.to.trim()], bcc: clientCopy(info.to), reply_to: info.replyTo, subject: info.subject, html }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {

@@ -3,7 +3,7 @@ import RejectActions from "@/components/admin/RejectActions";
 import StaffPanel from "@/components/admin/StaffPanel";
 import type { StaffRow } from "@/lib/staff";
 import { FIXED_VENUES, atStudio, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
-import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
+import { CALENDAR_HOSTS, calendarEvent, hostNames, withVenueStaff } from "@/lib/calendar";
 import type { Service, SiteSettings } from "@/lib/content/types";
 import { VAT_NOTE, amountText, costsToText, eur, parseCostOverride, priceVariants, type BookingCosts } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
@@ -42,6 +42,8 @@ export default function BookingAdminPanel({
   staff?: StaffRow[];
 }) {
   const { programs, settings, googleConnected } = ctx;
+  // Kas piedalās: atzīmētās + telpu nomā vienmēr Keita
+  const hostEmails = withVenueStaff(b, CALENDAR_HOSTS.filter((h) => hostsOf(b.message).split(/,\s*/).includes(h.name)).map((h) => h.email));
   return (
     <div className="mt-2 rounded-2xl bg-white ring-1 ring-line">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
@@ -71,7 +73,7 @@ export default function BookingAdminPanel({
               ["Dalībnieki", b.participants],
               ["Ceļa izdevumi", b.travel_cost != null && `${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`],
               ["Budžets", b.budget_range],
-              ["Piedalās", hostsOf(b.message) || null],
+              ["Piedalās", hostNames(hostEmails) || null],
               ["Saņemts", b.created_at && new Date(b.created_at).toLocaleString("lv-LV", { dateStyle: "short", timeStyle: "short" })],
             ] as [string, React.ReactNode][]
           )
@@ -129,7 +131,7 @@ export default function BookingAdminPanel({
                 id={b.id}
                 rows={staff.map((r) => ({ email: r.email, name: r.name, status: r.status }))}
                 status={b.status}
-                initial={CALENDAR_HOSTS.filter((h) => hostsOf(b.message).split(/,\s*/).includes(h.name)).map((h) => h.email)}
+                initial={hostEmails}
               />
             </div>
           </details>
@@ -203,7 +205,7 @@ export default function BookingAdminPanel({
                                   type="checkbox"
                                   name="hosts"
                                   value={h.email}
-                                  defaultChecked={hostsOf(b.message).split(/,\s*/).includes(h.name)}
+                                  defaultChecked={hostEmails.includes(h.email)}
                                   className="size-4 accent-ink"
                                 />
                                 {h.name}
@@ -325,7 +327,7 @@ export default function BookingAdminPanel({
                   <CalendarLink
                     event={event}
                     withHost
-                    initialHosts={CALENDAR_HOSTS.filter((h) => hostsOf(b.message).split(/,\s*/).includes(h.name)).map((h) => h.email)}
+                    initialHosts={hostEmails}
                     googleBookingId={googleConnected && b.status === "Apstiprināta" ? b.id : undefined}
                   />
                 )}

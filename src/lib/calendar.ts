@@ -32,6 +32,11 @@ export const CALENDAR_HOSTS = [
   { name: "Madara K", email: "madarakuksa3@gmail.com" },
   { name: "Keita", email: "keitaplavina3@gmail.com" },
 ];
+/** Telpu nomā Keita (CALENDAR_VENUE) piedalās vienmēr — pievieno automātiski, nav jāatzīmē */
+export function withVenueStaff(b: Pick<Booking, "location" | "inquiry_type">, emails: string[]): string[] {
+  if (b.inquiry_type === "business" || !atStudio(b.location)) return emails;
+  return [...new Set([...emails, ...CALENDAR_VENUE])];
+}
 /** Vadītāju adreses → vārdi, piem. "Agija, Gunta" */
 export const hostNames = (emails: string[]) =>
   CALENDAR_HOSTS.filter((h) => emails.includes(h.email))

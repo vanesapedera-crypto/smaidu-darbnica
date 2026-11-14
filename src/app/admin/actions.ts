@@ -13,7 +13,7 @@ import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
 import { sendConfirmation } from "@/lib/booking-confirm";
 import { syncStaff } from "@/lib/staff";
 import { whenLabel } from "@/lib/dates";
-import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts } from "@/lib/calendar";
+import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
 import { atStudio, withEditedMessage, withHostsLine } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
@@ -138,7 +138,7 @@ export async function saveBookingDetails(id: string, form: FormData) {
   // Kas vada programmu (izvēles rūtiņas "hosts"; "hosts_shown" — lauks bija formā)
   let hostEmails: string[] | null = null;
   if (form.has("hosts_shown")) {
-    hostEmails = pickHosts(form.getAll("hosts").filter((v): v is string => typeof v === "string"));
+    hostEmails = withVenueStaff({ ...b, ...row } as Booking, pickHosts(form.getAll("hosts").filter((v): v is string => typeof v === "string")));
     row.message = withHostsLine((row.message as string | undefined) ?? b.message, hostNames(hostEmails));
   }
 
@@ -411,7 +411,7 @@ export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<
   if (b.status !== "Apstiprināta") return { error: "Kalendārā var ielikt tikai apstiprinātas rezervācijas." };
 
   if (!b.event_date) return { error: "Pieteikumam nav datuma." };
-  const picked = pickHosts(hosts);
+  const picked = withVenueStaff(b, pickHosts(hosts));
   if (picked.length) {
     b.message = withHostsLine(b.message, hostNames(picked));
     await db.from("bookings").update({ message: b.message }).eq("id", id);
@@ -556,7 +556,7 @@ export async function askStaff(id: string, emails: string[]): Promise<{ error?: 
   const { data } = await db.from("bookings").select("*").eq("id", id).single();
   const b = data as Booking | null;
   if (!b) return { error: "Pieteikums nav atrasts." };
-  const picked = pickHosts(emails);
+  const picked = withVenueStaff(b, pickHosts(emails));
   if (!picked.length) return { error: "Atzīmējiet vismaz vienu." };
   const message = withHostsLine(b.message, hostNames(picked));
   await db.from("bookings").update({ message }).eq("id", id);

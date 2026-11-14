@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdmin } from "@/lib/auth";
 import { BOOKING_STATUSES, withHostsLine, type Booking } from "@/lib/bookings";
-import { hostNames, pickHosts } from "@/lib/calendar";
+import { hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { sendConfirmation } from "@/lib/booking-confirm";
 import { syncStaff } from "@/lib/staff";
@@ -17,7 +17,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const { status, hosts: hostsInput, host: hostInput } = await request.json();
     // Programmas vadītājas (izvēlas panelī apstiprinot, var vairākas) — pieņem tikai adreses no saraksta
-    const hosts = pickHosts(hostsInput ?? hostInput);
+    const picked = pickHosts(hostsInput ?? hostInput);
     const { id } = await params;
 
     if (!BOOKING_STATUSES.includes(status)) {
@@ -26,6 +26,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     // Pieteikums pirms izmaiņām — lai zinātu, vai statuss tiešām mainās uz "Apstiprināta"
     const { data: before } = await admin.db.from("bookings").select("*").eq("id", id).maybeSingle<Booking>();
+    // Telpu nomā Keita piedalās vienmēr
+    const hosts = before ? withVenueStaff(before, picked) : picked;
 
     // Apstiprinot ar izvēlētām programmas vadītājām — tās saglabā pieteikumā (rinda "Vada: …"; redzams kalendārā)
     const message = status === "Apstiprināta" && hosts.length && before ? withHostsLine(before.message, hostNames(hosts)) : undefined;
