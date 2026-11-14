@@ -434,7 +434,7 @@ ${facts([
  * Atgādinājums komandai: klienti, kas 3 dienu laikā nav apstiprinājuši rezervāciju.
  * `dates` — pasākumu datumi (bez klientu datiem); panelī pie šīm rezervācijām ir pogas "WhatsApp" un "SMS".
  */
-export function notifyUnconfirmed(dates: string[]) {
+export function notifyUnconfirmed(dates: string[], emailed = false) {
   const list = dates.map((d) => `<li>${escape(dateWords(d) || "datums nav norādīts")}</li>`).join("");
   return notifyTeam(
     `Nav apstiprināts: ${dates.length} ${dates.length === 1 ? "rezervācija" : "rezervācijas"}`,
@@ -442,7 +442,7 @@ export function notifyUnconfirmed(dates: string[]) {
     "apstiprinājis",
     `<p style="margin:0 0 12px">Šīm rezervācijām apstiprinājuma e-pasts nosūtīts pirms vairāk nekā 3 dienām, bet klients to vēl nav apstiprinājis:</p>
 <ul style="margin:0 0 16px;padding-left:20px;font-weight:bold">${list}</ul>
-<p style="margin:0">Panelī pie katras ir pogas <b>WhatsApp</b> un <b>SMS</b> — tās atver ziņu ar jau uzrakstītu tekstu un apstiprināšanas saiti.</p>`,
+<p style="margin:0">${emailed ? "Klientam automātiski nosūtīts atgādinājums e-pastā. " : ""}Ja vajag, panelī pie katras ir pogas <b>WhatsApp</b> un <b>SMS</b> — tās atver ziņu ar jau uzrakstītu tekstu un apstiprināšanas saiti.</p>`,
   );
 }
 
@@ -642,4 +642,71 @@ export function notifyStaffReady(info: { when: string; title: string }) {
 </td></tr></table>
 <p style="margin:0">Atver kalendāru un nospied <b>“Apstiprināt un nosūtīt klientam”</b>.</p>`,
   );
+}
+
+/**
+ * Atgādinājums klientam (automātiski, ja 3 dienas pēc apstiprinājuma e-pasta klients nav apstiprinājis):
+ * īss e-pasts ar pogām "Apstiprinu rezervāciju" / "Atcelt rezervāciju". Atgriež true, ja nosūtīts.
+ */
+export async function notifyClientReminder(info: {
+  to: string;
+  name: string;
+  when: string;
+  confirmUrl: string;
+  replyTo: string;
+  logoUrl?: string;
+  footer: { address: string; phone: string; email: string; site: string };
+}): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key || !info.to.trim()) return false;
+  const first = info.name.trim().split(/\s+/)[0];
+  const p = (html: string, style = "") => `<p style="margin:0 0 16px;${style}">${html}</p>`;
+  const html = `<div style="margin:0;padding:24px 12px;background:${SURFACE};font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${INK}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;border-collapse:separate">
+<tr><td style="background:${INK};border-radius:20px 20px 0 0;padding:28px 32px 30px">
+${info.logoUrl ? `<img src="${info.logoUrl}" alt="Smaidu Darbnīca" width="110" style="display:block;width:110px;height:auto;border:0;margin:0 0 22px">` : ""}
+<p style="margin:0;font-size:26px;line-height:1.25;font-weight:bold;text-transform:uppercase;color:#ffffff">Atgādinājums<br><span style="display:inline-block;margin-top:4px;padding:2px 12px;border-radius:8px;background:${BRAND};color:${INK}">rezervācija</span></p>
+</td></tr>
+<tr><td style="background:#ffffff;padding:30px 32px 26px">
+${p(`Sveiki${first ? `, ${escape(first)}` : ""}!`, "font-size:17px;font-weight:bold")}
+${p(`Atgādinām, ka Jūsu rezervācija <b>${escape(info.when)}</b> vēl gaida apstiprinājumu.`)}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 24px"><tr><td style="background:${INK};border-radius:14px;padding:22px 20px;text-align:center">
+<p style="margin:0 0 14px;color:#ffffff;font-size:16px">Lūdzu, apstipriniet rezervāciju, nospiežot pogu:</p>
+<a href="${info.confirmUrl}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${BRAND};color:${INK};font-size:17px;font-weight:bold;text-decoration:none">Apstiprinu rezervāciju</a>
+<p style="margin:16px 0 0;font-size:14px"><a href="${info.confirmUrl}&amp;atcelt=1" style="color:#ffffff;text-decoration:underline">Atcelt rezervāciju</a></p>
+</td></tr></table>
+${p("Ja plāni mainījušies vai ir jautājumi — vienkārši atbildiet uz šo e-pastu.")}
+<p style="margin:0">Paldies, un uz tikšanos!<br><b>Smaidu Darbnīca</b></p>
+</td></tr>
+<tr><td style="background:${INK};border-radius:0 0 20px 20px;padding:22px 32px;font-size:13px;line-height:1.7;color:#bdb6ab">
+<span style="color:#ffffff;font-weight:bold">Smaidu Darbnīca</span><br>
+${escape(info.footer.address)}<br>
+<a href="tel:${escape(info.footer.phone.replace(/\s/g, ""))}" style="color:#bdb6ab;text-decoration:none">${escape(info.footer.phone)}</a> · <a href="mailto:${escape(info.footer.email)}" style="color:#bdb6ab;text-decoration:none">${escape(info.footer.email)}</a><br>
+<a href="${info.footer.site}" style="color:${BRAND};text-decoration:none">${escape(info.footer.site.replace(/^https?:\/\//, ""))}</a>
+</td></tr>
+</table>
+</div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: sender(),
+        to: [info.to.trim()],
+        bcc: clientCopy(info.to),
+        reply_to: info.replyTo,
+        subject: "Atgādinājums: lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca",
+        html,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      console.error("[notify] Resend (atgādinājums)", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[notify] reminder failed", e);
+    return false;
+  }
 }
