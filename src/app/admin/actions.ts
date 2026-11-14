@@ -13,8 +13,8 @@ import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
 import { sendConfirmation } from "@/lib/booking-confirm";
 import { syncStaff } from "@/lib/staff";
 import { whenLabel } from "@/lib/dates";
-import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
-import { atStudio, withEditedMessage, withHostsLine } from "@/lib/bookings";
+import { CALENDAR_HOSTS, CALENDAR_INVITES, calendarEvent, hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
+import { atStudio, hostsOf, withEditedMessage, withHostsLine } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
@@ -584,4 +584,27 @@ export async function approveAndNotify(id: string): Promise<{ error?: string; ok
   await sendConfirmation({ ...b, ...update } as Booking, hosts, db).catch((e) => console.error("[approveAndNotify]", e));
   revalidatePath("/admin", "layout");
   return { ok: true };
+}
+
+/**
+ * "Nosūtīt klientam atjaunotu apstiprinājumu" — pēc izmaiņām (datums, laiks, bērnu skaits u.c.):
+ * klientam aiziet atjaunots e-pasts ar visu aktuālo informāciju un pogu apstiprināt vēlreiz,
+ * Google kalendārā tas pats notikums tiek atjaunots (nevis izveidots jauns).
+ */
+export async function resendUpdatedConfirmation(id: string): Promise<{ error?: string; ok?: boolean; emailed?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  if (b.status !== "Apstiprināta") return { error: "Atjaunotu apstiprinājumu var sūtīt tikai apstiprinātām rezervācijām." };
+  const { data: staff } = await db.from("booking_staff").select("email, status").eq("booking_id", id);
+  const fromStaff = ((staff ?? []) as { email: string; status: string }[]).filter((r) => r.status !== "nevar").map((r) => r.email);
+  const named = hostsOf(b.message).split(/,\s*/);
+  const hosts = withVenueStaff(b, fromStaff.length ? fromStaff : CALENDAR_HOSTS.filter((h) => named.includes(h.name)).map((h) => h.email));
+  // Klients apstiprina vēlreiz (jaunā informācija); atgādinājums pēc 3 dienām — no jauna
+  const update = { confirmation_sent_at: b.email ? new Date().toISOString() : b.confirmation_sent_at, client_confirmed_at: null, client_reminded_at: null };
+  await db.from("bookings").update(update).eq("id", id);
+  await sendConfirmation({ ...b, ...update } as Booking, hosts, db, undefined, true).catch((e) => console.error("[resendUpdated]", e));
+  revalidatePath("/admin", "layout");
+  return { ok: true, emailed: Boolean(b.email) };
 }

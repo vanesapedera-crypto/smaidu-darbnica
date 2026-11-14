@@ -16,7 +16,7 @@ import { SITE_URL, absoluteUrl } from "@/lib/seo";
  *     (to var labot Google kalendārā, viesi saņem ielūgumu no Google); citādi — .ics ielūgums, ko Google kalendārs ieliek automātiski.
  * Uzņēmumu pieprasījumiem atbildes adrese un telefons ir uzņēmumu kontaktam, ballītēm — privātpersonu kontaktam.
  */
-export async function sendConfirmation(b: Booking, hosts: string[], db: AdminContext["db"], extraNotice?: string) {
+export async function sendConfirmation(b: Booking, hosts: string[], db: AdminContext["db"], extraNotice?: string, updated = false) {
   const isBusiness = b.inquiry_type === "business";
   const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
   const { contact } = settings;
@@ -49,6 +49,7 @@ export async function sendConfirmation(b: Booking, hosts: string[], db: AdminCon
         rulesUrl: inVenue ? absoluteUrl("/telpu-noma#noteikumi") : undefined,
         notice: [extraNotice, service ? parseNotice(service.body) : ""].filter(Boolean).join("\n\n") || undefined,
         logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
+        updated,
         // Poga "Apstiprinu rezervāciju" (ja datubāzē jau ir klienta apstiprinājuma lauki)
         confirmUrl: confirm ? absoluteUrl(confirm) : undefined,
         footer: {

@@ -193,6 +193,8 @@ export async function notifyClientConfirmed(
     confirmUrl?: string;
     /** Kontakti e-pasta apakšā */
     footer?: { address: string; phone: string; email: string; site: string };
+    /** Atjaunots apstiprinājums (pēc izmaiņām — datums, laiks u.c.) */
+    updated?: boolean;
   },
 ) {
   const key = process.env.RESEND_API_KEY;
@@ -248,9 +250,9 @@ ${escape(info.footer.address)}<br>
 <tr><td style="background:${INK};border-radius:20px 20px 0 0;padding:28px 32px 30px">
 ${info.logoUrl ? `<img src="${info.logoUrl}" alt="Smaidu Darbnīca" width="110" style="display:block;width:110px;height:auto;border:0;margin:0 0 22px">` : ""}
 <p style="margin:0;font-size:28px;line-height:1.25;font-weight:bold;text-transform:uppercase;color:#ffffff">${
-    info.confirmUrl ? "Apstipriniet" : "Rezervācija"
+    info.updated ? "Rezervācija" : info.confirmUrl ? "Apstipriniet" : "Rezervācija"
   }<br><span style="display:inline-block;margin-top:4px;padding:2px 12px;border-radius:8px;background:${BRAND};color:${INK}">${
-    info.confirmUrl ? "rezervāciju" : "apstiprināta"
+    info.updated ? "atjaunota" : info.confirmUrl ? "rezervāciju" : "apstiprināta"
   }</span></p>
 </td></tr>
 <tr><td style="background:#ffffff;padding:30px 32px 26px${footer ? "" : ";border-radius:0 0 20px 20px"}">
@@ -306,7 +308,11 @@ ${footer}
         to: [to],
         bcc: clientCopy(to),
         reply_to: info.replyTo,
-        subject: info.confirmUrl ? "Lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca" : "Rezervācija apstiprināta — Smaidu Darbnīca",
+        subject: info.updated
+          ? "Rezervācija atjaunota — Smaidu Darbnīca"
+          : info.confirmUrl
+            ? "Lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca"
+            : "Rezervācija apstiprināta — Smaidu Darbnīca",
         html,
       }),
       signal: AbortSignal.timeout(8000),

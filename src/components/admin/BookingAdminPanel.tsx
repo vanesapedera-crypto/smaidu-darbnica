@@ -1,5 +1,6 @@
 import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote, Users, XCircle } from "lucide-react";
 import RejectActions from "@/components/admin/RejectActions";
+import ResendUpdated from "@/components/admin/ResendUpdated";
 import StaffPanel from "@/components/admin/StaffPanel";
 import type { StaffRow } from "@/lib/staff";
 import { FIXED_VENUES, atStudio, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
@@ -115,6 +116,7 @@ export default function BookingAdminPanel({
         )}
 
         <ClientConfirmation booking={b} />
+        {b.status === "Apstiprināta" && <ResendUpdated id={b.id} hasEmail={Boolean(b.email)} />}
       </div>
 
       {/* 2. Darbības — katra atveras, uzspiežot */}
