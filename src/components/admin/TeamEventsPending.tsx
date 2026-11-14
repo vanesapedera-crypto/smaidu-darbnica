@@ -57,7 +57,7 @@ export default async function TeamEventsPending({ db }: { db: AdminContext["db"]
                   {e.title}
                   {e.place && <span className="font-semibold text-ink-soft"> · {e.place}</span>}
                 </p>
-                {e.team && <p className="mt-1">Komanda: {e.team}</p>}
+                {e.team && <p className="mt-1">Piedalās: {e.team}</p>}
                 {e.details && <p className="mt-2 rounded-xl bg-surface p-2.5 whitespace-pre-line text-ink-soft">{e.details}</p>}
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">

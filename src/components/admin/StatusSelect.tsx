@@ -121,7 +121,7 @@ export default function StatusSelect({ id, status, withHost = false, guests = nu
           </ul>
           {guests && withHost && (
             <div className="space-y-1.5">
-              <span className="block font-semibold">Programmu vada (var atzīmēt vairākas)</span>
+              <span className="block font-semibold">Piedalās (var atzīmēt vairākus)</span>
               <HostPicker value={hosts} onChange={setHosts} />
             </div>
           )}

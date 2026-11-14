@@ -1,4 +1,4 @@
-import { atStudio, type Booking } from "@/lib/bookings";
+import { atStudio, hostsOf, type Booking } from "@/lib/bookings";
 import { timeLabel } from "@/lib/dates";
 import { confirmationState } from "@/components/admin/ClientConfirmation";
 import { VAT_NOTE, amountText, eur, type BookingCosts } from "@/lib/pricing";
@@ -62,6 +62,7 @@ export default function BookingCard({
 
   const rows: [string, React.ReactNode][] = [
     ["Veids", kindLabel(b)],
+    ["Piedalās", hostsOf(b.message)],
     ["Uzņēmums / iestāde", b.company_name],
     [b.company_name ? "Kontaktpersona" : "Klients", b.parent_name],
     ["Amats", b.contact_role],

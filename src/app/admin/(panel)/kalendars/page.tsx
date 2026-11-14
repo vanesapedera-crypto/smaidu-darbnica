@@ -52,7 +52,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { db, role, email } = await requireSection("kalendars");
   const { q = "", google } = await searchParams;
   const owner = role === "owner";
-  // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu vadi"
+  // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
   const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me));
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
@@ -154,13 +154,13 @@ export default async function CalendarPage({ searchParams }: Props) {
               <span className="block truncate">
                 {mine && (
                   <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-xs font-extrabold text-ink">
-                    <Star className="size-3 fill-current" aria-hidden /> Tu vadi
+                    <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
                   </span>
                 )}
                 <b>{e.title}</b>
                 {e.place && ` · ${e.place}`}
               </span>
-              {e.team && <span className="mt-0.5 block truncate text-xs text-ink-soft">Komanda: {e.team}</span>}
+              {e.team && <span className="mt-0.5 block truncate text-xs text-ink-soft">Piedalās: {e.team}</span>}
             </span>
             {role === "owner" && !e.published ? (
               <span className="w-fit rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-ink-soft ring-1 ring-line">Komanda neredz</span>
@@ -175,7 +175,7 @@ export default async function CalendarPage({ searchParams }: Props) {
               <dd className="font-semibold">{e.time || "—"}</dd>
               <dt className="text-ink-soft">Vieta</dt>
               <dd className="font-semibold">{e.place || "—"}</dd>
-              <dt className="text-ink-soft">Komanda</dt>
+              <dt className="text-ink-soft">Piedalās</dt>
               <dd className="font-semibold">{e.team || "—"}</dd>
             </dl>
             {e.details && <p className="mt-3 rounded-xl bg-surface p-3 whitespace-pre-line">{e.details}</p>}
@@ -215,7 +215,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                   <span className="block truncate">
                     {isMine(b) && (
                       <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-xs font-extrabold text-ink">
-                        <Star className="size-3 fill-current" aria-hidden /> Tu vadi
+                        <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
                       </span>
                     )}
                     <b>{isVenue(b) ? "Telpu noma" : label(b)}</b> · {b.company_name || b.parent_name || "—"}
@@ -227,12 +227,24 @@ export default async function CalendarPage({ searchParams }: Props) {
                       </span>
                     )}
                   </span>
-                  {/* Telpu nomai ar izklaides programmu — programma un kas to vada (mazākiem burtiem) */}
+                  {/* Programma (telpu nomai) un kas piedalās — visiem pasākumiem ar izklaides programmu vai pakalpojumu */}
                   {(() => {
                     const program = isVenue(b) ? programTitle(b) : null;
                     const hosts = hostsOf(b.message);
-                    const parts = [program && `Izklaides programma: ${program}`, hosts && `Vada: ${hosts}`].filter(Boolean);
-                    return parts.length > 0 && <span className="mt-0.5 block truncate text-xs text-ink-soft">{parts.join(" · ")}</span>;
+                    const hasProgram = Boolean(programTitle(b));
+                    return (
+                      (program || hosts || hasProgram) && (
+                        <span className="mt-0.5 block truncate text-xs text-ink-soft">
+                          {program && `Izklaides programma: ${program}`}
+                          {program && (hosts || hasProgram) && " · "}
+                          {hosts ? (
+                            <>Piedalās: <b className="text-ink">{hosts}</b></>
+                          ) : (
+                            hasProgram && <span className={owner ? "font-semibold text-destructive" : ""}>Piedalās: vēl nav norādīts</span>
+                          )}
+                        </span>
+                      )
+                    );
                   })()}
                 </span>
                 <span className={cn("w-fit rounded-full px-2.5 py-1 text-xs font-bold ring-1", st.tone)}>{st.label}</span>

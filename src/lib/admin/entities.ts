@@ -233,7 +233,7 @@ export const entities: Record<EntityKey, EntityConfig> = {
       { name: "time", label: "Laiks", type: "text", help: "Piem. 18.00–21.00, 16.30 un 17.40 vai “laiki jāprecizē”" },
       { name: "title", label: "Nosaukums", type: "text", required: true, wide: true },
       { name: "place", label: "Vieta", type: "text", wide: true },
-      { name: "team", label: "Komanda", type: "text", wide: true, help: "Vārdi ar komatiem, piem. Agija, Madara K., Gunta. Animatorēm ar savu kontu šie pasākumi kalendārā būs ar “Tu vadi”." },
+      { name: "team", label: "Piedalās", type: "text", wide: true, help: "Vārdi ar komatiem, piem. Agija, Madara K., Gunta. Animatorēm ar savu kontu šie pasākumi kalendārā būs ar “Tu piedalies”." },
       { name: "details", label: "Piezīmes", type: "textarea", rows: 4, wide: true },
     ],
   },

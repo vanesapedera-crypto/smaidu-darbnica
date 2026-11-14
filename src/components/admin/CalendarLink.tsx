@@ -31,7 +31,7 @@ export default function CalendarLink({
       <p className="text-sm text-ink-soft">Google kalendārs — ar roku</p>
       {withHost && (
         <div className="space-y-1.5">
-          <p className="text-sm font-semibold">Programmu vada (var atzīmēt vairākas)</p>
+          <p className="text-sm font-semibold">Piedalās (var atzīmēt vairākus)</p>
           <HostPicker value={hosts} onChange={setHosts} />
         </div>
       )}

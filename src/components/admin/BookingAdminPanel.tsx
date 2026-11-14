@@ -22,7 +22,7 @@ export type BookingAdminContext = {
 
 /**
  * Pieteikuma pārvaldība administratorei (kalendārā, atverot pasākumu): statuss un apstiprināšana,
- * kas piedalās ("Programmu vada"), visa informācija, izmaksas, labošana, piezīmes, dzēšana.
+ * kas piedalās, visa informācija, izmaksas, labošana, piezīmes, dzēšana.
  */
 export default function BookingAdminPanel({
   b,
@@ -43,7 +43,7 @@ export default function BookingAdminPanel({
         <StatusSelect
           id={b.id}
           status={b.status}
-          withHost={b.inquiry_type !== "business"}
+          withHost
           guests={calendarEvent(b, labelText)?.guests ?? null}
           clientEmail={b.email}
         />
@@ -137,7 +137,7 @@ export default function BookingAdminPanel({
               event && (
                 <CalendarLink
                   event={event}
-                  withHost={b.inquiry_type !== "business"}
+                  withHost
                   googleBookingId={googleConnected && b.status === "Apstiprināta" ? b.id : undefined}
                 />
               )
@@ -199,9 +199,8 @@ export default function BookingAdminPanel({
                         </>,
                         true,
                       )}
-                    {isPrivate &&
-                      field(
-                        "Programmu vada",
+                    {field(
+                        "Piedalās",
                         <>
                           <input type="hidden" name="hosts_shown" value="1" />
                           <span className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
@@ -269,7 +268,7 @@ export default function BookingAdminPanel({
                         className={adminInput}
                       />
                       <span className="mt-1 block text-xs">
-                        Var izlabot vai pierakstīt klāt (piem. klienta vēlmes). Izmaksas un “Programmu vada” labo atsevišķi — tās šeit nav redzamas, bet saglabājas.
+                        Var izlabot vai pierakstīt klāt (piem. klienta vēlmes). Izmaksas un “Piedalās” labo atsevišķi — tās šeit nav redzamas, bet saglabājas.
                       </span>
                     </label>
                     {(
