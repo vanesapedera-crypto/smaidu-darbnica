@@ -19,7 +19,7 @@ import { costLinesText, type BookingCosts } from "./pricing";
  * savienotajā Google kalendārā bez viesiem, komanda rezervācijas redz paneļa sadaļā "Kalendārs".
  * Lai ielūgumus atkal sūtītu — true.
  */
-export const CALENDAR_INVITES = true;
+export const CALENDAR_INVITES = false;
 
 export const CALENDAR_ALWAYS = ["smaidu.darbniica@gmail.com", "smaidu.darbnica@gmail.com"];
 /** Saņem notikumus, kas notiek mūsu telpās (telpu noma) — telpu uzkopšanai */
