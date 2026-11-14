@@ -22,6 +22,9 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+/** Pasākums, kurā ielogojusies piedalās — koši rozā, labi redzams */
+const MINE_ROW = "bg-pink-200 ring-4 ring-pink-500 border-l-8 border-pink-600 shadow-md group-open:bg-pink-200 group-open:ring-4 group-open:ring-pink-600";
+
 export const metadata = { title: "Kalendārs" };
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
 export const maxDuration = 60;
@@ -56,7 +59,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { q = "", google } = await searchParams;
   const owner = role === "owner";
   // Kristīne (vadība) — informēta par visu: redz jaunos, atceltos un komandas atbildes (bez labošanas)
-  const seesAll = role !== "viewer"; // visa komanda redz to pašu, ko administratore (bez labošanas); skatītāja (telpu uzkopšana) — tikai telpu nomu
+  const seesAll = true; // visa komanda redz pilnīgi visu to pašu, ko administratore — tikai bez labošanas
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
   const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b));
@@ -117,7 +120,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   };
 
   // Skatītājiem (piem. telpu uzkopšanai) — tikai rezervācijas mūsu telpās
-  const all = ((data ?? []) as Booking[]).filter((b) => role !== "viewer" || isVenue(b));
+  const all = (data ?? []) as Booking[];
   const group = (list: Booking[]) => {
     const map = new Map<string, Booking[]>();
     for (const b of list) {
@@ -159,15 +162,15 @@ export default async function CalendarPage({ searchParams }: Props) {
             className={cn(
               "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
               "border-l-4 border-sky-400",
-              mine && "bg-pink-100 ring-2 ring-pink-500",
               "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
+              mine && MINE_ROW,
             )}
           >
             <span className="text-sm font-semibold">{e.time || "—"}</span>
             <span className="min-w-0 text-sm">
               <span className="block truncate">
                 {mine && (
-                  <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-500 px-2 py-0.5 align-middle text-xs font-extrabold text-white">
+                  <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-600 px-3 py-1 align-middle text-xs font-extrabold tracking-wide text-white uppercase shadow">
                     <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
                   </span>
                 )}
@@ -217,8 +220,8 @@ export default async function CalendarPage({ searchParams }: Props) {
                   "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
                   isTrip(b) && "border-l-4 border-purple-400",
                   isVenue(b) && "border-l-4 border-brand-strong",
-                  isMine(b) && "bg-pink-100 ring-2 ring-pink-500",
                   "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
+                  isMine(b) && MINE_ROW,
                 )}
               >
                 <span className="text-sm font-semibold">
@@ -228,7 +231,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                 <span className="min-w-0 text-sm">
                   <span className="block truncate">
                     {isMine(b) && (
-                      <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-500 px-2 py-0.5 align-middle text-xs font-extrabold text-white">
+                      <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-600 px-3 py-1 align-middle text-xs font-extrabold tracking-wide text-white uppercase shadow">
                         <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
                       </span>
                     )}
