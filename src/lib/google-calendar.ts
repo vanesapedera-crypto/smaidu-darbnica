@@ -155,7 +155,8 @@ export async function upsertGoogleEvent(db: AdminContext["db"], bookingId: strin
 }
 
 /**
- * Atceļ rezervācijas notikumu savienotajā Google kalendārā (viesi saņem paziņojumu).
+ * Atceļ rezervācijas notikumu savienotajā Google kalendārā: viesiem tas pazūd (saņem paziņojumu),
+ * administratores kalendārā paliek kā "❌ ATCELTS" — dublējums, informācija nepazūd.
  * Atgriež: "deleted" — izdzēsts visiem; "gone" — jau bija izdzēsts; "missing" — Google kalendārā tāda notikuma nav
  * (piem. ielūgums agrāk aizgāja kā .ics e-pasts); "failed" — nav savienojuma vai kļūda.
  */
@@ -164,15 +165,28 @@ export async function cancelGoogleEvent(db: AdminContext["db"], bookingId: strin
   if (!conn) return "failed";
   const token = await accessToken(conn.refreshToken);
   if (!token) return "failed";
+  // Notikumu NEDZĒŠ — administratores kalendārā tas paliek ar atzīmi "ATCELTS" (dublējums), viesi tiek noņemti
+  // (viņiem Google notikumu izņem un nosūta atcelšanu).
   try {
-    const res = await fetch(`${API}/${eventId(bookingId)}?sendUpdates=all`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+    const url = `${API}/${eventId(bookingId)}`;
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    const current = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+    if (current.status === 404) return "missing";
+    if (current.status === 410) return "gone";
+    if (!current.ok) {
+      console.error("[google] cancel get", current.status, await current.text());
+      return "failed";
+    }
+    const ev = (await current.json()) as { summary?: string; status?: string };
+    if (ev.status === "cancelled") return "gone";
+    const summary = ev.summary?.startsWith("❌ ATCELTS") ? ev.summary : `❌ ATCELTS · ${ev.summary ?? ""}`;
+    const res = await fetch(`${url}?sendUpdates=all`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ summary, attendees: [], colorId: "8", transparency: "transparent" }),
       signal: AbortSignal.timeout(10000),
     });
     if (res.ok) return "deleted";
-    if (res.status === 410) return "gone";
-    if (res.status === 404) return "missing";
     console.error("[google] cancel", res.status, await res.text());
     return "failed";
   } catch (e) {

@@ -26,6 +26,11 @@ import {
 } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyNewBooking } from "@/lib/notify";
+import type { Booking } from "@/lib/bookings";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { upsertGoogleEvent } from "@/lib/google-calendar";
+import { calendarEvent } from "@/lib/calendar";
+
 import { timeLabel } from "@/lib/dates";
 import { PRICE_UNKNOWN_TEXT, bookingCosts, bookingPrices } from "@/lib/pricing";
 import { quoteTravel } from "@/lib/travel";
@@ -192,7 +197,8 @@ export async function POST(request: Request) {
     ]);
     if (quote) ({ roundTripKm: travel_km, cost: travel_cost } = quote);
   }
-  const record = { ...row, travel_km, travel_cost };
+  // ID izveido šeit — lai jauno pieteikumu uzreiz varētu ielikt administratores Google kalendārā (dublējums)
+  const record = { id: crypto.randomUUID(), ...row, travel_km, travel_cost };
 
   // Rezervāciju ar cenu "pēc vienošanās" nepieņem — programmas cenai un ceļa izdevumiem jābūt zināmiem
   if (!isBusiness && (row.program || row.location === "Izbraukums")) {
@@ -267,12 +273,26 @@ export async function POST(request: Request) {
     const slug = row.service_slug || row.program || "";
     // Pieprasījums var būt arī par izklaides programmu ar pieprasījuma formu (piem. izrāde bērnudārziem) — meklē abos sarakstos
     const service = services.find((s) => s.slug === slug) ?? others.find((s) => s.slug === slug);
-    await notifyNewBooking(record, {
-      title: service?.title ?? EXTRA_TITLES[slug] ?? slug,
-      time: timeLabel(row.event_time, row.location),
-      costs: isBusiness ? null : bookingCosts(record, service, bookingPrices(settings)),
-    });
+    const title = service?.title ?? EXTRA_TITLES[slug] ?? slug;
+    const costs = isBusiness ? null : bookingCosts(record, service, bookingPrices(settings));
+    await Promise.allSettled([
+      notifyNewBooking(record, { title, time: timeLabel(row.event_time, row.location), costs }),
+      backupToGoogle(record as unknown as Booking, title, costs),
+    ]);
   });
 
   return NextResponse.json({ success: true });
+}
+
+/**
+ * Dublējums: katrs jauns pieteikums uzreiz administratores Google kalendārā ("🆕 JAUNS", bez viesiem).
+ * Apstiprinot to pašu notikumu atjauno (nosaukums, viesi); atceļot — paliek ar "❌ ATCELTS".
+ * Vajag SUPABASE_SECRET_KEY (savienojums ar Google glabājas aizsargātā tabulā).
+ */
+async function backupToGoogle(b: Booking, title: string, costs: ReturnType<typeof bookingCosts>) {
+  const db = supabaseAdmin();
+  if (!db || !b.event_date) return;
+  const event = calendarEvent(b, title || (atStudio(b.location) ? "Telpu noma" : "Pieteikums"), costs);
+  if (!event) return;
+  await upsertGoogleEvent(db, b.id, { ...event, text: `🆕 JAUNS · ${event.text}` }, []).catch((e) => console.error("[bookings] google backup", e));
 }
