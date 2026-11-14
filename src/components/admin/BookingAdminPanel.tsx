@@ -1,5 +1,6 @@
-import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote } from "lucide-react";
-import { FIXED_VENUES, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
+import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote, XCircle } from "lucide-react";
+import RejectActions from "@/components/admin/RejectActions";
+import { FIXED_VENUES, atStudio, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import type { Service, SiteSettings } from "@/lib/content/types";
 import { VAT_NOTE, amountText, costsToText, eur, parseCostOverride, priceVariants, type BookingCosts } from "@/lib/pricing";
@@ -269,6 +270,21 @@ export default function BookingAdminPanel({
               </details>
             );
           })()}
+
+        {/* Nevaram uzņemt vai nodrošināt programmu — tikai vēl neatceltiem pieteikumiem */}
+        {b.status !== "Atcelta" && (
+          <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink">
+            <Summary icon={<XCircle className="size-4" aria-hidden />}>Nevaram uzņemt vai nodrošināt programmu</Summary>
+            <div className="border-t border-line p-4">
+              <RejectActions
+                id={b.id}
+                venueWithProgram={b.inquiry_type !== "business" && atStudio(b.location) && Boolean(b.program || b.service_slug)}
+                programTitle={b.program || b.service_slug ? labelText.replace(/^Telpu noma \+ /, "") : ""}
+                hasEmail={Boolean(b.email)}
+              />
+            </div>
+          </details>
+        )}
 
         {/* Google kalendārs: kas piedalās + ielikt/atjaunot notikumu */}
         {(() => {

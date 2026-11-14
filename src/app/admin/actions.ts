@@ -9,7 +9,9 @@ import { parse, slugify, setPath } from "@/lib/admin/fields";
 import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { notifyReviewRequest } from "@/lib/notify";
+import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
+import { sendConfirmation } from "@/lib/booking-confirm";
+import { whenLabel } from "@/lib/dates";
 import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts } from "@/lib/calendar";
 import { atStudio, withEditedMessage, withHostsLine } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
@@ -458,3 +460,84 @@ export async function resendAllToGoogle(): Promise<{ error?: string; done?: numb
   return { done, failed };
 }
 
+
+
+/* ------------------------------ Nevaram uzņemt / nodrošināt programmu ------------------------------ */
+
+/** Pieteikuma programmas nosaukums un vai tā ir telpu noma ar programmu */
+async function programInfo(db: Awaited<ReturnType<typeof requireAdmin>>["db"], b: Booking) {
+  const slug = b.program || b.service_slug || "";
+  const services = await getServices(b.inquiry_type === "business" ? "business" : "private");
+  return { slug, title: services.find((s) => s.slug === slug)?.title ?? slug, venue: b.inquiry_type !== "business" && atStudio(b.location) };
+}
+
+/**
+ * Telpas varam, programmu — nē (piem. visas animatores citā pasākumā): programmu noņem, izmaksas pārrēķinās
+ * (tikai telpu noma), rezervāciju apstiprina un klientam aiziet parastais apstiprinājums ar piebildi par programmu.
+ */
+export async function approveWithoutProgram(id: string): Promise<{ error?: string; ok?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  const { slug, title, venue } = await programInfo(db, b);
+  if (!venue || !slug) return { error: "Šis nav telpu nomas pieteikums ar izklaides programmu." };
+
+  const note = `Izklaides programmu “${title}” nevarējām nodrošināt — apstiprināta tikai telpu noma.`;
+  const message = [b.message?.trim(), note].filter(Boolean).join("\n\n");
+  const now = new Date().toISOString();
+  const update = { program: null, service_slug: null, message, status: "Apstiprināta", confirmation_sent_at: b.email ? now : null, client_confirmed_at: null, client_reminded_at: null, client_cancelled_at: null };
+  const { error } = await db.from("bookings").update(update).eq("id", id);
+  if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+
+  const updated = { ...b, ...update } as Booking;
+  await sendConfirmation(updated, [], db, `Diemžēl izklaides programmu “${title}” izvēlētajā laikā nevaram nodrošināt — visas mūsu animatores jau ir aizņemtas. Telpas jums ir rezervētas. Ja vēlaties citu programmu vai citu laiku, sazinieties ar mums.`).catch((e) =>
+    console.error("[approveWithoutProgram]", e),
+  );
+  revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+/**
+ * Atteikt pieteikumu: statuss "Atcelta" (pieteikums nepazūd — atceltajos), klientam — pieklājīgs e-pasts.
+ * Ja rezervācija jau bija apstiprināta — notikumu izņem no kalendāriem.
+ */
+export async function rejectBooking(id: string): Promise<{ error?: string; ok?: boolean; emailed?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  const { slug, title } = await programInfo(db, b);
+  const { error } = await db.from("bookings").update({ status: "Atcelta" }).eq("id", id);
+  if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  if (b.status === "Apstiprināta" && b.event_date) await removeBookingFromCalendars(db, b).catch(() => false);
+
+  let emailed = false;
+  if (b.email) {
+    const { contact } = await getSettings();
+    const isBusiness = b.inquiry_type === "business";
+    const when = whenLabel(b.event_date, b.event_time, isBusiness ? null : b.location);
+    emailed = await notifyClientRejected({
+      to: b.email,
+      name: b.parent_name ?? "",
+      subject: "Par jūsu pieteikumu — Smaidu Darbnīca",
+      paragraphs: [
+        `Paldies par jūsu pieteikumu${slug ? ` (“${title}”)` : ""}${when ? ` ${when}` : ""}!`,
+        slug
+          ? "Diemžēl izvēlētajā datumā un laikā nevaram nodrošināt izklaides programmu — visas mūsu animatores jau ir aizņemtas citā pasākumā."
+          : "Diemžēl izvēlētajā datumā un laikā nevaram jūs uzņemt.",
+        "Ja jums der cits datums vai laiks, ļoti priecāsimies palīdzēt — atbildiet uz šo e-pastu vai zvaniet mums.",
+      ],
+      replyTo: contact.emailPrivate,
+      logoUrl: absoluteUrl("/brand/logo-email-dark.png"),
+      footer: {
+        address: `${contact.address}, ${contact.city}`,
+        phone: isBusiness ? contact.phoneBusiness : contact.phonePrivate,
+        email: isBusiness ? contact.email : contact.emailPrivate,
+        site: SITE_URL,
+      },
+    });
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true, emailed };
+}
