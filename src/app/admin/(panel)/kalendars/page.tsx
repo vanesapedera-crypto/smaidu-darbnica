@@ -15,9 +15,10 @@ import BookingAdminPanel, { type BookingAdminContext } from "@/components/admin/
 import StaffAnswer from "@/components/admin/StaffAnswer";
 import type { StaffRow } from "@/lib/staff";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
-import TeamEventsPending from "@/components/admin/TeamEventsPending";
 import { googleConnection } from "@/lib/google-calendar";
-import { adminInput, adminSecondary } from "@/components/admin/styles";
+import { adminInput, adminPrimary, adminSecondary } from "@/components/admin/styles";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -339,7 +340,13 @@ export default async function CalendarPage({ searchParams }: Props) {
               <ul className="mt-2 space-y-2">{found.map((b) => bookingRow(b, true))}</ul>
             </section>
           )}
-          {!q && <TeamEventsPending db={db} />}
+          {owner && !q && (
+            <div className="mt-4">
+              <Link href="/admin/kalendars/jauns" className={adminPrimary}>
+                <Plus className="size-4" aria-hidden /> Pievienot rezervāciju
+              </Link>
+            </div>
+          )}
           {/* Komandas atbildes: kāda nevar — jāmeklē cits; visas var — jāapstiprina klientam */}
           {!q && (() => {
             const today_ = today;

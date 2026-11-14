@@ -608,3 +608,67 @@ export async function resendUpdatedConfirmation(id: string): Promise<{ error?: s
   revalidatePath("/admin", "layout");
   return { ok: true, emailed: Boolean(b.email) };
 }
+
+/* ------------------------------ Rezervācija, ko administratore pievieno pati (piem. pa telefonu) ------------------------------ */
+
+/**
+ * "Pievienot rezervāciju": jauns pieteikums ar statusu "Jauns" — tālāk tāpat kā no mājaslapas
+ * (kas piedalās → "Jautāt komandai" → "Apstiprināt un nosūtīt klientam"). Uzreiz arī Google kalendārā kā "🆕 JAUNS".
+ */
+export async function createManualBooking(form: FormData) {
+  const { db } = await requireAdmin();
+  const str = (k: string) => String(form.get(k) ?? "").trim() || null;
+  const num = (k: string) => {
+    const n = Number(String(form.get(k) ?? "").replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const isBusiness = form.get("inquiry_type") === "business";
+  const slug = str("program");
+  const location = isBusiness ? null : (str("location") ?? "Smaidu Darbnīcā");
+  const row: Record<string, unknown> = {
+    id: crypto.randomUUID(),
+    status: "Jauns",
+    inquiry_type: isBusiness ? "business" : "private",
+    parent_name: str("parent_name"),
+    phone: str("phone"),
+    email: str("email"),
+    company_name: isBusiness ? str("company_name") : null,
+    program: isBusiness ? null : slug,
+    service_slug: isBusiness ? slug : null,
+    event_date: str("event_date"),
+    event_time: str("event_time"),
+    location,
+    address: str("address"),
+    event_city: isBusiness ? str("event_city") : null,
+    children_count: isBusiness ? null : num("children_count"),
+    participants: isBusiness ? num("children_count") : null,
+    child_age: isBusiness ? null : str("child_age"),
+    message: str("message"),
+    admin_notes: "Pievienots panelī (pa telefonu)",
+  };
+  if (!row.parent_name && !row.company_name) redirect("/admin/kalendars/jauns?kluda=vards");
+  if (!row.event_date) redirect("/admin/kalendars/jauns?kluda=datums");
+
+  // Izbraukumam — ceļa izdevumi (ja karte neatbild, tos var ievadīt vēlāk sadaļā "Labot informāciju")
+  if (!isBusiness && location === "Izbraukums" && row.address) {
+    const { quoteTravel } = await import("@/lib/travel");
+    const quote = await Promise.race([quoteTravel(String(row.address)).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 12000))]);
+    if (quote) Object.assign(row, { travel_km: quote.roundTripKm, travel_cost: quote.cost });
+  }
+
+  const { error } = await db.from("bookings").insert(row);
+  if (error) redirect(`/admin/kalendars/jauns?kluda=${encodeURIComponent(error.message)}`);
+
+  // Google kalendārā — kā dublējums (bez viesiem)
+  try {
+    const services = await getServices(isBusiness ? "business" : "private");
+    const title = services.find((s) => s.slug === slug)?.title ?? "";
+    const b = row as unknown as Booking;
+    const event = calendarEvent(b, title || (atStudio(b.location) ? "Telpu noma" : "Pieteikums"));
+    if (event) await upsertGoogleEvent(db, b.id, { ...event, text: `🆕 JAUNS · ${event.text}` }, []);
+  } catch (e) {
+    console.error("[manual booking] google", e);
+  }
+  revalidatePath("/admin", "layout");
+  redirect("/admin/kalendars?pievienots=1");
+}
