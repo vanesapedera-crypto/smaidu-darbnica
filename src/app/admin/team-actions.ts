@@ -176,7 +176,7 @@ export async function deleteOffer(kind: OfferKind, id: string) {
   await db.from("offers").delete().eq("id", id);
   await removeFile(db, data?.file_path);
   revalidatePath(offerBase(kind));
-  redirect(`${offerBase(kind)}?dzests=1`);
+  redirect(kind === "client" ? "/admin/piedavajuma-izveide#arhivs" : `${offerBase(kind)}?dzests=1`);
 }
 
 /* ------------------------------ Komandas piekļuve ------------------------------ */
@@ -526,7 +526,7 @@ export async function deletePresentation(id: string) {
   const { db } = await requireAdmin();
   await db.from("presentations").delete().eq("id", id);
   revalidatePath("/admin/prezentacijas");
-  redirect("/admin/prezentacijas?dzests=1");
+  redirect("/admin/prezentacijas-izveide#arhivs");
 }
 
 /** Lapa "Izrādes — cenas": izrādes izmaksas un sezona (cost_items aktivitāte ar fiksētu summu "Izrāde „…”") */

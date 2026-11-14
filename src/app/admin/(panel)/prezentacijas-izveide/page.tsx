@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calculator, ImageOff, Presentation } from "lucide-react";
+import { Archive, Calculator, ChevronDown, ImageOff, Presentation } from "lucide-react";
+import { lvDate } from "@/components/admin/team/offer-utils";
 import { requireSection } from "@/lib/auth";
 import { deletePresentation, savePresentation } from "@/app/admin/team-actions";
 import { missingTable } from "@/lib/team/files";
@@ -23,12 +24,14 @@ export default async function PresentationBuilderPage({ searchParams }: Props) {
   const pid = id && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
   if (id && !pid) notFound();
 
-  const [{ data: p, error }, { data: ws }, { data: acts }, { data: names }] = await Promise.all([
+  const [{ data: p, error }, { data: ws }, { data: acts }, { data: names }, { data: archiveData }] = await Promise.all([
     pid ? db.from("presentations").select("*").eq("id", pid).maybeSingle() : db.from("presentations").select("id").limit(1),
     db.from("workshops").select("id, title, description, image").order("title"),
     db.from("cost_items").select("id, title, description, image").eq("kind", "activity").order("sort").order("title"),
     db.from("client_history").select("client_name"),
+    db.from("presentations").select("*").order("created_at", { ascending: false }),
   ]);
+  const archive = (archiveData ?? []) as PresentationRow[];
   if (missingTable(error)) return <MigrationNotice title="Prezentācijas izveide" file="20261108110000_presentations.sql" />;
   const pres = pid ? (p as PresentationRow | null) : null;
   if (pid && !pres) notFound();
@@ -67,7 +70,7 @@ export default async function PresentationBuilderPage({ searchParams }: Props) {
         description="Atzīmējiet, ko piedāvāt — prezentācija ar foto un aprakstiem izveidojas pati. Bez cenām."
         notice={saglabats ? "Saglabāts. Prezentāciju var atvērt un lejupielādēt PDF." : undefined}
         actions={
-          pres && (
+          pres ? (
             <>
               <Link href={`/admin/prezentacija-pdf/${pres.id}`} target="_blank" className={adminSecondary}>
                 <Presentation className="size-4" aria-hidden /> Atvērt prezentāciju (PDF)
@@ -75,7 +78,14 @@ export default async function PresentationBuilderPage({ searchParams }: Props) {
               <Link href={`/admin/piedavajuma-izveide?prezentacija=${pres.id}`} className={adminSecondary}>
                 <Calculator className="size-4" aria-hidden /> Izveidot piedāvājumu ar cenu
               </Link>
+              <Link href="/admin/prezentacijas-izveide" className={adminSecondary}>
+                Jauna prezentācija
+              </Link>
             </>
+          ) : (
+            <a href="#arhivs" className={adminSecondary}>
+              <Archive className="size-4" aria-hidden /> Arhīvs ({archive.length})
+            </a>
           )
         }
       />
@@ -142,6 +152,36 @@ export default async function PresentationBuilderPage({ searchParams }: Props) {
           </div>
         )}
       </div>
+
+      {/* Arhīvs — visas izveidotās prezentācijas (jaunākās augšā) */}
+      <details id="arhivs" className="group/a mt-8 rounded-2xl bg-white ring-1 ring-line open:ring-ink" open={!pres || undefined}>
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+          <Archive className="size-4" aria-hidden />
+          <span className="flex-1 text-base font-extrabold">Arhīvs ({archive.length})</span>
+          <ChevronDown className="size-4 text-ink-soft transition-transform group-open/a:rotate-180" aria-hidden />
+        </summary>
+        <ul className="divide-y divide-line border-t border-line">
+          {archive.length === 0 && <li className="p-5 text-sm text-ink-soft">Prezentāciju vēl nav.</li>}
+          {archive.map((a) => (
+            <li key={a.id} className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 ${a.id === pres?.id ? "bg-brand-soft" : ""}`}>
+              <Link href={`/admin/prezentacijas-izveide?id=${a.id}`} className="grid min-w-0 flex-1 gap-x-6 gap-y-1 hover:underline sm:grid-cols-[100px_minmax(0,1fr)_minmax(0,1.2fr)]">
+                <span className="text-sm text-ink-soft">{lvDate(a.created_at)}</span>
+                <span className="truncate font-bold">{a.client_name}</span>
+                <span className="truncate text-sm">
+                  {a.title || "—"}
+                  <span className="text-ink-soft">
+                    {" "}
+                    · {a.workshop_ids.length + a.activity_ids.length} poz.{a.event_date ? ` · pasākums ${lvDate(a.event_date)}` : ""}
+                  </span>
+                </span>
+              </Link>
+              <Link href={`/admin/prezentacija-pdf/${a.id}`} target="_blank" className={adminSecondary}>
+                <Presentation className="size-4" aria-hidden /> PDF
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </details>
     </>
   );
 }

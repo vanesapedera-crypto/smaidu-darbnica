@@ -1,4 +1,9 @@
 import Link from "next/link";
+import { Archive, ChevronDown, Paperclip } from "lucide-react";
+import type { OfferRow } from "@/lib/team/types";
+import { lvDate, statusTone } from "@/components/admin/team/offer-utils";
+import { adminSecondary } from "@/components/admin/styles";
+import { cn } from "@/lib/utils";
 import { requireSection } from "@/lib/auth";
 import { saveCalcOffer } from "@/app/admin/team-actions";
 import { getSettings } from "@/lib/content/queries";
@@ -18,7 +23,7 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
   const { id, saglabats, klients, prezentacija } = await searchParams;
   const offerId = id && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 
-  const [{ data: ws, error }, { data: items }, { data: s }, { data: names }, site, existing, { data: materials }] = await Promise.all([
+  const [{ data: ws, error }, { data: items }, { data: s }, { data: names }, site, existing, { data: materials }, { data: archiveData }] = await Promise.all([
     db.from("workshops").select("id, title, items, description").order("title"),
     db.from("cost_items").select("*").order("sort").order("title"),
     db.from("calc_settings").select("data").eq("id", 1).maybeSingle(),
@@ -26,7 +31,9 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
     getSettings(),
     offerId ? db.from("offers").select("calc, client_name, title").eq("id", offerId).maybeSingle() : Promise.resolve({ data: null }),
     db.from("materials").select("id, name, price, pack"),
+    db.from("offers").select("*").eq("kind", "client").order("offer_date", { ascending: false, nullsFirst: false }),
   ]);
+  const archive = (archiveData ?? []) as OfferRow[];
   const mats = materialMap(materials as Material[] | null);
   if (missingTable(error) || items === null) return <MigrationNotice title="Piedāvājuma izveide" file="20261108090000_offer_builder.sql" />;
 
@@ -81,9 +88,14 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
         description="Atzīmējiet, ko piedāvāt — cena saskaitās pati. Pēc saglabāšanas var lejupielādēt prezentāciju un piedāvājumu PDF formātā."
         notice={saglabats ? "Saglabāts. Tagad var veidot PDF." : undefined}
         actions={
-          <Link href="/admin/izmaksas" className="text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
-            💰 Pakalpojumu cenas
-          </Link>
+          <>
+            <a href="#arhivs" className={adminSecondary}>
+              <Archive className="size-4" aria-hidden /> Arhīvs ({archive.length})
+            </a>
+            <Link href="/admin/izmaksas" className="text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
+              💰 Pakalpojumu cenas
+            </Link>
+          </>
         }
       />
       {offerId && !existing.data?.calc && existing.data && (
@@ -107,6 +119,37 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
         />
       </div>
 
+      {/* Arhīvs — visi piedāvājumi klientiem (jaunākie augšā) */}
+      <details id="arhivs" className="group/a mt-8 rounded-2xl bg-white ring-1 ring-line open:ring-ink">
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+          <Archive className="size-4" aria-hidden />
+          <span className="flex-1 text-base font-extrabold">Arhīvs ({archive.length})</span>
+          <ChevronDown className="size-4 text-ink-soft transition-transform group-open/a:rotate-180" aria-hidden />
+        </summary>
+        <ul className="divide-y divide-line border-t border-line">
+          {archive.length === 0 && <li className="p-5 text-sm text-ink-soft">Piedāvājumu vēl nav.</li>}
+          {archive.map((o) => (
+            <li key={o.id}>
+              <Link
+                href={`/admin/piedavajumi/${o.id}`}
+                className={cn("grid gap-x-6 gap-y-1 px-5 py-3 hover:bg-surface/60 md:grid-cols-[100px_minmax(0,1fr)_minmax(0,1.4fr)_auto]", o.id === offerId && "bg-brand-soft")}
+              >
+                <span className="text-sm text-ink-soft">{lvDate(o.offer_date) || "—"}</span>
+                <span className="min-w-0 font-bold">{o.client_name}</span>
+                <span className="min-w-0 text-sm">
+                  <span className="font-semibold">{o.title}</span>
+                  {o.file_name && <Paperclip className="ml-1.5 inline size-3.5 text-ink-soft" aria-label="Pievienots fails" />}
+                  {o.services && <span className="line-clamp-1 text-ink-soft">{o.services}</span>}
+                </span>
+                <span className="flex items-center gap-2 text-sm">
+                  {o.price && <span className="font-semibold">{o.price}</span>}
+                  {o.status && <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", statusTone(o.status))}>{o.status}</span>}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </details>
     </>
   );
 }
