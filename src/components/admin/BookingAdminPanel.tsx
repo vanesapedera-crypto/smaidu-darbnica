@@ -7,7 +7,6 @@ import CalendarLink from "@/components/admin/CalendarLink";
 import RemoveFromCalendar from "@/components/admin/RemoveFromCalendar";
 import ClientConfirmation from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
-import DeleteBooking from "@/components/admin/DeleteBooking";
 import StatusSelect from "@/components/admin/StatusSelect";
 import TimeSelect from "@/components/site/TimeSelect";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
@@ -324,9 +323,10 @@ export default function BookingAdminPanel({
           </form>
         </details>
 
-        <div className="pt-2">
-          <DeleteBooking id={b.id} />
-        </div>
+        {/* Pieteikumus nedzēš: nevajadzīgu — statuss "Atcelta" (pāriet uz atceltajiem); notikušie paši pāriet uz arhīvu */}
+        <p className="pt-2 text-xs text-ink-soft">
+          Pieteikumi netiek dzēsti. Ja pasākums nenotiks, nomainiet statusu uz “Atcelta” — tas pāries uz atceltajiem pieteikumiem. Notikušie pasākumi paši pāriet uz arhīvu.
+        </p>
       </div>
     </div>
   );
