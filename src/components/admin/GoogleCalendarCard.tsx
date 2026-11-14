@@ -20,6 +20,8 @@ export default async function GoogleCalendarCard({ db, message }: { db: AdminCon
   const configured = isGoogleConfigured();
   const conn = configured ? await googleConnection(db) : null;
   const notice = message ? MESSAGES[message] : undefined;
+  // Savienots un viss kārtībā — kartīti nerāda (lai netraucē); parādās tikai, ja savienojums pazūd vai ir paziņojums
+  if (conn && !notice) return null;
 
   return (
     <div className="mt-6 rounded-2xl bg-white p-4 ring-1 ring-line sm:flex sm:items-center sm:justify-between sm:gap-6">
