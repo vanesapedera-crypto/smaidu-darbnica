@@ -16,19 +16,21 @@ export default function CalendarLink({
   event,
   withHost,
   googleBookingId,
+  initialHosts = [],
 }: {
   event: CalendarEvent;
   withHost: boolean;
+  /** Jau atzīmētie (rinda "Vada: …" pieteikumā) */
+  initialHosts?: string[];
   /** Ja Google kalendārs ir savienots un rezervācija apstiprināta — poga "Ielikt Google kalendārā" (labojams notikums) */
   googleBookingId?: string;
 }) {
-  const [hosts, setHosts] = useState<string[]>([]);
+  const [hosts, setHosts] = useState<string[]>(initialHosts);
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ error?: string; ok?: boolean }>();
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-ink-soft">Google kalendārs — ar roku</p>
       {withHost && (
         <div className="space-y-1.5">
           <p className="text-sm font-semibold">Piedalās (var atzīmēt vairākus)</p>

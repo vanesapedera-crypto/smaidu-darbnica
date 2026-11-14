@@ -1,3 +1,4 @@
+import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote } from "lucide-react";
 import { FIXED_VENUES, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import type { Service, SiteSettings } from "@/lib/content/types";
@@ -48,101 +49,69 @@ export default function BookingAdminPanel({
           clientEmail={b.email}
         />
       </div>
-      <div className="grid gap-6 border-t border-line p-4 sm:p-5 md:grid-cols-2">
-        <dl className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-2 text-sm">
+      {/* 1. Ko klients iesniedza */}
+      <div className="space-y-4 p-4 sm:p-5">
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
           {(
             [
               ["Kontaktpersona", b.parent_name],
+              ["Uzņēmums / iestāde", b.company_name],
               ["Amats", b.contact_role],
-              ["Telefons", b.phone && <a href={`tel:${b.phone}`} className="font-semibold underline">{b.phone}</a>],
-              ["E-pasts", b.email && <a href={`mailto:${b.email}`} className="font-semibold underline">{b.email}</a>],
-              ["Uzņēmums", b.company_name],
+              ["Telefons", b.phone && <a href={`tel:${b.phone}`} className="font-semibold underline decoration-brand decoration-2 underline-offset-4">{b.phone}</a>],
+              ["E-pasts", b.email && <a href={`mailto:${b.email}`} className="font-semibold underline decoration-brand decoration-2 underline-offset-4">{b.email}</a>],
+              ["Programma", labelText !== "—" ? labelText : null],
               ["Vieta", [b.location, b.event_city, b.address].filter(Boolean).join(", ")],
-              ["Ceļa izdevumi", b.travel_cost != null && `${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`],
-              ["Dalībnieki", b.participants],
               ["Bērnu skaits", b.children_count],
               ["Vecums", b.child_age],
+              ["Dalībnieki", b.participants],
+              ["Ceļa izdevumi", b.travel_cost != null && `${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`],
               ["Budžets", b.budget_range],
-              ["Saņemts", b.created_at && new Date(b.created_at).toLocaleString("lv-LV")],
+              ["Piedalās", hostsOf(b.message) || null],
+              ["Saņemts", b.created_at && new Date(b.created_at).toLocaleString("lv-LV", { dateStyle: "short", timeStyle: "short" })],
             ] as [string, React.ReactNode][]
           )
-            .filter(([, v]) => v !== null && v !== undefined && v !== "")
+            .filter(([, v]) => v !== null && v !== undefined && v !== "" && v !== false)
             .map(([k, v]) => (
-              <div key={k} className="contents">
-                <dt className="text-ink-soft">{k}</dt>
-                <dd className="min-w-0 break-words">{v}</dd>
+              <div key={k} className="min-w-0">
+                <dt className="text-xs text-ink-soft">{k}</dt>
+                <dd className="font-semibold break-words">{v}</dd>
               </div>
             ))}
         </dl>
-        <div className="space-y-4">
-          <ClientConfirmation booking={b} />
-          {/* Pēc ballītes: aicinājums atstāt atsauksmi Google (tikai apstiprinātām privātajām rezervācijām) */}
-          {b.inquiry_type !== "business" && b.status === "Apstiprināta" && (
-            <ReviewRequest
-              id={b.id}
-              hasEmail={Boolean(b.email)}
-              phoneDigits={phoneDigits(b.phone)}
-              message={reviewMessageText(reviewKind(b), reviewUrl(settings.contact))}
-              about={reviewKind(b) === "venue" ? "par telpām" : "par animatoriem un programmu"}
-              requestedAt={b.review_requested_at ?? null}
-              fallbackUrl={!settings.contact.googleReviewUrl?.trim()}
-            />
-          )}
-          {b.message && (
-            <div>
-              <p className="text-sm text-ink-soft">Ziņojums</p>
-              <p className="mt-1 text-sm whitespace-pre-line">
-                {/* Labotās izmaksas redzamas sadaļā "Izmaksas" — ziņojumā tās nerāda */}
-                {b.message
-                  .split("\n")
-                  .filter((l) => !l.startsWith("Izmaksas:"))
-                  .join("\n")
-                  .trim()}
-              </p>
-            </div>
-          )}
-          {(() => {
 
-            return (
-              costs && (
-                <div>
-                  <p className="text-sm text-ink-soft">Izmaksas (tās pašas klients saņem apstiprinājuma e-pastā)</p>
-                  <dl className="mt-1 space-y-1 text-sm">
-                    {costs.lines.map((l) => (
-                      <div key={l.label} className="flex justify-between gap-4">
-                        <dt>{l.label}</dt>
-                        <dd className="font-semibold whitespace-nowrap">
-                          {amountText(l)}
-                        </dd>
-                      </div>
-                    ))}
-                    {/* Kopsummu rāda tikai tad, ja visas cenas ir zināmas */}
-                    {costs.exact && (
-                      <div className="flex justify-between gap-4 border-t border-line pt-1">
-                        <dt className="font-extrabold">Kopā</dt>
-                        <dd className="font-extrabold whitespace-nowrap">{eur(costs.total)}</dd>
-                      </div>
-                    )}
-                    {costs.plusVat && <p className="text-ink-soft">{VAT_NOTE}</p>}
-                  </dl>
+        {editableMessage(b.message).trim() && (
+          <div className="rounded-xl bg-surface p-3 text-sm">
+            <p className="text-xs text-ink-soft">Ziņojums</p>
+            <p className="mt-0.5 whitespace-pre-line">{editableMessage(b.message).trim()}</p>
+          </div>
+        )}
+
+        {costs && (
+          <div className="rounded-xl bg-surface p-3 text-sm">
+            <p className="text-xs text-ink-soft">Izmaksas (tās pašas klients saņem apstiprinājuma e-pastā)</p>
+            <dl className="mt-1 space-y-0.5">
+              {costs.lines.map((l) => (
+                <div key={l.label} className="flex justify-between gap-4">
+                  <dt>{l.label}</dt>
+                  <dd className="font-semibold whitespace-nowrap">{amountText(l)}</dd>
                 </div>
-              )
-            );
-          })()}
-          {/* Google kalendārs: aizpildīts notikums ar viesiem (tikai pieteikumiem ar datumu) */}
-          {(() => {
-            const event = calendarEvent(b, labelText, costs);
-            if (event && b.status === "Atcelta") return <RemoveFromCalendar id={b.id} />;
-            return (
-              event && (
-                <CalendarLink
-                  event={event}
-                  withHost
-                  googleBookingId={googleConnected && b.status === "Apstiprināta" ? b.id : undefined}
-                />
-              )
-            );
-          })()}
+              ))}
+              {costs.exact && (
+                <div className="flex justify-between gap-4 border-t border-line pt-1">
+                  <dt className="font-extrabold">Kopā</dt>
+                  <dd className="font-extrabold whitespace-nowrap">{eur(costs.total)}</dd>
+                </div>
+              )}
+              {costs.plusVat && <p className="text-ink-soft">{VAT_NOTE}</p>}
+            </dl>
+          </div>
+        )}
+
+        <ClientConfirmation booking={b} />
+      </div>
+
+      {/* 2. Darbības — katra atveras, uzspiežot */}
+      <div className="space-y-2 border-t border-line p-4 sm:p-5">
           {/* Rezervācijas labošana — visa informācija un izmaksas */}
           {(() => {
             const isPrivate = b.inquiry_type !== "business";
@@ -159,8 +128,9 @@ export default function BookingAdminPanel({
               </label>
             );
             return (
-              <details className="rounded-2xl bg-surface p-4" open={costs?.exact === false || undefined}>
-                <summary className="cursor-pointer text-sm font-extrabold">Labot rezervāciju</summary>
+              <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink" open={costs?.exact === false || undefined}>
+                <Summary icon={<Pencil className="size-4" aria-hidden />}>Labot informāciju</Summary>
+                <div className="border-t border-line p-4">
                 <form action={saveBookingDetails.bind(null, b.id)} className="mt-3 space-y-3">
                   {costs?.exact === false && (
                     <p className="text-sm font-semibold text-destructive">
@@ -296,21 +266,79 @@ export default function BookingAdminPanel({
                     Saglabāt izmaiņas
                   </button>
                 </form>
+                </div>
               </details>
             );
           })()}
-          <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2">
-            <label htmlFor={`notes-${b.id}`} className="text-sm text-ink-soft">
-              Iekšējās piezīmes
-            </label>
-            <textarea id={`notes-${b.id}`} name="admin_notes" defaultValue={b.admin_notes ?? ""} rows={3} className={adminInput} />
+
+        {/* Google kalendārs: kas piedalās + ielikt/atjaunot notikumu */}
+        {(() => {
+          const event = calendarEvent(b, labelText, costs);
+          if (!event) return null;
+          return (
+            <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink">
+              <Summary icon={<CalendarPlus className="size-4" aria-hidden />}>
+                {b.status === "Atcelta" ? "Izņemt no Google kalendāra" : "Google kalendārs — kas piedalās"}
+              </Summary>
+              <div className="border-t border-line p-4">
+                {b.status === "Atcelta" ? (
+                  <RemoveFromCalendar id={b.id} />
+                ) : (
+                  <CalendarLink
+                    event={event}
+                    withHost
+                    initialHosts={CALENDAR_HOSTS.filter((h) => hostsOf(b.message).split(/,\s*/).includes(h.name)).map((h) => h.email)}
+                    googleBookingId={googleConnected && b.status === "Apstiprināta" ? b.id : undefined}
+                  />
+                )}
+              </div>
+            </details>
+          );
+        })()}
+
+        {/* Pēc ballītes: aicinājums atstāt atsauksmi Google (tikai apstiprinātām privātajām rezervācijām) */}
+        {b.inquiry_type !== "business" && b.status === "Apstiprināta" && (
+          <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink">
+            <Summary icon={<Star className="size-4" aria-hidden />}>Pieprasīt atsauksmi</Summary>
+            <div className="border-t border-line p-4">
+              <ReviewRequest
+                id={b.id}
+                hasEmail={Boolean(b.email)}
+                phoneDigits={phoneDigits(b.phone)}
+                message={reviewMessageText(reviewKind(b), reviewUrl(settings.contact))}
+                about={reviewKind(b) === "venue" ? "par telpām" : "par animatoriem un programmu"}
+                requestedAt={b.review_requested_at ?? null}
+                fallbackUrl={!settings.contact.googleReviewUrl?.trim()}
+              />
+            </div>
+          </details>
+        )}
+
+        <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink" open={Boolean(b.admin_notes) || undefined}>
+          <Summary icon={<StickyNote className="size-4" aria-hidden />}>Iekšējās piezīmes</Summary>
+          <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2 border-t border-line p-4">
+            <textarea name="admin_notes" defaultValue={b.admin_notes ?? ""} rows={3} className={adminInput} aria-label="Iekšējās piezīmes" />
             <button type="submit" className={adminSecondary}>
               Saglabāt piezīmes
             </button>
           </form>
+        </details>
+
+        <div className="pt-2">
           <DeleteBooking id={b.id} />
         </div>
       </div>
     </div>
+  );
+}
+
+/** Sakļaujamas sadaļas virsraksts ar bultiņu */
+function Summary({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-extrabold [&::-webkit-details-marker]:hidden">
+      {icon}
+      <span className="flex-1">{children}</span>
+      <ChevronDown className="size-4 text-ink-soft transition-transform group-open/s:rotate-180" aria-hidden />
+    </summary>
   );
 }
