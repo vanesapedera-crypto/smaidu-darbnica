@@ -63,13 +63,13 @@ export default async function CalendarPage({ searchParams }: Props) {
   const seesAll = true; // visa komanda redz pilnīgi visu to pašu, ko administratore — tikai bez labošanas
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
-  const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b));
+  const isMine = (b: Booking) => b.status !== "Atcelta" && (Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b)));
   // Google kalendāra savienojums ir administratorei; komandai to nolasa ar servera atslēgu (tikai skatīšanai)
   const googleDb = (owner ? db : supabaseAdmin()) as MemberContext["db"] | null;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
   const [{ data, error }, { data: eventRows }, business, programs, settings] = await Promise.all([
-    db.from("bookings").select("*").not("event_date", "is", null).neq("status", "Atcelta").order("event_date").order("event_time", { nullsFirst: true }),
+    db.from("bookings").select("*").not("event_date", "is", null).order("event_date").order("event_time", { nullsFirst: true }),
     // Izbraukumi un pasākumi, kas ievadīti ar roku (tabula team_events) — visa komanda redz visus (lasa ar servera atslēgu)
     ((owner ? db : (supabaseAdmin() ?? db)) as typeof db).from("team_events").select("*").order("event_date"),
     getServices("business"),
@@ -121,7 +121,9 @@ export default async function CalendarPage({ searchParams }: Props) {
   };
 
   // Skatītājiem (piem. telpu uzkopšanai) — tikai rezervācijas mūsu telpās
+  // Arī atceltās: paliek pie sava datuma (ar lielu "ATCELTA"), pēc datuma — arhīvā
   const all = (data ?? []) as Booking[];
+  const active = all.filter((b) => b.status !== "Atcelta");
   const group = (list: Booking[]) => {
     const map = new Map<string, Booking[]>();
     for (const b of list) {
@@ -219,14 +221,20 @@ export default async function CalendarPage({ searchParams }: Props) {
                   isVenue(b) && "border-l-4 border-brand-strong",
                   "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
                   isMine(b) && MINE_ROW,
+                  b.status === "Atcelta" && "bg-red-50 ring-2 ring-red-300 border-l-4 border-red-500 group-open:bg-red-50 group-open:ring-red-400",
                 )}
               >
-                <span className="text-sm font-semibold">
+                <span className={cn("text-sm font-semibold", b.status === "Atcelta" && "text-red-700 line-through")}>
                   {showDate && (b.event_date ? `${b.event_date.slice(8, 10)}.${b.event_date.slice(5, 7)}. ` : "bez datuma ")}
                   {timeLabel(b.event_time, b.location) || (showDate ? "" : "—")}
                 </span>
                 <span className="min-w-0 text-sm">
-                  <span className="block truncate">
+                  <span className={cn("block truncate", b.status === "Atcelta" && "text-ink-soft")}>
+                    {b.status === "Atcelta" && (
+                      <span className="mr-2 inline-flex items-center rounded-md bg-red-600 px-2.5 py-1 align-middle text-xs font-extrabold tracking-widest text-white uppercase">
+                        ✕ Atcelta
+                      </span>
+                    )}
                     {isMine(b) && (
                       <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-600 px-3 py-1 align-middle text-xs font-extrabold tracking-wide text-white uppercase shadow">
                         <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
@@ -346,7 +354,7 @@ export default async function CalendarPage({ searchParams }: Props) {
           {/* Komandas atbildes: kāda nevar — jāmeklē cits; visas var — jāapstiprina klientam */}
           {!q && (() => {
             const today_ = today;
-            const list = [...all, ...pending].filter((b, i, arr) => arr.findIndex((x) => x.id === b.id) === i);
+            const list = [...active, ...pending].filter((b, i, arr) => arr.findIndex((x) => x.id === b.id) === i);
             const declined = list.filter((b) => (b.event_date ?? "9999") >= today_ && (staffBy.get(b.id) ?? []).some((r) => r.status === "nevar"));
             const ready = list.filter((b) => b.status === "Jauns" && (staffBy.get(b.id) ?? []).length > 0 && (staffBy.get(b.id) ?? []).every((r) => r.status === "var"));
             return (
@@ -380,7 +388,7 @@ export default async function CalendarPage({ searchParams }: Props) {
 
       {/* Komandas loceklim: pasākumi, uz kuriem jāatbild "Varu" / "Nevaru" */}
       {!owner && (() => {
-        const mine = all.filter((b) => myRow(b)?.status === "gaida" && b.event_date!.slice(0, 10) >= today);
+        const mine = active.filter((b) => myRow(b)?.status === "gaida" && b.event_date!.slice(0, 10) >= today);
         return (
           mine.length > 0 && (
             <section className="mt-6 rounded-2xl bg-amber-50 p-4 ring-2 ring-amber-300 sm:p-5">
@@ -421,10 +429,10 @@ export default async function CalendarPage({ searchParams }: Props) {
         </Suspense>
       )}
 
-      {seesAll && cancelled.length > 0 && (
+      {seesAll && cancelled.filter((b) => !b.event_date).length > 0 && (
         <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
-          <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Atceltie pieteikumi ({cancelled.length})</summary>
-          <ul className="mt-4 space-y-2 opacity-80">{cancelled.map((b) => bookingRow(b, true))}</ul>
+          <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Atceltie pieteikumi bez datuma ({cancelled.filter((b) => !b.event_date).length})</summary>
+          <ul className="mt-4 space-y-2 opacity-80">{cancelled.filter((b) => !b.event_date).map((b) => bookingRow(b, true))}</ul>
         </details>
       )}
 
