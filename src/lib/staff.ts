@@ -52,9 +52,12 @@ export async function answerStaff(db: MemberContext["db"], bookingId: string, em
     .update({ status, responded_at: new Date().toISOString() })
     .eq("booking_id", bookingId)
     .eq("email", email.toLowerCase())
+    // Atbildi var dot tikai vienreiz — ja vēlāk nevar, jārunā ar Vanesu
+    .eq("status", "gaida")
     .select("name")
     .maybeSingle();
-  if (error || !data) return { error: "Neizdevās saglabāt atbildi." };
+  if (error) return { error: "Neizdevās saglabāt atbildi." };
+  if (!data) return { error: "Atbilde jau ir dota. Ja kaut kas mainījies — sazinies ar Vanesu." };
   // Visas pievienotās atbildējušas "Varu" — administratorei: var apstiprināt klientam
   if (status === "var") {
     const { data: rows } = await db.from("booking_staff").select("status").eq("booking_id", bookingId);

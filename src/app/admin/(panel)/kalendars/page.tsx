@@ -20,6 +20,7 @@ import { googleConnection } from "@/lib/google-calendar";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const metadata = { title: "Kalendārs" };
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
@@ -55,10 +56,12 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { q = "", google } = await searchParams;
   const owner = role === "owner";
   // Kristīne (vadība) — informēta par visu: redz jaunos, atceltos un komandas atbildes (bez labošanas)
-  const seesAll = owner || role === "manager";
+  const seesAll = role !== "viewer"; // visa komanda redz to pašu, ko administratore (bez labošanas); skatītāja (telpu uzkopšana) — tikai telpu nomu
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
   const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b));
+  // Google kalendāra savienojums ir administratorei; komandai to nolasa ar servera atslēgu (tikai skatīšanai)
+  const googleDb = (owner ? db : supabaseAdmin()) as MemberContext["db"] | null;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
   const [{ data, error }, { data: eventRows }, business, programs, settings] = await Promise.all([
@@ -156,7 +159,7 @@ export default async function CalendarPage({ searchParams }: Props) {
             className={cn(
               "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
               "border-l-4 border-sky-400",
-              mine && "bg-amber-50 ring-2 ring-amber-400",
+              mine && "bg-pink-100 ring-2 ring-pink-500",
               "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
             )}
           >
@@ -164,7 +167,7 @@ export default async function CalendarPage({ searchParams }: Props) {
             <span className="min-w-0 text-sm">
               <span className="block truncate">
                 {mine && (
-                  <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-xs font-extrabold text-ink">
+                  <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-500 px-2 py-0.5 align-middle text-xs font-extrabold text-white">
                     <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
                   </span>
                 )}
@@ -214,7 +217,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                   "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
                   isTrip(b) && "border-l-4 border-purple-400",
                   isVenue(b) && "border-l-4 border-brand-strong",
-                  isMine(b) && "bg-amber-50 ring-2 ring-amber-400",
+                  isMine(b) && "bg-pink-100 ring-2 ring-pink-500",
                   "group-open:bg-brand-soft group-open:ring-2 group-open:ring-ink",
                 )}
               >
@@ -225,7 +228,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                 <span className="min-w-0 text-sm">
                   <span className="block truncate">
                     {isMine(b) && (
-                      <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-xs font-extrabold text-ink">
+                      <span className="mr-2 inline-flex items-center gap-1 rounded-full bg-pink-500 px-2 py-0.5 align-middle text-xs font-extrabold text-white">
                         <Star className="size-3 fill-current" aria-hidden /> Tu piedalies
                       </span>
                     )}
@@ -345,14 +348,14 @@ export default async function CalendarPage({ searchParams }: Props) {
                 {declined.length > 0 && (
                   <section className="mt-6 rounded-2xl bg-red-50 p-4 ring-2 ring-red-300 sm:p-5">
                     <h2 className="text-base font-extrabold text-red-700">Jāmeklē aizvietotājs ({declined.length})</h2>
-                    <p className="text-sm text-red-700">Kāda no komandas nevar piedalīties — atveriet pasākumu un sadaļā “Kas piedalās” atzīmējiet citu.</p>
+                    <p className="text-sm text-red-700">{owner ? "Kāda no komandas nevar piedalīties — atveriet pasākumu un sadaļā “Kas piedalās” atzīmējiet citu." : "Kāda no komandas nevar piedalīties — Vanesa meklē aizvietotāju."}</p>
                     <ul className="mt-3 space-y-2">{declined.map((b) => bookingRow(b, true))}</ul>
                   </section>
                 )}
                 {ready.length > 0 && (
                   <section className="mt-6 rounded-2xl bg-emerald-50 p-4 ring-2 ring-emerald-300 sm:p-5">
                     <h2 className="text-base font-extrabold text-emerald-800">Komanda gatava — jāapstiprina klientam ({ready.length})</h2>
-                    <p className="text-sm text-emerald-800">Visas atbildēja “Varu”. Atveriet pasākumu un nospiediet “Apstiprināt un nosūtīt klientam”.</p>
+                    <p className="text-sm text-emerald-800">{owner ? "Visas atbildēja “Varu”. Atveriet pasākumu un nospiediet “Apstiprināt un nosūtīt klientam”." : "Visas atbildēja “Varu” — Vanesa apstiprinās klientam."}</p>
                     <ul className="mt-3 space-y-2">{ready.map((b) => bookingRow(b, true))}</ul>
                   </section>
                 )}
@@ -409,9 +412,9 @@ export default async function CalendarPage({ searchParams }: Props) {
       </section>
 
       {/* Google kalendāra notikumi, kas nav no mājaslapas (piem. Kristīnes) — tikai administratorei; ielādējas atsevišķi, lai lapa nav jāgaida */}
-      {role === "owner" && (
+      {seesAll && googleDb && (
         <Suspense fallback={<p className="mt-8 text-sm text-ink-soft">Ielādē Google kalendāru…</p>}>
-          <GoogleEvents db={db} from={today} to={addDays(today, 120)} dayTitle={dayTitle} />
+          <GoogleEvents db={googleDb} from={today} to={addDays(today, 120)} dayTitle={dayTitle} />
         </Suspense>
       )}
 
