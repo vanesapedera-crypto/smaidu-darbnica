@@ -432,7 +432,7 @@ export async function saveMaterial(id: string | null, _: TeamActionState, form: 
   const row = { name, pack: text(form, "pack", 200), price: Math.max(0, numField(form, "price")), updated_at: new Date().toISOString() };
   const { error } = id ? await db.from("materials").update(row).eq("id", id) : await db.from("materials").insert(row);
   if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
-  revalidatePath("/admin/izejmateriali");
+  revalidatePath("/admin/darbnicas");
   revalidatePath("/admin/darbnicas", "layout");
   return { ok: id ? "Saglabāts." : `Pievienots: ${name}` };
 }
@@ -441,7 +441,7 @@ export async function saveMaterial(id: string | null, _: TeamActionState, form: 
 export async function deleteMaterial(id: string) {
   const { db } = await requireAdmin();
   await db.from("materials").delete().eq("id", id);
-  revalidatePath("/admin/izejmateriali");
+  revalidatePath("/admin/darbnicas");
 }
 
 /* ------------------------------ Klientu vēsture ------------------------------ */

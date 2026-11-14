@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Clapperboard, FileText, Handshake, History, Inbox, KeyRound, Palette, UserCog, Calculator, Package, Presentation, Archive, Coins } from "lucide-react";
+import { CalendarDays, Clapperboard, FileText, Handshake, History, Inbox, KeyRound, Palette, UserCog, Calculator, Presentation, Archive, Coins } from "lucide-react";
 import type { TeamRole } from "@/lib/auth";
 import type { Section } from "@/lib/team/sections";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,6 @@ const groups: Group[] = [
     title: "💰 Cenas",
     items: [
       { href: "/admin/darbnicas", label: "Radošās darbnīcas", icon: Palette, section: "darbnicas" },
-      { href: "/admin/izejmateriali", label: "Izejmateriāli", icon: Package, section: "darbnicas" },
       { href: "/admin/izmaksas", label: "Pakalpojumi", icon: Coins, section: "piedavajumi" },
       // Izrāžu izmaksas un sezona — lapai "Salikt piedāvājumu"
       { href: "/admin/izrades-cenas", label: "Izrādes", icon: Clapperboard, section: "piedavajumi" },

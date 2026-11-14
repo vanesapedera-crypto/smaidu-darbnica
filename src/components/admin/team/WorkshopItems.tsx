@@ -53,7 +53,7 @@ export default function WorkshopItems({
     <div className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-sm font-bold">Materiāli</span>
-        <Link href="/admin/izejmateriali" target="_blank" className="text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
+        <Link href="/admin/darbnicas?materiali=1#izejmateriali" target="_blank" className="text-sm font-semibold underline decoration-brand decoration-2 underline-offset-4">
           Izejmateriāli un to cenas
         </Link>
       </div>
