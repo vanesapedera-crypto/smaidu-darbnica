@@ -9,6 +9,17 @@ import { notifyClientAccepted, notifyClientCancelled } from "@/lib/notify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import type { Booking } from "@/lib/bookings";
+import type { MemberContext } from "@/lib/auth";
+import { pushToAdmin } from "@/lib/push";
+
+/** Paziņojums telefonā administratorei un Kristīnei (vajag servera atslēgu SUPABASE_SECRET_KEY) */
+async function pushAdmin(title: string, s: { name: string; when: string; title: string }, tag: string) {
+  const db = supabaseAdmin() as MemberContext["db"] | null;
+  if (!db) return;
+  await pushToAdmin(db, { title, body: `${s.title} · ${s.when}${s.name ? ` · ${s.name}` : ""}`, url: "/admin/kalendars", tag }).catch((e) =>
+    console.error("[push] client", e),
+  );
+}
 
 /** Dati paziņojumam komandai */
 async function summary(b: ClientBooking) {
@@ -24,7 +35,10 @@ async function summary(b: ClientBooking) {
 /** Klients nospiež "Apstiprinu rezervāciju": ieraksta apstiprinājumu un paziņo komandai (tikai pirmajā reizē). */
 export async function confirmBooking(id: string, token: string) {
   const b = await clientBooking(id, token, "confirm");
-  if (b?.found && b.did === "confirmed") await notifyClientAccepted(await summary(b));
+  if (b?.found && b.did === "confirmed") {
+    const s = await summary(b);
+    await Promise.all([notifyClientAccepted(s), pushAdmin("Klients apstiprināja ✓", s, `klients-${id}`)]);
+  }
   redirect(`/rezervacija/${id}?k=${token}`);
 }
 
@@ -36,7 +50,8 @@ export async function confirmBooking(id: string, token: string) {
 export async function cancelBooking(id: string, token: string) {
   const b = await clientBooking(id, token, "cancel");
   if (b?.found && b.did === "cancelled") {
-    await Promise.all([notifyClientCancelled(await summary(b)), removeFromCalendars(id)]);
+    const s = await summary(b);
+    await Promise.all([notifyClientCancelled(s), removeFromCalendars(id), pushAdmin("❌ Klients atcēla rezervāciju", s, `klients-${id}`)]);
   }
   redirect(`/rezervacija/${id}?k=${token}`);
 }
