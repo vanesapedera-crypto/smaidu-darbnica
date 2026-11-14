@@ -158,7 +158,29 @@ export const BOSS_EMAIL = "smaidu.darbnica@gmail.com";
 /** Administratore + priekšniece (bez atkārtojumiem) */
 const teamInbox = (primary?: string) => [...new Set([primary || process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com", BOSS_EMAIL])];
 /** Kopija (slēpta) administratorei un Kristīnei no katra klientam sūtītā e-pasta — lai Gmail redz, kas un kā aizgāja */
-const clientCopy = (to: string) => teamInbox().filter((e) => e.toLowerCase() !== to.trim().toLowerCase());
+/**
+ * Kopija administratorei un Kristīnei no klientam sūtītā e-pasta — ATSEVIŠĶS e-pasts (nevis slēptā kopija),
+ * kurā visas saites ir izslēgtas: pogas "Apstiprinu" / "Atcelt" kopijā nedarbojas, lai nejauši neatceltu klienta rezervāciju.
+ */
+async function teamCopy(clientTo: string, subject: string, html: string) {
+  const key = process.env.RESEND_API_KEY;
+  const to = teamInbox().filter((e) => e.toLowerCase() !== clientTo.trim().toLowerCase());
+  if (!key || !to.length) return;
+  // Visas saites → parasts teksts (pogas izskatās tāpat, bet nekur neved)
+  const safe = html.replace(/<a\b([^>]*)>/gi, (_m, attrs: string) => `<span${attrs.replace(/\shref="[^"]*"/gi, "")}>`).replace(/<\/a>/gi, "</span>");
+  const banner = `<div style="margin:0;padding:12px 16px;background:#fde7ef;border-bottom:2px solid #db2777;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#831843"><b>KOPIJA</b> — šis e-pasts nosūtīts klientam ${escape(clientTo.trim())}. Pogas un saites kopijā nedarbojas.</div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: sender(), to, subject: `[Kopija] ${subject}`, html: banner + safe }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) console.error("[notify] Resend (kopija)", res.status, await res.text());
+  } catch (e) {
+    console.error("[notify] team copy failed", e);
+  }
+}
 const senderEmail = () => sender().match(/<([^>]+)>/)?.[1] ?? sender();
 
 /**
@@ -299,6 +321,12 @@ ${footer}
 </table>
 </div>`;
 
+  const subject = info.updated
+    ? "Rezervācija atjaunota — Smaidu Darbnīca"
+    : info.confirmUrl
+      ? "Lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca"
+      : "Rezervācija apstiprināta — Smaidu Darbnīca";
+  await teamCopy(to, subject, html);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -306,13 +334,8 @@ ${footer}
       body: JSON.stringify({
         from: sender(),
         to: [to],
-        bcc: clientCopy(to),
         reply_to: info.replyTo,
-        subject: info.updated
-          ? "Rezervācija atjaunota — Smaidu Darbnīca"
-          : info.confirmUrl
-            ? "Lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca"
-            : "Rezervācija apstiprināta — Smaidu Darbnīca",
+        subject,
         html,
       }),
       signal: AbortSignal.timeout(8000),
@@ -488,11 +511,12 @@ ${escape(info.footer.address)}<br>
 </td></tr>
 </table>
 </div>`;
+  await teamCopy(info.to, info.subject, html);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: sender(), to: [info.to.trim()], bcc: clientCopy(info.to), reply_to: info.replyTo, subject: info.subject, html }),
+      body: JSON.stringify({ from: sender(), to: [info.to.trim()], reply_to: info.replyTo, subject: info.subject, html }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
@@ -547,11 +571,12 @@ ${escape(info.footer.address)}<br>
 </table>
 </div>`;
 
+  await teamCopy(info.to, info.subject, html);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: sender(), to: [info.to.trim()], bcc: clientCopy(info.to), reply_to: info.replyTo, subject: info.subject, html }),
+      body: JSON.stringify({ from: sender(), to: [info.to.trim()], reply_to: info.replyTo, subject: info.subject, html }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
@@ -692,6 +717,7 @@ ${escape(info.footer.address)}<br>
 </td></tr>
 </table>
 </div>`;
+  await teamCopy(info.to, "Atgādinājums: lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca", html);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -699,7 +725,6 @@ ${escape(info.footer.address)}<br>
       body: JSON.stringify({
         from: sender(),
         to: [info.to.trim()],
-        bcc: clientCopy(info.to),
         reply_to: info.replyTo,
         subject: "Atgādinājums: lūdzu, apstipriniet rezervāciju — Smaidu Darbnīca",
         html,
