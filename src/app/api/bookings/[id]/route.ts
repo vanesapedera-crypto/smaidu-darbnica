@@ -5,6 +5,7 @@ import { BOOKING_STATUSES, withHostsLine, type Booking } from "@/lib/bookings";
 import { hostNames, pickHosts } from "@/lib/calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { sendConfirmation } from "@/lib/booking-confirm";
+import { syncStaff } from "@/lib/staff";
 
 /** Pieteikuma statusa maiņa administrēšanas panelī. Pieejama tikai administratoram. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -42,6 +43,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       clientEmail = !before.email ? "no-email" : configured ? "sent" : "not-configured";
       calendar = !before.event_date ? "no-date" : configured ? "sent" : "not-configured";
       if (configured) after(() => sendConfirmation(before, hosts, admin.db));
+      // Atzīmētajām — jautājums "Vai vari piedalīties?" (telefonā un e-pastā)
+      if (hosts.length) after(() => syncStaff(admin.db, before, hosts));
       // No šī brīža skaita 3 dienas līdz atgādinājumam; iepriekšējo klienta apstiprinājumu (ja bija) notīra.
       // Atsevišķs pieprasījums — ja lauku datubāzē vēl nav (migrācija nav palaista), statusa maiņa tāpat ir notikusi.
       if (clientEmail === "sent") {

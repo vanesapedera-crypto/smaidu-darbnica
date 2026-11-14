@@ -26,6 +26,7 @@ supabase/migrations/20261108090000_offer_builder.sql
 supabase/migrations/20261108100000_materials.sql
 supabase/migrations/20261108110000_presentations.sql
 supabase/migrations/20261114090000_bookings_no_delete.sql
+supabase/migrations/20261114100000_staff_responses.sql
 ```
 
 Tas:

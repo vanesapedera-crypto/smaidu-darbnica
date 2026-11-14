@@ -11,6 +11,7 @@ import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
 import { sendConfirmation } from "@/lib/booking-confirm";
+import { syncStaff } from "@/lib/staff";
 import { whenLabel } from "@/lib/dates";
 import { CALENDAR_INVITES, calendarEvent, hostNames, pickHosts } from "@/lib/calendar";
 import { atStudio, withEditedMessage, withHostsLine } from "@/lib/bookings";
@@ -135,12 +136,15 @@ export async function saveBookingDetails(id: string, form: FormData) {
   }
 
   // Kas vada programmu (izvēles rūtiņas "hosts"; "hosts_shown" — lauks bija formā)
+  let hostEmails: string[] | null = null;
   if (form.has("hosts_shown")) {
-    const names = hostNames(form.getAll("hosts").filter((v): v is string => typeof v === "string"));
-    row.message = withHostsLine((row.message as string | undefined) ?? b.message, names);
+    hostEmails = pickHosts(form.getAll("hosts").filter((v): v is string => typeof v === "string"));
+    row.message = withHostsLine((row.message as string | undefined) ?? b.message, hostNames(hostEmails));
   }
 
   await db.from("bookings").update(row).eq("id", id);
+  // Kas piedalās: jaunajiem — jautājums "Vai vari piedalīties?", noņemtajiem — ieraksts dzēsts
+  if (hostEmails) await syncStaff(db, { ...b, ...row } as Booking, hostEmails).catch((e) => console.error("[staff]", e));
   revalidatePath("/admin", "layout");
 }
 
@@ -411,6 +415,7 @@ export async function addToGoogleCalendar(id: string, hosts: string[]): Promise<
   if (picked.length) {
     b.message = withHostsLine(b.message, hostNames(picked));
     await db.from("bookings").update({ message: b.message }).eq("id", id);
+    await syncStaff(db, b, picked).catch((e) => console.error("[staff]", e));
     revalidatePath("/admin", "layout");
   }
   const ok = await pushToGoogle(db, b, picked);
@@ -540,4 +545,43 @@ export async function rejectBooking(id: string): Promise<{ error?: string; ok?: 
   }
   revalidatePath("/admin", "layout");
   return { ok: true, emailed };
+}
+
+
+/* ------------------------------ Vispirms komanda, tad klients ------------------------------ */
+
+/** "Jautāt komandai": saglabā, kas piedalās, un atzīmētajām aiziet jautājums. Klientam vēl nekas netiek sūtīts. */
+export async function askStaff(id: string, emails: string[]): Promise<{ error?: string; ok?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  const picked = pickHosts(emails);
+  if (!picked.length) return { error: "Atzīmējiet vismaz vienu." };
+  const message = withHostsLine(b.message, hostNames(picked));
+  await db.from("bookings").update({ message }).eq("id", id);
+  await syncStaff(db, { ...b, message }, picked);
+  revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+/**
+ * "Apstiprināt un nosūtīt klientam": statuss "Apstiprināta", klientam — apstiprinājuma e-pasts ar pogu,
+ * komandai (tām, kas atbildēja "Varu") — kalendāra notikums.
+ */
+export async function approveAndNotify(id: string): Promise<{ error?: string; ok?: boolean }> {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("bookings").select("*").eq("id", id).single();
+  const b = data as Booking | null;
+  if (!b) return { error: "Pieteikums nav atrasts." };
+  if (b.status === "Apstiprināta") return { error: "Jau apstiprināta." };
+  const { data: staff } = await db.from("booking_staff").select("email, status").eq("booking_id", id);
+  const hosts = ((staff ?? []) as { email: string; status: string }[]).filter((r) => r.status === "var").map((r) => r.email);
+  const now = new Date().toISOString();
+  const update = { status: "Apstiprināta", confirmation_sent_at: b.email ? now : null, client_confirmed_at: null, client_reminded_at: null, client_cancelled_at: null };
+  const { error } = await db.from("bookings").update(update).eq("id", id);
+  if (error) return { error: `Neizdevās saglabāt: ${error.message}` };
+  await sendConfirmation({ ...b, ...update } as Booking, hosts, db).catch((e) => console.error("[approveAndNotify]", e));
+  revalidatePath("/admin", "layout");
+  return { ok: true };
 }

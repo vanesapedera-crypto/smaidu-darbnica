@@ -4,6 +4,8 @@ import { ExternalLink, LogOut } from "lucide-react";
 import { ROLE_LABEL, homeFor, requireMember } from "@/lib/auth";
 import { logout } from "../actions";
 import AdminNav from "@/components/admin/AdminNav";
+import PushToggle from "@/components/admin/PushToggle";
+import { VAPID_PUBLIC_KEY } from "@/lib/push";
 
 /**
  * Administrēšanas paneļa izkārtojums. requireMember() šeit aizsargā visas paneļa lapas;
@@ -28,6 +30,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         <div className="hidden shrink-0 border-t border-line px-5 py-4 lg:block">
           <p className="truncate text-xs text-ink-soft">{admin.email}</p>
           <p className="text-xs font-semibold text-ink-soft">{ROLE_LABEL[admin.role]}</p>
+          <div className="mt-2">
+            <PushToggle publicKey={VAPID_PUBLIC_KEY} />
+          </div>
           <form action={logout}>
             <button type="submit" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold hover:text-destructive">
               <LogOut className="size-4" aria-hidden /> Iziet
@@ -37,6 +42,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       </aside>
 
       <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+        {/* Telefonā — paziņojumu ieslēgšana virs satura */}
+        <div className="mb-4 lg:hidden">
+          <PushToggle publicKey={VAPID_PUBLIC_KEY} />
+        </div>
         {children}
         <form action={logout} className="mt-10 lg:hidden">
           <button type="submit" className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">

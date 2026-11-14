@@ -1,5 +1,7 @@
-import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote, XCircle } from "lucide-react";
+import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote, Users, XCircle } from "lucide-react";
 import RejectActions from "@/components/admin/RejectActions";
+import StaffPanel from "@/components/admin/StaffPanel";
+import type { StaffRow } from "@/lib/staff";
 import { FIXED_VENUES, atStudio, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "@/lib/calendar";
 import type { Service, SiteSettings } from "@/lib/content/types";
@@ -30,11 +32,14 @@ export default function BookingAdminPanel({
   labelText,
   costs,
   ctx,
+  staff = [],
 }: {
   b: Booking;
   labelText: string;
   costs: BookingCosts | null;
   ctx: BookingAdminContext;
+  /** Kas piedalās un ko atbildēja (booking_staff) */
+  staff?: StaffRow[];
 }) {
   const { programs, settings, googleConnected } = ctx;
   return (
@@ -112,6 +117,24 @@ export default function BookingAdminPanel({
 
       {/* 2. Darbības — katra atveras, uzspiežot */}
       <div className="space-y-2 border-t border-line p-4 sm:p-5">
+        {/* Kas piedalās: vispirms jautā komandai, tikai tad apstiprina klientam */}
+        {b.status !== "Atcelta" && (
+          <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink" open={b.status === "Jauns" || staff.some((r) => r.status === "nevar") || undefined}>
+            <Summary icon={<Users className="size-4" aria-hidden />}>
+              Kas piedalās
+              {staff.some((r) => r.status === "nevar") && <span className="ml-2 text-red-700">— kāda nevar!</span>}
+            </Summary>
+            <div className="border-t border-line p-4">
+              <StaffPanel
+                id={b.id}
+                rows={staff.map((r) => ({ email: r.email, name: r.name, status: r.status }))}
+                status={b.status}
+                initial={CALENDAR_HOSTS.filter((h) => hostsOf(b.message).split(/,\s*/).includes(h.name)).map((h) => h.email)}
+              />
+            </div>
+          </details>
+        )}
+
           {/* Rezervācijas labošana — visa informācija un izmaksas */}
           {(() => {
             const isPrivate = b.inquiry_type !== "business";

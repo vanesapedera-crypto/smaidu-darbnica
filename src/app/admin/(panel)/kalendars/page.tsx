@@ -12,6 +12,8 @@ import type { MemberContext } from "@/lib/auth";
 import BookingCard, { isTrip, isVenue, stateOf } from "@/components/admin/team/BookingCard";
 import PageHeader from "@/components/admin/PageHeader";
 import BookingAdminPanel, { type BookingAdminContext } from "@/components/admin/BookingAdminPanel";
+import StaffAnswer from "@/components/admin/StaffAnswer";
+import type { StaffRow } from "@/lib/staff";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import TeamEventsPending from "@/components/admin/TeamEventsPending";
 import { googleConnection } from "@/lib/google-calendar";
@@ -52,9 +54,11 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { db, role, email } = await requireSection("kalendars");
   const { q = "", google } = await searchParams;
   const owner = role === "owner";
+  // Kristīne (vadība) — informēta par visu: redz jaunos, atceltos un komandas atbildes (bez labošanas)
+  const seesAll = owner || role === "manager";
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
-  const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me));
+  const isMine = (b: Booking) => Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b));
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
   const [{ data, error }, { data: eventRows }, business, programs, settings] = await Promise.all([
@@ -68,20 +72,27 @@ export default async function CalendarPage({ searchParams }: Props) {
 
   // Administratorei: jaunie pieteikumi (arī bez datuma un uzņēmumu pieprasījumi), atceltie, meklēšana, Google savienojums
   const term = q.trim().replace(/[,()%*]/g, " ");
-  const [pendingRes, cancelledRes, searchRes, googleConn] = owner
+  const [pendingRes, cancelledRes, searchRes, googleConn] = seesAll
     ? await Promise.all([
         db.from("bookings").select("*").eq("status", "Jauns").order("created_at", { ascending: false }),
         db.from("bookings").select("*").eq("status", "Atcelta").order("event_date", { ascending: false, nullsFirst: false }).limit(100),
         term
           ? db.from("bookings").select("*").or(["parent_name", "company_name", "phone", "email"].map((c) => `${c}.ilike.%${term}%`).join(",")).order("event_date", { ascending: false, nullsFirst: false })
           : Promise.resolve({ data: null }),
-        googleConnection(db),
+        owner ? googleConnection(db) : Promise.resolve(null),
       ])
     : [{ data: null }, { data: null }, { data: null }, null];
   const pending = (pendingRes.data ?? []) as Booking[];
   const cancelled = (cancelledRes.data ?? []) as Booking[];
   const found = (searchRes.data ?? null) as Booking[] | null;
   const ctx: BookingAdminContext = { programs, settings, googleConnected: Boolean(googleConn) };
+
+  // Kas piedalās un ko atbildēja (ja tabulas vēl nav — tukšs; tad rāda vārdus no "Vada:" rindas)
+  const { data: staffData } = await db.from("booking_staff").select("booking_id, email, name, status, responded_at");
+  const staffBy = new Map<string, StaffRow[]>();
+  for (const r of (staffData ?? []) as StaffRow[]) staffBy.set(r.booking_id, [...(staffBy.get(r.booking_id) ?? []), r]);
+  const myEmail = email.toLowerCase();
+  const myRow = (b: Booking) => (staffBy.get(b.id) ?? []).find((r) => r.email.toLowerCase() === myEmail);
 
   const prices = bookingPrices(settings);
   const costsOf = (b: Booking) =>
@@ -237,7 +248,20 @@ export default async function CalendarPage({ searchParams }: Props) {
                         <span className="mt-0.5 block truncate text-xs text-ink-soft">
                           {program && `Izklaides programma: ${program}`}
                           {program && (hosts || hasProgram) && " · "}
-                          {hosts ? (
+                          {(staffBy.get(b.id) ?? []).length ? (
+                            <>
+                              Piedalās:{" "}
+                              {(staffBy.get(b.id) ?? []).map((r, i) => (
+                                <span key={r.email}>
+                                  {i > 0 && ", "}
+                                  <b className={r.status === "nevar" ? "text-red-700" : r.status === "var" ? "text-emerald-700" : "text-ink"}>
+                                    {r.name}
+                                    {r.status === "var" ? " ✓" : r.status === "nevar" ? " ✗ nevar" : " ?"}
+                                  </b>
+                                </span>
+                              ))}
+                            </>
+                          ) : hosts ? (
                             <>Piedalās: <b className="text-ink">{hosts}</b></>
                           ) : (
                             hasProgram && <span className={owner ? "font-semibold text-destructive" : ""}>Piedalās: vēl nav norādīts</span>
@@ -251,11 +275,18 @@ export default async function CalendarPage({ searchParams }: Props) {
                 <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />
               </summary>
               {owner ? (
-                <BookingAdminPanel b={b} labelText={label(b)} costs={c} ctx={ctx} />
+                <BookingAdminPanel b={b} labelText={label(b)} costs={c} ctx={ctx} staff={staffBy.get(b.id) ?? []} />
               ) : (
-                <ul className="mt-2">
-                  <BookingCard b={b} label={label(b)} costs={c} />
-                </ul>
+                <>
+                  {myRow(b) && (
+                    <div className="mt-2 rounded-2xl bg-white p-4 ring-1 ring-line">
+                      <StaffAnswer bookingId={b.id} status={myRow(b)!.status} />
+                    </div>
+                  )}
+                  <ul className="mt-2">
+                    <BookingCard b={b} label={label(b)} costs={c} />
+                  </ul>
+                </>
               )}
               </details>
             </li>
@@ -286,9 +317,9 @@ export default async function CalendarPage({ searchParams }: Props) {
         description={owner ? "Visi pieteikumi un pasākumi vienuviet. Uzspiežot uz pasākuma — apstiprināšana, kas piedalās, labošana." : undefined}
       />
 
-      {owner && (
+      {seesAll && (
         <>
-          <GoogleCalendarCard db={db} message={google} />
+          {owner && <GoogleCalendarCard db={db} message={google} />}
           <form className="mt-6 flex flex-wrap gap-2" action="/admin/kalendars">
             <label className="relative min-w-60 flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" aria-hidden />
@@ -303,15 +334,64 @@ export default async function CalendarPage({ searchParams }: Props) {
             </section>
           )}
           {!q && <TeamEventsPending db={db} />}
+          {/* Komandas atbildes: kāda nevar — jāmeklē cits; visas var — jāapstiprina klientam */}
+          {!q && (() => {
+            const today_ = today;
+            const list = [...all, ...pending].filter((b, i, arr) => arr.findIndex((x) => x.id === b.id) === i);
+            const declined = list.filter((b) => (b.event_date ?? "9999") >= today_ && (staffBy.get(b.id) ?? []).some((r) => r.status === "nevar"));
+            const ready = list.filter((b) => b.status === "Jauns" && (staffBy.get(b.id) ?? []).length > 0 && (staffBy.get(b.id) ?? []).every((r) => r.status === "var"));
+            return (
+              <>
+                {declined.length > 0 && (
+                  <section className="mt-6 rounded-2xl bg-red-50 p-4 ring-2 ring-red-300 sm:p-5">
+                    <h2 className="text-base font-extrabold text-red-700">Jāmeklē aizvietotājs ({declined.length})</h2>
+                    <p className="text-sm text-red-700">Kāda no komandas nevar piedalīties — atveriet pasākumu un sadaļā “Kas piedalās” atzīmējiet citu.</p>
+                    <ul className="mt-3 space-y-2">{declined.map((b) => bookingRow(b, true))}</ul>
+                  </section>
+                )}
+                {ready.length > 0 && (
+                  <section className="mt-6 rounded-2xl bg-emerald-50 p-4 ring-2 ring-emerald-300 sm:p-5">
+                    <h2 className="text-base font-extrabold text-emerald-800">Komanda gatava — jāapstiprina klientam ({ready.length})</h2>
+                    <p className="text-sm text-emerald-800">Visas atbildēja “Varu”. Atveriet pasākumu un nospiediet “Apstiprināt un nosūtīt klientam”.</p>
+                    <ul className="mt-3 space-y-2">{ready.map((b) => bookingRow(b, true))}</ul>
+                  </section>
+                )}
+              </>
+            );
+          })()}
           {!q && pending.length > 0 && (
             <section className="mt-6 rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200 sm:p-5">
               <h2 className="text-base font-extrabold">Gaida apstiprinājumu ({pending.length})</h2>
-              <p className="text-sm text-ink-soft">Atveriet pieteikumu, pārbaudiet datus, atzīmējiet, kas vada, un nomainiet statusu uz “Apstiprināta”.</p>
+              <p className="text-sm text-ink-soft">{owner ? "Atveriet pieteikumu, sadaļā “Kas piedalās” atzīmējiet komandu un nospiediet “Jautāt komandai” — klientam apstiprinājumu sūta, kad komanda atbildējusi." : "Jaunie pieteikumi — tos apstiprina Vanesa."}</p>
               <ul className="mt-3 space-y-2">{pending.map((b) => bookingRow(b, true))}</ul>
             </section>
           )}
         </>
       )}
+
+      {/* Komandas loceklim: pasākumi, uz kuriem jāatbild "Varu" / "Nevaru" */}
+      {!owner && (() => {
+        const mine = all.filter((b) => myRow(b)?.status === "gaida" && b.event_date!.slice(0, 10) >= today);
+        return (
+          mine.length > 0 && (
+            <section className="mt-6 rounded-2xl bg-amber-50 p-4 ring-2 ring-amber-300 sm:p-5">
+              <h2 className="text-base font-extrabold">Gaida tavu atbildi ({mine.length})</h2>
+              <ul className="mt-3 space-y-3">
+                {mine.map((b) => (
+                  <li key={b.id} className="rounded-xl bg-white p-3 ring-1 ring-line">
+                    <p className="text-sm font-bold">
+                      {dayTitle(b.event_date!.slice(0, 10))} · {timeLabel(b.event_time, b.location) || "—"} · {label(b)}
+                    </p>
+                    <div className="mt-2">
+                      <StaffAnswer bookingId={b.id} status="gaida" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        );
+      })()}
 
       {error && <p className="mt-4 text-sm font-semibold text-destructive">Neizdevās ielādēt rezervācijas: {error.message}</p>}
 
@@ -335,7 +415,7 @@ export default async function CalendarPage({ searchParams }: Props) {
         </Suspense>
       )}
 
-      {owner && cancelled.length > 0 && (
+      {seesAll && cancelled.length > 0 && (
         <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
           <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Atceltie pieteikumi ({cancelled.length})</summary>
           <ul className="mt-4 space-y-2 opacity-80">{cancelled.map((b) => bookingRow(b, true))}</ul>

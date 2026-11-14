@@ -138,7 +138,7 @@ ${info.costs ? costTable(info.costs) : ""}
       body: JSON.stringify({
         from: sender(),
         // Visi pieteikumi (uzņēmumu un privātie) nāk uz vienu adresi; ja vajag dalīt — iestatiet NOTIFY_EMAIL uzņēmumiem
-        to: [(isBusiness && process.env.NOTIFY_EMAIL) || process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"],
+        to: teamInbox((isBusiness && process.env.NOTIFY_EMAIL) || undefined),
         reply_to: email || undefined,
         subject,
         html: shell(isBusiness ? "Jauns" : "Jauna", isBusiness ? "pieprasījums" : "rezervācija", body),
@@ -153,6 +153,10 @@ ${info.costs ? costTable(info.costs) : ""}
 
 /** Sūtītāja adrese un tās e-pasta daļa (kalendāra ielūguma organizatoram) */
 const sender = () => process.env.NOTIFY_FROM || "Smaidu Darbnīca <onboarding@resend.dev>";
+/** Kristīne (priekšniece) — vienmēr informēta par visu: pieteikumi, komandas atbildes, atcelšanas, atsauksmes */
+export const BOSS_EMAIL = "smaidu.darbnica@gmail.com";
+/** Administratore + priekšniece (bez atkārtojumiem) */
+const teamInbox = (primary?: string) => [...new Set([primary || process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com", BOSS_EMAIL])];
 const senderEmail = () => sender().match(/<([^>]+)>/)?.[1] ?? sender();
 
 /**
@@ -357,7 +361,7 @@ ${event.location ? `<p style="margin:0 0 12px">${escape(event.location)}</p>` : 
 }
 
 /** Īss paziņojums komandai (tas pats rāmis kā pārējiem e-pastiem) ar pogu uz paneli */
-async function notifyTeam(subject: string, title: string, sticker: string, body: string, replyTo?: string) {
+async function notifyTeam(subject: string, title: string, sticker: string, body: string, replyTo?: string, to?: string, link = "/admin/kalendars") {
   const key = process.env.RESEND_API_KEY;
   if (!key) return;
   const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.smaidudarbnica.lv").replace(/\/$/, "");
@@ -365,7 +369,7 @@ async function notifyTeam(subject: string, title: string, sticker: string, body:
     title,
     sticker,
     `${body}
-<p style="margin:22px 0 0"><a href="${site}/admin?statuss=Apstiprin%C4%81ta" style="display:inline-block;padding:12px 22px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">Atvērt paneli →</a></p>`,
+<p style="margin:22px 0 0"><a href="${site}${link}" style="display:inline-block;padding:12px 22px;border-radius:999px;background:${BRAND};color:${INK};font-weight:bold;text-decoration:none">Atvērt paneli →</a></p>`,
   );
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -373,7 +377,7 @@ async function notifyTeam(subject: string, title: string, sticker: string, body:
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: sender(),
-        to: [process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"],
+        to: to ? [to] : teamInbox(),
         reply_to: replyTo || undefined,
         subject,
         html,
@@ -572,7 +576,7 @@ ${facts([
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: sender(),
-        to: [process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"],
+        to: teamInbox(),
         subject: `Jauna atsauksme: ${t.author}${stars ? ` ${stars}` : ""}`,
         html: shell("Jauna", "atsauksme", body),
       }),
@@ -582,4 +586,57 @@ ${facts([
   } catch (e) {
     console.error("[notify] testimonial failed", e);
   }
+}
+
+
+/** Komandas loceklis pievienots pasākumam — jautājums, vai var piedalīties (poga uz paneli) */
+export function notifyStaffAssigned(info: { to: string; name: string; when: string; title: string; place: string; bookingId: string }) {
+  return notifyTeam(
+    `Vai vari piedalīties? ${info.title} · ${info.when}`,
+    "Vai vari",
+    "piedalīties?",
+    `<p style="margin:0 0 16px">Sveika, ${escape(info.name)}! Tevi pievienoja pasākumam:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 18px"><tr><td style="background:${SURFACE};border-radius:14px;padding:18px 20px">
+${eyebrow("Datums un laiks")}
+<p style="margin:0;font-size:22px;line-height:1.3;font-weight:bold">${escape(info.when)}</p>
+<p style="margin:6px 0 0;font-weight:bold">${escape(info.title)}</p>
+${info.place ? `<p style="margin:4px 0 0;color:${SOFT}">${escape(info.place)}</p>` : ""}
+</td></tr></table>
+<p style="margin:0">Atver paneli un atbildi <b>“Varu”</b> vai <b>“Nevaru”</b>.</p>`,
+    undefined,
+    info.to,
+    `/admin/kalendars?atbildet=${info.bookingId}`,
+  );
+}
+
+/** Komandas loceklis atbildēja "Nevaru" — paziņojums administratorei */
+export function notifyStaffDeclined(info: { name: string; when: string; title: string; bookingId: string }) {
+  return notifyTeam(
+    `${info.name} nevar piedalīties: ${info.title} · ${info.when}`,
+    "Jāmeklē",
+    "aizvietotājs",
+    `<p style="margin:0 0 16px"><b>${escape(info.name)}</b> atbildēja, ka <b style="color:#b91c1c">nevar piedalīties</b>:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 18px"><tr><td style="background:${SURFACE};border-radius:14px;padding:18px 20px">
+<p style="margin:0;font-size:20px;line-height:1.3;font-weight:bold">${escape(info.when)}</p>
+<p style="margin:6px 0 0">${escape(info.title)}</p>
+</td></tr></table>`,
+    undefined,
+    undefined,
+    `/admin/kalendars`,
+  );
+}
+
+/** Visas pievienotās atbildēja "Varu" — administratorei: var apstiprināt klientam */
+export function notifyStaffReady(info: { when: string; title: string }) {
+  return notifyTeam(
+    `Komanda gatava: ${info.title} · ${info.when}`,
+    "Komanda",
+    "gatava",
+    `<p style="margin:0 0 16px">Visas pievienotās atbildēja <b>“Varu”</b>:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 18px"><tr><td style="background:${SURFACE};border-radius:14px;padding:18px 20px">
+<p style="margin:0;font-size:20px;line-height:1.3;font-weight:bold">${escape(info.when)}</p>
+<p style="margin:6px 0 0">${escape(info.title)}</p>
+</td></tr></table>
+<p style="margin:0">Atver kalendāru un nospied <b>“Apstiprināt un nosūtīt klientam”</b>.</p>`,
+  );
 }

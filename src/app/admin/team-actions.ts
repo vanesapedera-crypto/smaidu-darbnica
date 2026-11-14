@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { canSee, isManagerRole, requireAdmin, requireMember, requireSection } from "@/lib/auth";
 import { isSection, type Section } from "@/lib/team/sections";
 import { parseItems } from "@/lib/team/workshops";
+import { answerStaff } from "@/lib/staff";
 import { computeOffer, parseCalc, parseSettings, showPriceItem, type CostItemRow } from "@/lib/team/offer-calc";
 import { slugify } from "@/lib/admin/fields";
 import { ACCESS_COOKIE } from "@/lib/auth-cookies";
@@ -542,4 +543,26 @@ export async function saveShowPrice(form: FormData) {
   revalidatePath("/admin/izmaksas");
   revalidatePath("/piedavajums");
   redirect(`/admin/izrades-cenas?saglabats=${encodeURIComponent(show)}`);
+}
+
+
+/* ------------------------------ Piedalīšanās un paziņojumi ------------------------------ */
+
+/** Komandas loceklis atbild, vai var piedalīties pasākumā */
+export async function answerParticipation(bookingId: string, status: "var" | "nevar"): Promise<{ error?: string; ok?: boolean }> {
+  const { db, email } = await requireMember();
+  if (!/^[0-9a-f-]{36}$/i.test(bookingId) || (status !== "var" && status !== "nevar")) return { error: "Nepareizs pieprasījums." };
+  const res = await answerStaff(db, bookingId, email, status);
+  revalidatePath("/admin/kalendars");
+  return res;
+}
+
+/** Saglabā šīs ierīces paziņojumu abonementu (SD Admin lietotne) */
+export async function savePushSubscription(sub: { endpoint: string; keys: { p256dh: string; auth: string } }): Promise<{ error?: string; ok?: boolean }> {
+  const { db, email } = await requireMember();
+  if (!sub?.endpoint?.startsWith("https://") || !sub.keys?.p256dh || !sub.keys?.auth) return { error: "Nepareizs abonements." };
+  // user_id aizpilda datubāze (noklusējums auth.uid())
+  const { error } = await db.from("push_subscriptions").upsert({ endpoint: sub.endpoint, email: email.toLowerCase(), p256dh: sub.keys.p256dh, auth: sub.keys.auth });
+  if (error) return { error: error.message.includes("push_subscriptions") ? "Datubāzē vēl nav paziņojumu tabulas (migrācija 20261114100000)." : error.message };
+  return { ok: true };
 }
