@@ -6,6 +6,9 @@ import { getServices } from "@/lib/content/queries";
 import { fixedVenueAddress } from "@/lib/bookings";
 import { whenLabel } from "@/lib/dates";
 import { notifyClientAccepted, notifyClientCancelled } from "@/lib/notify";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
+import type { Booking } from "@/lib/bookings";
 
 /** Dati paziņojumam komandai */
 async function summary(b: ClientBooking) {
@@ -26,11 +29,29 @@ export async function confirmBooking(id: string, token: string) {
 }
 
 /**
- * Klients nospiež "Atcelt rezervāciju": rezervācija kļūst "Atcelta" un komanda saņem paziņojumu.
+ * Klients nospiež "Atcelt rezervāciju": rezervācija kļūst "Atcelta", notikums automātiski pazūd no kalendāriem
+ * (savienotā Google kalendāra un komandas ielūgumiem) un komanda saņem paziņojumu.
  * Datubāze to pieļauj tikai, kamēr klients vēl nav pieņēmis lēmumu — pēc apstiprināšanas no saites atcelt vairs nevar.
  */
 export async function cancelBooking(id: string, token: string) {
   const b = await clientBooking(id, token, "cancel");
-  if (b?.found && b.did === "cancelled") await notifyClientCancelled(await summary(b));
+  if (b?.found && b.did === "cancelled") {
+    await Promise.all([notifyClientCancelled(await summary(b)), removeFromCalendars(id)]);
+  }
   redirect(`/rezervacija/${id}?k=${token}`);
+}
+
+/** Izņem atcelto rezervāciju no kalendāriem. Vajag servera atslēgu (SUPABASE_SECRET_KEY), jo klients nav pieteicies. */
+async function removeFromCalendars(id: string) {
+  const db = supabaseAdmin();
+  if (!db) {
+    console.warn("[cancel] SUPABASE_SECRET_KEY nav iestatīts — notikums no kalendāra automātiski netiek izņemts");
+    return;
+  }
+  try {
+    const { data } = await db.from("bookings").select("*").eq("id", id).single();
+    if (data) await removeBookingFromCalendars(db, data as Booking);
+  } catch (e) {
+    console.error("[cancel] calendar", e);
+  }
 }
