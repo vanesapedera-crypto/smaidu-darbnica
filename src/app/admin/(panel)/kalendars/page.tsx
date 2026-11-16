@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import { hostsOf, type Booking } from "@/lib/bookings";
-import { CALENDAR_HOSTS, hostNames, withVenueStaff } from "@/lib/calendar";
+import { CALENDAR_HOSTS, hostNames, staffEmailOf, withVenueStaff } from "@/lib/calendar";
 import { Star } from "lucide-react";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur, parseCostOverride } from "@/lib/pricing";
@@ -64,10 +64,10 @@ export default async function CalendarPage({ searchParams }: Props) {
   // Kristīne (vadība) — informēta par visu: redz jaunos, atceltos un komandas atbildes (bez labošanas)
   const seesAll = true; // visa komanda redz pilnīgi visu to pašu, ko administratore — tikai bez labošanas
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
-  const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
+  const me = CALENDAR_HOSTS.find((h) => h.email === staffEmailOf(role, email))?.name;
   const isMine = (b: Booking) =>
     b.status !== "Atcelta" &&
-    (Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b)) || withVenueStaff(b, []).includes(email.toLowerCase()));
+    (Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b)) || withVenueStaff(b, []).includes(myEmail));
   // Google kalendāra savienojums ir administratorei; komandai to nolasa ar servera atslēgu (tikai skatīšanai)
   const googleDb = (owner ? db : supabaseAdmin()) as MemberContext["db"] | null;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
@@ -102,7 +102,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { data: staffData } = await db.from("booking_staff").select("booking_id, email, name, status, responded_at");
   const staffBy = new Map<string, StaffRow[]>();
   for (const r of (staffData ?? []) as StaffRow[]) staffBy.set(r.booking_id, [...(staffBy.get(r.booking_id) ?? []), r]);
-  const myEmail = email.toLowerCase();
+  const myEmail = staffEmailOf(role, email);
   const myRow = (b: Booking) => (staffBy.get(b.id) ?? []).find((r) => r.email.toLowerCase() === myEmail);
 
   const prices = bookingPrices(settings);

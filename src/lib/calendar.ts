@@ -31,7 +31,12 @@ export const CALENDAR_HOSTS = [
   { name: "Gunta", email: "guntammg@gmail.com" },
   { name: "Madara K", email: "madarakuksa3@gmail.com" },
   { name: "Keita", email: "keitaplavina3@gmail.com" },
+  { name: "Vanesa", email: "smaidu.darbniica@gmail.com" },
 ];
+/** Administratore panelī pieslēdzas ar citu e-pastu — sarakstā "Piedalās" viņa ir ar šo adresi */
+export const OWNER_STAFF_EMAIL = "smaidu.darbniica@gmail.com";
+/** Kāda adrese ielogotajam ir sarakstā "Piedalās" (administratorei — OWNER_STAFF_EMAIL) */
+export const staffEmailOf = (role: string, email: string) => (role === "owner" ? OWNER_STAFF_EMAIL : email.toLowerCase());
 /** Telpu nomā Keita (CALENDAR_VENUE) piedalās vienmēr — pievieno automātiski, nav jāatzīmē */
 export function withVenueStaff(b: Pick<Booking, "location" | "inquiry_type">, emails: string[]): string[] {
   // Mūsu telpās: telpu noma vai Ziemassvētku programma Smaidu Darbnīcā (FIXED_VENUES "Smaidu Darbnīca, Tukums")

@@ -33,7 +33,13 @@ export async function pushToEmails(db: MemberContext["db"], emails: string[], pa
   const list = emails.map((e) => e.toLowerCase());
   if (!list.length) return 0;
   const { data } = await db.from("push_subscriptions").select("endpoint, p256dh, auth").in("email", list);
-  return send((data ?? []) as Sub[], payload);
+  let subs = (data ?? []) as Sub[];
+  // Administratore (sarakstā "Piedalās" — smaidu.darbniica@gmail.com) paziņojumus ieslēgusi ar savu pieteikšanās kontu
+  if (list.includes("smaidu.darbniica@gmail.com")) {
+    const { data: admins } = await db.rpc("admin_push_subscriptions");
+    subs = [...subs, ...((admins ?? []) as Sub[])].filter((s, i, all) => all.findIndex((x) => x.endpoint === s.endpoint) === i);
+  }
+  return send(subs, payload);
 }
 
 /** Paziņojums administratorei un Kristīnei (priekšniecei) — piem. komandas loceklis atbild "Nevaru" */

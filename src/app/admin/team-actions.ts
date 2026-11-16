@@ -1,4 +1,5 @@
 "use server";
+import { staffEmailOf } from "@/lib/calendar";
 
 import { seasonFromForm } from "@/lib/team/season";
 
@@ -550,9 +551,9 @@ export async function saveShowPrice(form: FormData) {
 
 /** Komandas loceklis atbild, vai var piedalīties pasākumā */
 export async function answerParticipation(bookingId: string, status: "var" | "nevar"): Promise<{ error?: string; ok?: boolean }> {
-  const { db, email } = await requireMember();
+  const { db, email, role } = await requireMember();
   if (!/^[0-9a-f-]{36}$/i.test(bookingId) || (status !== "var" && status !== "nevar")) return { error: "Nepareizs pieprasījums." };
-  const res = await answerStaff(db, bookingId, email, status);
+  const res = await answerStaff(db, bookingId, staffEmailOf(role, email), status);
   revalidatePath("/admin/kalendars");
   return res;
 }

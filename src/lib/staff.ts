@@ -1,6 +1,6 @@
 import "server-only";
 import type { MemberContext } from "@/lib/auth";
-import { CALENDAR_HOSTS, CALENDAR_INVITES, CALENDAR_VENUE, calendarEvent, withVenueStaff } from "@/lib/calendar";
+import { CALENDAR_HOSTS, CALENDAR_INVITES, CALENDAR_VENUE, OWNER_STAFF_EMAIL, calendarEvent, withVenueStaff } from "@/lib/calendar";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { atStudio } from "@/lib/bookings";
@@ -37,7 +37,8 @@ export async function syncStaff(db: MemberContext["db"], b: Booking, emails: str
   if (removed.length) await db.from("booking_staff").delete().eq("booking_id", b.id).in("email", removed);
   if (!added.length) return;
   // Telpu kopēja (Keita) telpu nomā piedalās vienmēr — uzreiz "Varu", bez jautājuma
-  const venue = (h: { email: string }) => CALENDAR_VENUE.includes(h.email) && withVenueStaff(b, []).includes(h.email);
+  // Vanesa (administratore) pati sevi pievieno — arī uzreiz "Varu"
+  const venue = (h: { email: string }) => h.email === OWNER_STAFF_EMAIL || (CALENDAR_VENUE.includes(h.email) && withVenueStaff(b, []).includes(h.email));
   await db.from("booking_staff").insert(added.map((h) => ({ booking_id: b.id, email: h.email, name: h.name, status: venue(h) ? "var" : "gaida", responded_at: venue(h) ? new Date().toISOString() : null })));
   const ask = added.filter((h) => !venue(h));
   if (!ask.length) return;
