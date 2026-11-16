@@ -118,8 +118,7 @@ export default async function NewBookingPage({
 
         <fieldset className="sm:col-span-2">
           <legend className="text-sm text-ink-soft">
-            Kas piedalās (atzīmētās saņems jautājumu “Vai vari piedalīties?”;
-            telpu nomā Keita — automātiski)
+            Kas piedalās (atzīmētās saņems jautājumu “Vai vari piedalīties?”)
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {CALENDAR_HOSTS.map((h) => (
