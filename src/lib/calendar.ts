@@ -117,7 +117,8 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
   // ("Telpu noma + Glitteru ballīte"); uzņēmumu pieprasījumiem — pakalpojums un uzņēmums
   const program = ["", "—", "Telpu noma", "Pieteikums"].includes(title.trim()) ? "" : title.trim();
   const text = isBusiness
-    ? [title, who].filter(Boolean).join(" — ")
+    ? // Pasākumam bez pakalpojuma (piem. ar roku pievienots) — tikai nosaukums, bez "Pieteikums —" un atkārtojuma
+      [["Pieteikums", "Pasākums", who].includes(title.trim()) ? "" : title, who].filter(Boolean).join(" — ") || "Pasākums"
     : [inVenue && "Telpu noma", program].filter(Boolean).join(" + ") || "Pieteikums";
 
   return {
