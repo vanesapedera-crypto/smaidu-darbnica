@@ -34,6 +34,7 @@ import { calendarEvent } from "@/lib/calendar";
 import { timeLabel } from "@/lib/dates";
 import { PRICE_UNKNOWN_TEXT, bookingCosts, bookingPrices } from "@/lib/pricing";
 import { quoteTravel } from "@/lib/travel";
+import { ensureVenueStaff } from "@/lib/staff";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Validator } from "@/lib/validation";
 
@@ -278,6 +279,11 @@ export async function POST(request: Request) {
     await Promise.allSettled([
       notifyNewBooking(record, { title, time: timeLabel(row.event_time, row.location), costs }),
       backupToGoogle(record as unknown as Booking, title, costs),
+      // Telpu nomā — Keita uzreiz "Piedalās"
+      (async () => {
+        const adminDb = supabaseAdmin();
+        if (adminDb) await ensureVenueStaff(adminDb as unknown as Parameters<typeof ensureVenueStaff>[0], record as unknown as Booking);
+      })(),
     ]);
   });
 

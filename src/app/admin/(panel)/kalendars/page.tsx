@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import { hostsOf, type Booking } from "@/lib/bookings";
-import { CALENDAR_HOSTS } from "@/lib/calendar";
+import { CALENDAR_HOSTS, hostNames, withVenueStaff } from "@/lib/calendar";
 import { Star } from "lucide-react";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { bookingCosts, bookingPrices, eur, parseCostOverride } from "@/lib/pricing";
@@ -65,7 +65,9 @@ export default async function CalendarPage({ searchParams }: Props) {
   const seesAll = true; // visa komanda redz pilnīgi visu to pašu, ko administratore — tikai bez labošanas
   // Ielogojusies animatore (pēc e-pasta CALENDAR_HOSTS sarakstā) — viņas vadītās rezervācijas izceļ ar "Tu piedalies"
   const me = CALENDAR_HOSTS.find((h) => h.email === email.toLowerCase())?.name;
-  const isMine = (b: Booking) => b.status !== "Atcelta" && (Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b)));
+  const isMine = (b: Booking) =>
+    b.status !== "Atcelta" &&
+    (Boolean(me && hostsOf(b.message).split(/,\s*/).includes(me)) || Boolean(myRow(b)) || withVenueStaff(b, []).includes(email.toLowerCase()));
   // Google kalendāra savienojums ir administratorei; komandai to nolasa ar servera atslēgu (tikai skatīšanai)
   const googleDb = (owner ? db : supabaseAdmin()) as MemberContext["db"] | null;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
@@ -267,7 +269,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                   {/* Programma (telpu nomai) un kas piedalās — visiem pasākumiem ar izklaides programmu vai pakalpojumu */}
                   {(() => {
                     const program = isVenue(b) ? programTitle(b) : null;
-                    const hosts = hostsOf(b.message);
+                    const hosts = hostsOf(b.message) || hostNames(withVenueStaff(b, []));
                     const hasProgram = Boolean(programTitle(b));
                     return (
                       (program || hosts || hasProgram) && (

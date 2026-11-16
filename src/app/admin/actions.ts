@@ -11,7 +11,7 @@ import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
 import { sendConfirmation } from "@/lib/booking-confirm";
-import { syncStaff } from "@/lib/staff";
+import { ensureVenueStaff, syncStaff } from "@/lib/staff";
 import { whenLabel } from "@/lib/dates";
 import { CALENDAR_HOSTS, CALENDAR_INVITES, calendarEvent, hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
 import { atStudio, hostsOf, withEditedMessage, withHostsLine } from "@/lib/bookings";
@@ -687,6 +687,7 @@ export async function createManualBooking(form: FormData) {
   } catch (e) {
     console.error("[manual booking] google", e);
   }
+  await ensureVenueStaff(db, row as unknown as Booking).catch((e) => console.error("[manual booking] staff", e));
   revalidatePath("/admin", "layout");
   redirect("/admin/kalendars?pievienots=1");
 }

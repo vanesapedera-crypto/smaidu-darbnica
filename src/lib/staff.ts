@@ -1,6 +1,6 @@
 import "server-only";
 import type { MemberContext } from "@/lib/auth";
-import { CALENDAR_HOSTS, CALENDAR_INVITES, calendarEvent, withVenueStaff } from "@/lib/calendar";
+import { CALENDAR_HOSTS, CALENDAR_INVITES, CALENDAR_VENUE, calendarEvent, withVenueStaff } from "@/lib/calendar";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { atStudio } from "@/lib/bookings";
@@ -36,12 +36,16 @@ export async function syncStaff(db: MemberContext["db"], b: Booking, emails: str
 
   if (removed.length) await db.from("booking_staff").delete().eq("booking_id", b.id).in("email", removed);
   if (!added.length) return;
-  await db.from("booking_staff").insert(added.map((h) => ({ booking_id: b.id, email: h.email, name: h.name, status: "gaida" })));
+  // Telpu kopēja (Keita) telpu nomā piedalās vienmēr — uzreiz "Varu", bez jautājuma
+  const venue = (h: { email: string }) => CALENDAR_VENUE.includes(h.email) && withVenueStaff(b, []).includes(h.email);
+  await db.from("booking_staff").insert(added.map((h) => ({ booking_id: b.id, email: h.email, name: h.name, status: venue(h) ? "var" : "gaida", responded_at: venue(h) ? new Date().toISOString() : null })));
+  const ask = added.filter((h) => !venue(h));
+  if (!ask.length) return;
 
   const d = await describe(b);
   const url = `/admin/kalendars?atbildet=${b.id}`;
   await Promise.allSettled(
-    added.flatMap((h) => [
+    ask.flatMap((h) => [
       pushToEmails(db, [h.email], { title: "Vai vari piedalīties?", body: `${d.title} · ${d.when}`, url, tag: `staff-${b.id}` }),
       notifyStaffAssigned({ to: h.email, name: h.name, when: d.when, title: d.title, place: d.place, bookingId: b.id }),
     ]),
@@ -99,4 +103,19 @@ async function addToGoogleGuests(b: Booking, email: string) {
   const { data } = await admin.from("booking_staff").select("email, status").eq("booking_id", b.id);
   const yes = ((data ?? []) as { email: string; status: string }[]).filter((r) => r.status === "var").map((r) => r.email);
   await upsertGoogleEvent(admin, b.id, event, [...new Set([...event.guests, ...withVenueStaff(b, [...yes, email.toLowerCase()])])]);
+}
+
+/**
+ * Telpu nomā (un Ziemassvētku programmā mūsu telpās) Keita piedalās vienmēr: pievieno viņu uzreiz ar "Varu"
+ * (bez jautājuma), lai viņai kalendārā ir "Tu piedalies" un pienāk atgādinājumi. Citus neaiztiek.
+ * `db` — administratores vai servera (SUPABASE_SECRET_KEY) savienojums.
+ */
+export async function ensureVenueStaff(db: MemberContext["db"], b: Booking) {
+  const emails = withVenueStaff(b, []);
+  if (!emails.length || b.status === "Atcelta") return;
+  const { data } = await db.from("booking_staff").select("email").eq("booking_id", b.id);
+  const have = new Set(((data ?? []) as { email: string }[]).map((r) => r.email.toLowerCase()));
+  const add = CALENDAR_HOSTS.filter((h) => emails.includes(h.email) && !have.has(h.email));
+  if (!add.length) return;
+  await db.from("booking_staff").insert(add.map((h) => ({ booking_id: b.id, email: h.email, name: h.name, status: "var", responded_at: new Date().toISOString() })));
 }
