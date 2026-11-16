@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { isHiddenProgram } from "@/lib/bookings";
 import { getServices } from "@/lib/content/queries";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -26,6 +27,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...pages.map(([path, priority]) => ({ url: absoluteUrl(path), lastModified: now, priority })),
     ...business.filter((s) => s.slug !== "izrades").map((s) => ({ url: absoluteUrl(`/uznemumiem/${s.slug}`), lastModified: now, priority: 0.8 })),
-    ...privateServices.map((s) => ({ url: absoluteUrl(`/izklaides-programmas/${s.slug}`), lastModified: now, priority: 0.5 })),
+    ...privateServices.filter((s) => !isHiddenProgram(s.slug)).map((s) => ({ url: absoluteUrl(`/izklaides-programmas/${s.slug}`), lastModified: now, priority: 0.5 })),
   ];
 }

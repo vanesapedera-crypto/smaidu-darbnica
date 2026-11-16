@@ -5,6 +5,13 @@
 export const CONVERTED_NOTE = "Pārvērsts no izbraukuma ieraksta";
 export const googleManaged = (b: { admin_notes?: string | null }) => !(b.admin_notes ?? "").includes(CONVERTED_NOTE);
 
+/**
+ * Programmas, kas mājaslapā pašlaik nav redzamas (sarakstā, kartē, savā lapā) — piem. sezona beigusies.
+ * Esošās rezervācijas panelī, e-pastos un kalendārā tāpat rāda ar pilno nosaukumu. Atkal rādīt — izņemt no saraksta.
+ */
+export const HIDDEN_PROGRAMS = ["ziemassvetki-dobele"];
+export const isHiddenProgram = (slug: string | null | undefined) => HIDDEN_PROGRAMS.includes(slug ?? "");
+
 /** Pieteikumu statusi — tie paši, kas tika izmantoti iepriekšējā paneļa versijā. */
 export const BOOKING_STATUSES = ["Jauns", "Apstiprināta", "Atcelta"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];

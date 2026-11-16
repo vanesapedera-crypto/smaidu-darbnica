@@ -1,4 +1,5 @@
 import { getT, setLocale } from "@/lib/i18n/server";
+import { isHiddenProgram } from "@/lib/bookings";
 import { asLocale } from "@/lib/i18n/config";
 import GoogleReviewsSection from "@/components/site/GoogleReviewsSection";
 import ProgramCard from "@/components/site/ProgramCard";
@@ -24,7 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function ProgramsPage({ params }: { params: Promise<{ lang: string }> }) {
   const t = getT();
   setLocale(asLocale((await params).lang));
-  const [programs, settings] = await Promise.all([getServices("private"), getSettings()]);
+  const [allPrograms, settings] = await Promise.all([getServices("private"), getSettings()]);
+  const programs = allPrograms.filter((p) => !isHiddenProgram(p.slug));
   const { programs: page } = settings;
 
   return (

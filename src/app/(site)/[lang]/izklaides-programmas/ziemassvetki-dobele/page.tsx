@@ -7,7 +7,7 @@ import BookingForm from "@/components/site/BookingForm";
 import ProgramPhotos from "@/components/site/ProgramPhotos";
 import { StageHeading, StageHero } from "@/components/site/stage";
 import { ButtonLink, Container, Section } from "@/components/site/ui";
-import { FIXED_VENUES, PROGRAM_SLOTS } from "@/lib/bookings";
+import { FIXED_VENUES, PROGRAM_SLOTS, isHiddenProgram } from "@/lib/bookings";
 import { getService, getServicesRaw, getSettings, getSettingsRaw } from "@/lib/content/queries";
 import { bookingPrices, eur } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/seo";
@@ -51,7 +51,8 @@ export default async function DobeleXmasPage({ params }: { params: Promise<{ lan
     getServicesRaw("private"),
     getSettingsRaw(),
   ]);
-  if (!program) notFound();
+  // Programma pašlaik paslēpta (sk. HIDDEN_PROGRAMS)
+  if (!program || isHiddenProgram(SLUG)) notFound();
   const raw = rawPrograms.find((p) => p.slug === SLUG) ?? program;
 
   const words = program.excerpt.trim().split(/\s+/);
