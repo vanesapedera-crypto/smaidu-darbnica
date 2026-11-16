@@ -235,6 +235,14 @@ const tukumsXmas: Service = {
   title: "Ziemassvētki Smaidu Darbnīcā",
   heroImage: "/media/ziemassvetki-tukums/ziemassvetki-klasem.webp",
   duration: "2 stundas",
+  highlights: [
+    "Tikšanās ar Ziemassvētku rūķiem – rotaļas, uzdevumi un dažādi pārsteigumi",
+    "Spīdīgo nūjiņu deja – dejas ar gaismas nūjiņām mūzikas pavadībā",
+    "Radošā darbnīca – Ziemassvētku rotājuma izgatavošana pašu rokām",
+    "Gardā darbnīca – ēdamā Ziemassvētku čiekura pagatavošana",
+    "Brīvais laiks bumbu zonā un disko telpā – spēles bumbās un dejas disko gaismās",
+    "Silts dzēriens – nelielai pauzei un atpūtai",
+  ],
   pricing: [
     {
       title: "Cena",
