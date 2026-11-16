@@ -55,7 +55,7 @@ export default async function ProgramsPage({ params }: { params: Promise<{ lang:
         <Container>
           {seasonal.length > 0 && (
             <div className="mb-16 md:mb-20">
-              <StageHeading eyebrow={t("Sezonas piedāvājums")} title={t("Ziemassvētku")} highlight={t("programmas")} />
+              <StageHeading eyebrow={t("Sezonas piedāvājums")} title={t("Izklaides programmas")} highlight={t("izglītības iestādēm")} />
               <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {seasonal.map((p, i) => (
                   <ProgramCard key={p.slug} program={p} index={i} />
