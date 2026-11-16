@@ -34,7 +34,7 @@ export const metadata = { title: "Kalendārs" };
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
 export const maxDuration = 60;
 
-type Props = { searchParams: Promise<{ q?: string; google?: string; skats?: string; m?: string; diena?: string }> };
+type Props = { searchParams: Promise<{ q?: string; google?: string; skats?: string; m?: string; diena?: string; arhivs?: string }> };
 
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const WEEKDAY_NAMES = ["svētdiena", "pirmdiena", "otrdiena", "trešdiena", "ceturtdiena", "piektdiena", "sestdiena"];
@@ -61,7 +61,9 @@ const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) 
  */
 export default async function CalendarPage({ searchParams }: Props) {
   const { db, role, email } = await requireSection("kalendars");
-  const { q = "", google, skats, m: monthParam, diena } = await searchParams;
+  const { q = "", google, skats, m: monthParam, diena, arhivs } = await searchParams;
+  // Arhīvs (notikušās) — tikai pēc pieprasījuma, citādi lapa ir ļoti smaga
+  const showArchive = arhivs === "1";
   // Skats: saraksts (kā līdz šim) vai īsts kalendārs pa mēnešiem; izvēle saglabājas sīkdatnē
   const view: "saraksts" | "menesis" = (skats ?? (await cookies()).get("sd_skats")?.value) === "menesis" ? "menesis" : "saraksts";
   const day1 = diena && /^\d{4}-\d{2}-\d{2}$/.test(diena) ? diena : null;
@@ -77,13 +79,14 @@ export default async function CalendarPage({ searchParams }: Props) {
   const googleDb = (owner ? db : supabaseAdmin()) as MemberContext["db"] | null;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
-  const [{ data, error }, { data: eventRows }, business, programs, settings] = await Promise.all([
+  const [{ data, error }, { data: eventRows }, business, programs, settings, { data: staffData }] = await Promise.all([
     db.from("bookings").select("*").not("event_date", "is", null).order("event_date").order("event_time", { nullsFirst: true }),
     // Izbraukumi un pasākumi, kas ievadīti ar roku (tabula team_events) — visa komanda redz visus (lasa ar servera atslēgu)
     ((owner ? db : (supabaseAdmin() ?? db)) as typeof db).from("team_events").select("*").order("event_date"),
     getServices("business"),
     getServices("private"),
     getSettings(),
+    db.from("booking_staff").select("booking_id, email, name, status, responded_at"),
   ]);
 
   // Administratorei: jaunie pieteikumi (arī bez datuma un uzņēmumu pieprasījumi), atceltie, meklēšana, Google savienojums
@@ -104,7 +107,6 @@ export default async function CalendarPage({ searchParams }: Props) {
   const ctx: BookingAdminContext = { programs, settings, googleConnected: Boolean(googleConn) };
 
   // Kas piedalās un ko atbildēja (ja tabulas vēl nav — tukšs; tad rāda vārdus no "Vada:" rindas)
-  const { data: staffData } = await db.from("booking_staff").select("booking_id, email, name, status, responded_at");
   const staffBy = new Map<string, StaffRow[]>();
   for (const r of (staffData ?? []) as StaffRow[]) staffBy.set(r.booking_id, [...(staffBy.get(r.booking_id) ?? []), r]);
   const myEmail = staffEmailOf(role, email);
@@ -380,15 +382,15 @@ export default async function CalendarPage({ searchParams }: Props) {
     return (
       <section className="mt-6">
         <div className="flex items-center justify-between gap-3">
-          <a href={`/admin/kalendars?skats=menesis&m=${shift(-1)}`} className={adminSecondary} aria-label="Iepriekšējais mēnesis">
+          <Link href={`/admin/kalendars?skats=menesis&m=${shift(-1)}`} className={adminSecondary} aria-label="Iepriekšējais mēnesis">
             <ChevronLeft className="size-4" aria-hidden />
-          </a>
+          </Link>
           <h2 className="text-lg font-extrabold capitalize">
             {MONTHS[first.getUTCMonth()]} {first.getUTCFullYear()}
           </h2>
-          <a href={`/admin/kalendars?skats=menesis&m=${shift(1)}`} className={adminSecondary} aria-label="Nākamais mēnesis">
+          <Link href={`/admin/kalendars?skats=menesis&m=${shift(1)}`} className={adminSecondary} aria-label="Nākamais mēnesis">
             <ChevronRight className="size-4" aria-hidden />
-          </a>
+          </Link>
         </div>
         <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs font-extrabold text-ink-soft">
           {["P", "O", "T", "C", "Pk", "S", "Sv"].map((d) => (
@@ -398,7 +400,7 @@ export default async function CalendarPage({ searchParams }: Props) {
         <div className="mt-1 grid grid-cols-7 gap-1">
           {cells.map((d, i) =>
             d ? (
-              <a
+              <Link
                 key={d}
                 href={`/admin/kalendars?diena=${d}`}
                 className={cn(
@@ -417,7 +419,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                   ))}
                   {(byDay.get(d) ?? []).length > 4 && <li className="text-[11px] font-bold text-ink-soft">+{(byDay.get(d) ?? []).length - 4}</li>}
                 </ul>
-              </a>
+              </Link>
             ) : (
               <div key={`x${i}`} />
             ),
@@ -540,11 +542,19 @@ export default async function CalendarPage({ searchParams }: Props) {
         <CalendarViewToggle view={view} />
       </div>
 
-      {day1 ? (
+      {showArchive ? (
+        <section className="mt-6 space-y-6">
+          <Link href="/admin/kalendars" className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
+            <ChevronLeft className="size-4" aria-hidden /> Atpakaļ uz kalendāru
+          </Link>
+          <h2 className="text-lg font-extrabold">Arhīvs — notikušās rezervācijas ({archiveCount})</h2>
+          {archiveDays.map((day) => renderDay(day, archive.get(day) ?? [], eventsByDay.get(day)))}
+        </section>
+      ) : day1 ? (
         <section className="mt-6 space-y-4">
-          <a href={`/admin/kalendars?skats=menesis&m=${day1.slice(0, 7)}`} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
+          <Link href={`/admin/kalendars?skats=menesis&m=${day1.slice(0, 7)}`} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
             <ChevronLeft className="size-4" aria-hidden /> Atpakaļ uz mēnesi
-          </a>
+          </Link>
           {renderDay(day1, all.filter((b) => b.event_date!.slice(0, 10) === day1), eventsByDay.get(day1))}
           {all.every((b) => b.event_date!.slice(0, 10) !== day1) && !(eventsByDay.get(day1) ?? []).length && (
             <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā dienā pasākumu nav.</p>
@@ -560,7 +570,7 @@ export default async function CalendarPage({ searchParams }: Props) {
       )}
 
       {/* Google kalendāra notikumi, kas nav no mājaslapas (piem. Kristīnes) — tikai administratorei; ielādējas atsevišķi, lai lapa nav jāgaida */}
-      {seesAll && googleDb && (
+      {seesAll && googleDb && view === "saraksts" && !day1 && !showArchive && (
         <Suspense fallback={<p className="mt-8 text-sm text-ink-soft">Ielādē Google kalendāru…</p>}>
           <GoogleEvents db={googleDb} from={today} to={addDays(today, 120)} dayTitle={dayTitle} />
         </Suspense>
@@ -573,11 +583,10 @@ export default async function CalendarPage({ searchParams }: Props) {
         </details>
       )}
 
-      {archiveDays.length > 0 && (
-        <details className="mt-10 rounded-2xl bg-surface/60 p-4 ring-1 ring-line sm:p-5">
-          <summary className="cursor-pointer text-sm font-extrabold text-ink-soft hover:text-ink">Arhīvs — notikušās rezervācijas ({archiveCount})</summary>
-          <div className="mt-4 space-y-6">{archiveDays.map((day) => renderDay(day, archive.get(day) ?? [], eventsByDay.get(day)))}</div>
-        </details>
+      {archiveDays.length > 0 && !showArchive && !day1 && (
+        <Link href="/admin/kalendars?arhivs=1" className="mt-10 block rounded-2xl bg-surface/60 p-4 text-sm font-extrabold text-ink-soft ring-1 ring-line hover:text-ink sm:p-5">
+          Arhīvs — notikušās rezervācijas ({archiveCount}) →
+        </Link>
       )}
     </>
   );
