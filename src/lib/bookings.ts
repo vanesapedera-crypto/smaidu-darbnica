@@ -60,7 +60,7 @@ export const INSTITUTION_PROGRAMS = ["ziemassvetki-bernudarza"];
 export const isInstitutionProgram = (program: string | null | undefined) => INSTITUTION_PROGRAMS.includes(program ?? "");
 
 /** Izklaides programmu cenām pierakstām "+ PVN" (PVN netiek pieskaitīts) — izņemot šīs programmas */
-export const NO_VAT_PROGRAMS = ["ziemassvetki-dobele"];
+export const NO_VAT_PROGRAMS = ["ziemassvetki-dobele", "ziemassvetki-tukums"];
 export const programPlusVat = (program: string | null | undefined) => !NO_VAT_PROGRAMS.includes(program ?? "");
 
 /**
@@ -70,6 +70,8 @@ export const programPlusVat = (program: string | null | undefined) => !NO_VAT_PR
  */
 export const FIXED_VENUES: Record<string, { name: string; address: string; hours: number }> = {
   "ziemassvetki-dobele": { name: "“Pilsētas māja” Dobelē", address: "“Pilsētas māja”, Dobele", hours: 1 },
+  // Tā pati programma mūsu telpās — telpu noma iekļauta cenā (aizņem telpas 1 h; Keita pievienojas kā telpu nomai)
+  "ziemassvetki-tukums": { name: "Smaidu Darbnīca, Tukums", address: "Smaidu Darbnīca, Pasta iela 25, Tukums", hours: 1 },
 };
 export const fixedVenue = (program: string | null | undefined) => FIXED_VENUES[program ?? ""];
 /** Norises vietas adrese, ja pieteikums ir kādā no FIXED_VENUES vietām; citādi undefined */
@@ -86,7 +88,7 @@ export const atStudio = (location: string | null | undefined) => location !== "I
  * nosaukums un bērnu skaits, gaviļnieka vecumu neprasa; kopējā ballīšu rezervācijas formā tās neparādās.
  */
 /** "minioni-atklaj-manu-pasauli" — izrāde bērnudārziem: lapā ir pieprasījuma forma (nevis rezervācija) */
-export const GROUP_PROGRAMS = [...INSTITUTION_PROGRAMS, "ziemassvetki-dobele", "minioni-atklaj-manu-pasauli"];
+export const GROUP_PROGRAMS = [...INSTITUTION_PROGRAMS, "ziemassvetki-dobele", "ziemassvetki-tukums", "minioni-atklaj-manu-pasauli"];
 export const isGroupProgram = (program: string | null | undefined) => GROUP_PROGRAMS.includes(program ?? "");
 
 /**

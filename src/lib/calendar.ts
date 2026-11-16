@@ -34,7 +34,9 @@ export const CALENDAR_HOSTS = [
 ];
 /** Telpu nomā Keita (CALENDAR_VENUE) piedalās vienmēr — pievieno automātiski, nav jāatzīmē */
 export function withVenueStaff(b: Pick<Booking, "location" | "inquiry_type">, emails: string[]): string[] {
-  if (b.inquiry_type === "business" || !atStudio(b.location)) return emails;
+  // Mūsu telpās: telpu noma vai Ziemassvētku programma Smaidu Darbnīcā (FIXED_VENUES "Smaidu Darbnīca, Tukums")
+  const ourRooms = atStudio(b.location) || (fixedVenueAddress(b.location) ?? "").includes("Pasta iela 25");
+  if (b.inquiry_type === "business" || !ourRooms) return emails;
   return [...new Set([...emails, ...CALENDAR_VENUE])];
 }
 /** Vadītāju adreses → vārdi, piem. "Agija, Gunta" */

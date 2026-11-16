@@ -228,6 +228,25 @@ const dobeleXmas: Service = {
     "Maģisks Ziemassvētku piedzīvojums bērniem “Pilsētas mājā” Dobelē: satikšanās ar rūķiem, spīdīgo nūjiņu deja, Ziemassvētku rotājuma pagatavošana. 1 stunda.",
 };
 
+/** Tā pati Ziemassvētku programma mūsu telpās (Smaidu Darbnīca, Tukums) — sava lapa izklaides-programmas/ziemassvetki-tukums */
+const tukumsXmas: Service = {
+  ...dobeleXmas,
+  slug: "ziemassvetki-tukums",
+  title: "Ziemassvētki Smaidu Darbnīcā",
+  pricing: [
+    {
+      title: "Cena",
+      options: [
+        { label: "līdz 15 bērniem", price: 295 },
+        { label: "Katrs nākamais bērns", price: 8 },
+      ],
+    },
+  ],
+  seoTitle: "Ziemassvētki bērniem Smaidu Darbnīcā Tukumā",
+  seoDescription:
+    "Maģisks Ziemassvētku piedzīvojums bērniem Smaidu Darbnīcā Tukumā: satikšanās ar rūķiem, spīdīgo nūjiņu deja, Ziemassvētku rotājuma pagatavošana. 1 stunda.",
+};
+
 /**
  * "Minioni atklāj maņu pasauli!" — interaktīva izrāde pirmsskolas izglītības iestādēm ar savu lapu
  * (src/app/(site)/izklaides-programmas/minioni-atklaj-manu-pasauli) un pieprasījuma formu. Teksts — Smaidu Darbnīcas piedāvājums.
@@ -272,7 +291,7 @@ const minionsShow: Service = {
 };
 
 // Secība sarakstos: sejas apgleznošana, tad Ziemassvētku sezonas piedāvājumi un izrāde bērnudārziem, tad pārējās programmas
-export const privateServices: Service[] = [partyPrograms[0], kindergartenXmas, dobeleXmas, minionsShow, ...partyPrograms.slice(1)].map((s, i) => ({
+export const privateServices: Service[] = [partyPrograms[0], kindergartenXmas, dobeleXmas, tukumsXmas, minionsShow, ...partyPrograms.slice(1)].map((s, i) => ({
   ...s,
   sort: (i + 1) * 10,
 }));
