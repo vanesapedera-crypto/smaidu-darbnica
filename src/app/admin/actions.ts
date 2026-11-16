@@ -662,8 +662,12 @@ export async function createManualBooking(form: FormData) {
     participants: isBusiness ? num("children_count") : null,
     child_age: isBusiness ? null : str("child_age"),
     message: str("message"),
-    admin_notes: "Pievienots panelī (pa telefonu)",
+    admin_notes: [str("admin_notes"), "Pievienots panelī (pa telefonu)"].filter(Boolean).join("\n"),
   };
+  // Kas piedalās (izvēles rūtiņas) + telpu nomā vienmēr Keita
+  const hosts = withVenueStaff(row as unknown as Booking, pickHosts(form.getAll("hosts").filter((v): v is string => typeof v === "string")));
+  if (hosts.length) row.message = withHostsLine(row.message as string | null, hostNames(hosts));
+  const approveNow = form.get("approve") === "1";
   if (!row.parent_name && !row.company_name) redirect("/admin/kalendars/jauns?kluda=vards");
   if (!row.event_date) redirect("/admin/kalendars/jauns?kluda=datums");
 
@@ -677,17 +681,28 @@ export async function createManualBooking(form: FormData) {
   const { error } = await db.from("bookings").insert(row);
   if (error) redirect(`/admin/kalendars/jauns?kluda=${encodeURIComponent(error.message)}`);
 
-  // Google kalendārā — kā dublējums (bez viesiem)
+  // Uzreiz apstiprināta (piem. jau sarunāts pa telefonu) — klientam e-pastu nesūta
+  if (approveNow) {
+    const { error: upd } = await db.from("bookings").update({ status: "Apstiprināta" }).eq("id", row.id as string);
+    if (!upd) row.status = "Apstiprināta";
+  }
+  const b = row as unknown as Booking;
+
+  // Google kalendārā: apstiprinātai — parasts notikums (viesus pievieno pēc atbildes "Varu"), citādi — "🆕 JAUNS" dublējums
   try {
-    const services = await getServices(isBusiness ? "business" : "private");
-    const title = services.find((s) => s.slug === slug)?.title ?? "";
-    const b = row as unknown as Booking;
-    const event = calendarEvent(b, title || (atStudio(b.location) ? "Telpu noma" : "Pieteikums"));
-    if (event) await upsertGoogleEvent(db, b.id, { ...event, text: `🆕 JAUNS · ${event.text}` }, []);
+    if (b.status === "Apstiprināta") await pushToGoogle(db, b, withVenueStaff(b, []));
+    else {
+      const services = await getServices(isBusiness ? "business" : "private");
+      const title = services.find((s) => s.slug === slug)?.title ?? "";
+      const event = calendarEvent(b, title || (atStudio(b.location) ? "Telpu noma" : isBusiness ? "Pasākums" : "Pieteikums"));
+      if (event) await upsertGoogleEvent(db, b.id, { ...event, text: `🆕 JAUNS · ${event.text}` }, []);
+    }
   } catch (e) {
     console.error("[manual booking] google", e);
   }
-  await ensureVenueStaff(db, row as unknown as Booking).catch((e) => console.error("[manual booking] staff", e));
+  // Atzīmētajām — jautājums "Vai vari piedalīties?" (Keitai telpu nomā — uzreiz "Varu")
+  if (hosts.length) await syncStaff(db, b, hosts).catch((e) => console.error("[manual booking] staff", e));
+  else await ensureVenueStaff(db, b).catch((e) => console.error("[manual booking] staff", e));
   revalidatePath("/admin", "layout");
   redirect("/admin/kalendars?pievienots=1");
 }

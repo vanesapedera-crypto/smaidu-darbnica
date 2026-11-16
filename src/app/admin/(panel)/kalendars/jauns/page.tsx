@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { getServices } from "@/lib/content/queries";
 import { FIXED_VENUES } from "@/lib/bookings";
+import { CALENDAR_HOSTS } from "@/lib/calendar";
 import { createManualBooking } from "@/app/admin/actions";
 import PageHeader from "@/components/admin/PageHeader";
 import TimeSelect from "@/components/site/TimeSelect";
@@ -33,7 +34,7 @@ export default async function NewBookingPage({ searchParams }: { searchParams: P
       <Link href="/admin/kalendars" className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Kalendārs
       </Link>
-      <PageHeader title="Pievienot rezervāciju" description="Piem. pēc telefona zvana. Rezervācija parādās sadaļā “Gaida apstiprinājumu” — tālāk kā parasti: kas piedalās, jautāt komandai, apstiprināt." />
+      <PageHeader title="Pievienot rezervāciju" description="Piem. pēc telefona zvana. Visu var labot arī vēlāk, atverot rezervāciju kalendārā." />
 
       <div className="mt-4 flex gap-2 text-sm">
         <Link href="/admin/kalendars/jauns" className={`rounded-full px-3 py-1.5 font-bold ring-1 ${business ? "ring-line" : "bg-ink text-white ring-ink"}`}>
@@ -81,7 +82,35 @@ export default async function NewBookingPage({ searchParams }: { searchParams: P
         {f("Adrese (izbraukumam)", <input name="address" className={adminInput} />)}
         {f(business ? "Dalībnieku skaits" : "Bērnu skaits", <input type="number" name="children_count" min={1} max={1000} className={adminInput} />)}
         {!business && f("Vecums", <input name="child_age" className={adminInput} />)}
-        {f("Ziņojums / piezīmes", <textarea name="message" rows={3} className={adminInput} />, true)}
+        {f("Ziņojums (redz arī klients apstiprinājumā)", <textarea name="message" rows={3} className={adminInput} />, true)}
+        {f("Iekšējās piezīmes (tikai komandai)", <textarea name="admin_notes" rows={2} className={adminInput} />, true)}
+
+        <fieldset className="sm:col-span-2">
+          <legend className="text-sm text-ink-soft">Kas piedalās (atzīmētās saņems jautājumu “Vai vari piedalīties?”; telpu nomā Keita — automātiski)</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {CALENDAR_HOSTS.map((h) => (
+              <label key={h.email} className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-line has-[:checked]:bg-ink has-[:checked]:text-white has-[:checked]:ring-ink">
+                <input type="checkbox" name="hosts" value={h.email} className="size-4 accent-brand" />
+                {h.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="sm:col-span-2">
+          <legend className="text-sm text-ink-soft">Statuss</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-line has-[:checked]:bg-ink has-[:checked]:text-white has-[:checked]:ring-ink">
+              <input type="radio" name="approve" value="0" defaultChecked className="size-4 accent-brand" />
+              Gaida apstiprinājumu
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-line has-[:checked]:bg-ink has-[:checked]:text-white has-[:checked]:ring-ink">
+              <input type="radio" name="approve" value="1" className="size-4 accent-brand" />
+              Jau apstiprināta (klientam e-pastu nesūta)
+            </label>
+          </div>
+        </fieldset>
+
         <div className="sm:col-span-2">
           <button className={adminPrimary}>Saglabāt rezervāciju</button>
         </div>
