@@ -16,7 +16,7 @@ export const revalidate = 3600;
 const SLUG = "ziemassvetki-bernudarza";
 const PATH = `/izklaides-programmas/${SLUG}`;
 /** Bilde lapas galvenē (albuma "Ziemassvētki bērnudārzā" trešā bilde) */
-const HERO_IMAGE = "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-03.webp";
+const HERO_IMAGE = "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-hero.webp";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
   setLocale(asLocale((await params).lang));

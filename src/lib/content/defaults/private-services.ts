@@ -166,7 +166,7 @@ const kindergartenXmas: Service = {
   duration: "30 minūtes",
   participants: "",
   icon: "TreePine",
-  heroImage: "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-01.webp",
+  heroImage: "/media/ziemassvetki-bernudarza/ziemassvetki-bernudarza-hero.webp",
   albums: ["ziemassvetki-bernudarza"],
   seasons: [],
   sort: 0,
