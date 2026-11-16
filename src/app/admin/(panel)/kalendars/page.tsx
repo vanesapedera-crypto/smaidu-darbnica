@@ -382,7 +382,7 @@ export default async function CalendarPage({ searchParams }: Props) {
               </>
             );
           })()}
-          {!q && pending.length > 0 && (
+          {!q && pending.length > 0 && (owner || role === "manager") && (
             <section className="mt-6 rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200 sm:p-5">
               <h2 className="text-base font-extrabold">Gaida apstiprinājumu ({pending.length})</h2>
               <p className="text-sm text-ink-soft">{owner ? "Atveriet pieteikumu, sadaļā “Kas piedalās” atzīmējiet komandu un nospiediet “Jautāt komandai” — klientam apstiprinājumu sūta, kad komanda atbildējusi." : "Jaunie pieteikumi — tos apstiprina Vanesa."}</p>
