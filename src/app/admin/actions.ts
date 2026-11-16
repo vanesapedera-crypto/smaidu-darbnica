@@ -725,9 +725,11 @@ async function convertOne(db: Awaited<ReturnType<typeof requireAdmin>>["db"], id
     [ev.details, ev.time && ev.time !== time ? `Laiks: ${ev.time}` : "", ev.team ? `Komanda (no izbraukuma ieraksta): ${ev.team}` : ""].filter(Boolean).join("\n\n"),
     hostNames(named.map((h) => h.email)),
   );
+  // Datubāze ļauj ievietot tikai statusā "Jauns" (RLS) — tāpēc vispirms "Jauns", tad uzreiz "Apstiprināta"
+  const newId = crypto.randomUUID();
   const { error } = await db.from("bookings").insert({
-    id: crypto.randomUUID(),
-    status: "Apstiprināta",
+    id: newId,
+    status: "Jauns",
     inquiry_type: "business",
     company_name: ev.title,
     event_date: String(ev.event_date).slice(0, 10),
@@ -738,6 +740,11 @@ async function convertOne(db: Awaited<ReturnType<typeof requireAdmin>>["db"], id
   });
   if (error) {
     console.error("[convert team event]", error.message);
+    return null;
+  }
+  const { error: upd } = await db.from("bookings").update({ status: "Apstiprināta" }).eq("id", newId);
+  if (upd) {
+    console.error("[convert team event] status", upd.message);
     return null;
   }
   await db.from("team_events").delete().eq("id", id);
