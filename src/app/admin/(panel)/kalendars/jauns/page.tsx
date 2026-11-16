@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireSection } from "@/lib/auth";
-import { getServices } from "@/lib/content/queries";
 import { CALENDAR_HOSTS } from "@/lib/calendar";
 import SubmitOnce from "@/components/admin/SubmitOnce";
 import { createManualBooking } from "@/app/admin/actions";
@@ -26,7 +25,6 @@ export default async function NewBookingPage({
   const { kluda } = await searchParams;
   // Ar roku pievieno tikai uzņēmumu / iestāžu pasākumus (ballītes un telpu noma nāk no mājaslapas)
   const business = true;
-  const services = await getServices(business ? "business" : "private");
   const f = (label: string, el: React.ReactNode, wide = false) => (
     <label className={`text-sm text-ink-soft ${wide ? "sm:col-span-2" : ""}`}>
       {label}
@@ -82,19 +80,6 @@ export default async function NewBookingPage({
           <input name="email" type="email" className={adminInput} />,
           true,
         )}
-        {business &&
-          f(
-            "Pakalpojums",
-            <select name="program" defaultValue="" className={adminInput}>
-              <option value="">— nav norādīts —</option>
-              {services.map((s) => (
-                <option key={s.slug} value={s.slug}>
-                  {s.title}
-                </option>
-              ))}
-            </select>,
-            true,
-          )}
         {f(
           "Datums",
           <input
