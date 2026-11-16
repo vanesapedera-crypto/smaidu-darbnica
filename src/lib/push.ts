@@ -34,8 +34,8 @@ export async function pushToEmails(db: MemberContext["db"], emails: string[], pa
   if (!list.length) return 0;
   const { data } = await db.from("push_subscriptions").select("endpoint, p256dh, auth").in("email", list);
   let subs = (data ?? []) as Sub[];
-  // Administratore (sarakstā "Piedalās" — smaidu.darbniica@gmail.com) paziņojumus ieslēgusi ar savu pieteikšanās kontu
-  if (list.includes("smaidu.darbniica@gmail.com")) {
+  // Administratore (sarakstā "Piedalās") — arī visas administratores ierīces
+  if (list.includes("vanesa.pedera@gmail.com")) {
     const { data: admins } = await db.rpc("admin_push_subscriptions");
     subs = [...subs, ...((admins ?? []) as Sub[])].filter((s, i, all) => all.findIndex((x) => x.endpoint === s.endpoint) === i);
   }
