@@ -34,7 +34,7 @@ export const metadata = { title: "Kalendārs" };
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
 export const maxDuration = 60;
 
-type Props = { searchParams: Promise<{ q?: string; google?: string; skats?: string; m?: string; diena?: string; arhivs?: string }> };
+type Props = { searchParams: Promise<{ q?: string; google?: string; skats?: string; m?: string; diena?: string; arhivs?: string; id?: string }> };
 
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const WEEKDAY_NAMES = ["svētdiena", "pirmdiena", "otrdiena", "trešdiena", "ceturtdiena", "piektdiena", "sestdiena"];
@@ -61,7 +61,7 @@ const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) 
  */
 export default async function CalendarPage({ searchParams }: Props) {
   const { db, role, email } = await requireSection("kalendars");
-  const { q = "", google, skats, m: monthParam, diena, arhivs } = await searchParams;
+  const { q = "", google, skats, m: monthParam, diena, arhivs, id: openId } = await searchParams;
   // Arhīvs (notikušās) — tikai pēc pieprasījuma, citādi lapa ir ļoti smaga
   const showArchive = arhivs === "1";
   // Skats: saraksts (kā līdz šim) vai īsts kalendārs pa mēnešiem; izvēle saglabājas sīkdatnē
@@ -230,8 +230,8 @@ export default async function CalendarPage({ searchParams }: Props) {
           const st = stateOf(b);
           const c = costsOf(b);
           return (
-            <li key={b.id}>
-              <details className="group">
+            <li key={b.id} id={`b-${b.id}`} className="scroll-mt-24">
+              <details className="group" open={openId === b.id || undefined}>
               <summary
                 className={cn(
                   "grid cursor-pointer list-none items-center gap-x-4 gap-y-1 rounded-2xl bg-white px-4 py-3 ring-1 ring-line hover:bg-surface/60 sm:grid-cols-[110px_minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden",
@@ -366,10 +366,11 @@ export default async function CalendarPage({ searchParams }: Props) {
       if (d.startsWith(month)) byDay.set(d, [...(byDay.get(d) ?? []), b]);
     }
     const chip = (b: Booking) => (
-      <li
-        key={b.id}
+      <li key={b.id}>
+        <Link
+        href={`/admin/kalendars?diena=${b.event_date!.slice(0, 10)}&id=${b.id}#b-${b.id}`}
         className={cn(
-          "truncate rounded px-1 py-0.5 text-[11px] leading-tight font-semibold ring-1",
+          "block truncate rounded px-1 py-0.5 text-[11px] leading-tight font-semibold ring-1 hover:ring-ink",
           isTrip(b) ? "bg-purple-50 ring-purple-200" : isVenue(b) ? "bg-amber-50 ring-amber-200" : "bg-white ring-line",
           b.status === "Jauns" && "bg-sky-50 ring-sky-300",
           isMine(b) && "bg-pink-200 ring-pink-500",
@@ -377,6 +378,7 @@ export default async function CalendarPage({ searchParams }: Props) {
         )}
       >
         {timeLabel(b.event_time, b.location).slice(0, 5)} {isVenue(b) ? "Telpu noma" : b.company_name || label(b)}
+        </Link>
       </li>
     );
     return (
@@ -400,16 +402,17 @@ export default async function CalendarPage({ searchParams }: Props) {
         <div className="mt-1 grid grid-cols-7 gap-1">
           {cells.map((d, i) =>
             d ? (
-              <Link
+              <div
                 key={d}
-                href={`/admin/kalendars?diena=${d}`}
                 className={cn(
                   "min-h-20 rounded-lg bg-white p-1 ring-1 ring-line hover:ring-ink sm:min-h-28",
                   d === today && "ring-2 ring-ink",
                   d < today && "opacity-60",
                 )}
               >
-                <span className={cn("block text-xs font-extrabold", d === today && "text-ink")}>{Number(d.slice(8))}</span>
+                <Link href={`/admin/kalendars?diena=${d}`} className={cn("block text-xs font-extrabold hover:underline", d === today && "text-ink")}>
+                  {Number(d.slice(8))}
+                </Link>
                 <ul className="mt-0.5 space-y-0.5 text-left">
                   {(byDay.get(d) ?? []).sort((x, y) => minuteOf(x.event_time) - minuteOf(y.event_time)).slice(0, 4).map(chip)}
                   {(eventsByDay.get(d) ?? []).slice(0, 2).map((e) => (
@@ -417,15 +420,21 @@ export default async function CalendarPage({ searchParams }: Props) {
                       {e.time} {e.title}
                     </li>
                   ))}
-                  {(byDay.get(d) ?? []).length > 4 && <li className="text-[11px] font-bold text-ink-soft">+{(byDay.get(d) ?? []).length - 4}</li>}
+                  {(byDay.get(d) ?? []).length > 4 && (
+                    <li>
+                      <Link href={`/admin/kalendars?diena=${d}`} className="text-[11px] font-bold text-ink-soft hover:text-ink">
+                        +{(byDay.get(d) ?? []).length - 4}
+                      </Link>
+                    </li>
+                  )}
                 </ul>
-              </Link>
+              </div>
             ) : (
               <div key={`x${i}`} />
             ),
           )}
         </div>
-        <p className="mt-2 text-xs text-ink-soft">Uzspiediet uz dienas — atveras tās dienas pasākumi ar visu informāciju.</p>
+        <p className="mt-2 text-xs text-ink-soft">Uzspiediet uz pasākuma — tas atveras ar visu informāciju; uz datuma — visi tās dienas pasākumi.</p>
       </section>
     );
   };
