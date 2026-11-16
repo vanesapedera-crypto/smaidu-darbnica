@@ -18,7 +18,7 @@ const minutes = (local: string) => Date.parse(`${local}:00Z`) / 60000;
 
 /**
  * Atgādinājumi tiem, kas piedalās pasākumā (atbildējuši "Varu" vai vēl nav atbildējuši; "Nevaru" — ne):
- *  • no rīta (no 7:00) — "Šodien: …";
+ *  • ~24 stundas pirms sākuma — "Rīt: …" (ja pasākums apstiprināts vēlāk — "Šodien: …");
  *  • ~3 stundas pirms sākuma — "Pēc 3 stundām: …".
  * Telefonā (ja ieslēgti paziņojumi); kam paziņojumu nav — e-pastā. Katrs atgādinājums tikai vienreiz.
  * Izsauc Supabase ik pēc 15 min (sk. migrāciju 20261115090000_staff_reminders.sql); atkārtots izsaukums neko nedubulto.
@@ -29,12 +29,12 @@ export async function GET() {
 
   const now = rigaNow();
   const today = now.slice(0, 10);
-  const hour = Number(now.slice(11, 13));
+  const tomorrow = new Date(Date.parse(`${today}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
 
   const { data: bookings, error } = await db
     .from("bookings")
     .select("*")
-    .eq("event_date", today)
+    .in("event_date", [today, tomorrow])
     .eq("status", "Apstiprināta");
   if (error) return NextResponse.json({ ok: false, error: error.message });
   const list = (bookings ?? []) as Booking[];
@@ -57,7 +57,9 @@ export async function GET() {
   let sent = 0;
   for (const b of list) {
     const start = (b.event_time ?? "").slice(0, 5);
-    const until = /^\d{2}:\d{2}$/.test(start) ? minutes(`${today}T${start}`) - minutes(now) : null;
+    const day = String(b.event_date).slice(0, 10);
+    // Bez laika — skaitām no 9:00
+    const until = minutes(`${day}T${/^\d{2}:\d{2}$/.test(start) ? start : "09:00"}`) - minutes(now);
     const slug = b.program || b.service_slug || "";
     const program = titles.get(slug) ?? "";
     const isBusiness = b.inquiry_type === "business";
@@ -67,11 +69,11 @@ export async function GET() {
 
     for (const r of staff.filter((s) => s.booking_id === b.id)) {
       // ~3 h pirms (arī, ja pasākums sākas agrāk nekā pēc 3 h un atgādinājuma vēl nav bijis)
-      const due3h = until !== null && until > 0 && until <= 180 && !r.reminded_3h_at;
-      const dueDay = !due3h && hour >= 7 && !r.reminded_day_at && (until === null || until > 180);
+      const due3h = /^\d{2}:\d{2}$/.test(start) && until > 0 && until <= 180 && !r.reminded_3h_at;
+      const dueDay = !due3h && until > 180 && until <= 24 * 60 && !r.reminded_day_at;
       if (!due3h && !dueDay) continue;
 
-      const headline = due3h ? (until! > 150 ? "Pēc 3 stundām" : `Pēc ${Math.max(1, Math.round(until! / 60))} h`) : "Šodien";
+      const headline = due3h ? (until > 150 ? "Pēc 3 stundām" : `Pēc ${Math.max(1, Math.round(until / 60))} h`) : day === today ? "Šodien" : "Rīt";
       const payload = {
         title: `${headline}: ${title}`,
         body: [time && `plkst. ${time}`, place].filter(Boolean).join(" · "),

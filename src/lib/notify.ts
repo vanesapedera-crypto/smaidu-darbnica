@@ -748,7 +748,7 @@ export function notifyStaffReminder(info: { to: string; name: string; headline: 
     `${info.headline}: ${info.title} · ${info.when}`,
     "Atgādinājums",
     info.headline.toLowerCase(),
-    `<p style="margin:0 0 16px">Sveika, ${escape(info.name)}! ${info.headline === "Šodien" ? "Šodien tev ir pasākums:" : `${escape(info.headline)} sākas pasākums:`}</p>
+    `<p style="margin:0 0 16px">Sveika, ${escape(info.name)}! ${info.headline === "Šodien" ? "Šodien tev ir pasākums:" : info.headline === "Rīt" ? "Rīt tev ir pasākums:" : `${escape(info.headline)} sākas pasākums:`}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin:0 0 18px"><tr><td style="background:${SURFACE};border-radius:14px;padding:18px 20px">
 <p style="margin:0;font-size:22px;line-height:1.3;font-weight:bold">${escape(info.when)}</p>
 <p style="margin:6px 0 0;font-weight:bold">${escape(info.title)}</p>
