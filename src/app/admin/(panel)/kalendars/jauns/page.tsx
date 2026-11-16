@@ -155,30 +155,7 @@ export default async function NewBookingPage({
           </div>
         </fieldset>
 
-        <fieldset className="sm:col-span-2">
-          <legend className="text-sm text-ink-soft">Statuss</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-line has-[:checked]:bg-ink has-[:checked]:text-white has-[:checked]:ring-ink">
-              <input
-                type="radio"
-                name="approve"
-                value="0"
-                defaultChecked
-                className="size-4 accent-brand"
-              />
-              Gaida apstiprinājumu
-            </label>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-line has-[:checked]:bg-ink has-[:checked]:text-white has-[:checked]:ring-ink">
-              <input
-                type="radio"
-                name="approve"
-                value="1"
-                className="size-4 accent-brand"
-              />
-              Jau apstiprināta (klientam e-pastu nesūta)
-            </label>
-          </div>
-        </fieldset>
+        <input type="hidden" name="approve" value="1" />
 
         <div className="sm:col-span-2">
           <SubmitOnce
