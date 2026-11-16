@@ -1,6 +1,9 @@
 import "server-only";
 import type { MemberContext } from "@/lib/auth";
-import { CALENDAR_HOSTS } from "@/lib/calendar";
+import { CALENDAR_HOSTS, CALENDAR_INVITES, calendarEvent, withVenueStaff } from "@/lib/calendar";
+import { upsertGoogleEvent } from "@/lib/google-calendar";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { atStudio } from "@/lib/bookings";
 import { type Booking } from "@/lib/bookings";
 import { whenLabel } from "@/lib/dates";
 import { getServices } from "@/lib/content/queries";
@@ -63,6 +66,8 @@ export async function answerStaff(db: MemberContext["db"], bookingId: string, em
     const { data: rows } = await db.from("booking_staff").select("status").eq("booking_id", bookingId);
     const all = (rows ?? []) as { status: StaffStatus }[];
     const { data: b } = await db.from("bookings").select("*").eq("id", bookingId).maybeSingle();
+    // Rezervācija jau apstiprināta (piem. aizvietotāja) — Google kalendāra notikumam pievieno arī šo cilvēku
+    if (b && (b as Booking).status === "Apstiprināta") await addToGoogleGuests(b as Booking, email).catch((e) => console.error("[staff] google", e));
     if (b && all.length && all.every((r) => r.status === "var") && (b as Booking).status === "Jauns") {
       const d = await describe(b as Booking);
       await Promise.allSettled([
@@ -82,4 +87,16 @@ export async function answerStaff(db: MemberContext["db"], bookingId: string, em
     }
   }
   return { ok: true };
+}
+
+/** Apstiprinātas rezervācijas Google notikumam pievieno vēl vienu viesi (kas atbildēja "Varu") */
+async function addToGoogleGuests(b: Booking, email: string) {
+  const admin = supabaseAdmin() as MemberContext["db"] | null;
+  if (!admin || !CALENDAR_INVITES) return;
+  const d = await describe(b);
+  const event = calendarEvent(b, d.title || (atStudio(b.location) ? "Telpu noma" : "Pieteikums"));
+  if (!event) return;
+  const { data } = await admin.from("booking_staff").select("email, status").eq("booking_id", b.id);
+  const yes = ((data ?? []) as { email: string; status: string }[]).filter((r) => r.status === "var").map((r) => r.email);
+  await upsertGoogleEvent(admin, b.id, event, [...new Set([...event.guests, ...withVenueStaff(b, [...yes, email.toLowerCase()])])]);
 }

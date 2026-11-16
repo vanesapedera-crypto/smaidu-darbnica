@@ -19,6 +19,7 @@ import { googleConnection } from "@/lib/google-calendar";
 import { adminInput, adminPrimary, adminSecondary } from "@/components/admin/styles";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import ResendInvites from "@/components/admin/ResendInvites";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -351,10 +352,11 @@ export default async function CalendarPage({ searchParams }: Props) {
             </section>
           )}
           {owner && !q && (
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
               <Link href="/admin/kalendars/jauns" className={adminPrimary}>
                 <Plus className="size-4" aria-hidden /> Pievienot rezervāciju
               </Link>
+              <ResendInvites />
             </div>
           )}
           {/* Komandas atbildes: kāda nevar — jāmeklē cits; visas var — jāapstiprina klientam */}

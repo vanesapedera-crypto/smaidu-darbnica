@@ -18,7 +18,7 @@ export default function ResendInvites() {
         disabled={pending}
         onClick={() => {
           if (!confirm(CALENDAR_INVITES
-                ? "Visas nākamās apstiprinātās rezervācijas tiks ieliktas Google kalendārā vēlreiz, un viesi (Kristīne u. c.) saņems ielūgumu. Klientiem nekas netiek sūtīts. Turpināt?"
+                ? "Visas nākamās apstiprinātās rezervācijas tiks atjaunotas Google kalendārā, un tās, kas piedalās (meitenes, Keita telpu nomai, Kristīne), saņems Google ielūgumu. Klientiem nekas netiek sūtīts. Turpināt?"
                 : "Visas nākamās apstiprinātās rezervācijas tiks ieliktas (vai atjaunotas) jūsu Google kalendārā. Klientiem un komandai nekas netiek sūtīts. Turpināt?")) return;
           setResult("");
           start(async () => {
@@ -29,7 +29,7 @@ export default function ResendInvites() {
         className={adminSecondary}
       >
         {pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-        {pending ? "Ieliek…" : "Ielikt visas Google kalendārā"}
+        {pending ? "Ieliek…" : "Atjaunot Google kalendāru (ar meitenēm)"}
       </button>
       {result && <p className="text-sm font-semibold">{result}</p>}
     </div>

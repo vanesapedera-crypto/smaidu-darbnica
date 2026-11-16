@@ -464,12 +464,22 @@ export async function resendAllToGoogle(): Promise<{ error?: string; done?: numb
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await db.from("bookings").select("*").eq("status", "Apstiprināta").gte("event_date", today).order("event_date");
   if (error) return { error: error.message };
+  const list = (data ?? []) as Booking[];
+  // Kas piedalās katrā pasākumā (bez tām, kas atbildēja "Nevaru"); ja ierakstu nav — vārdi no rindas "Piedalās"
+  const { data: staff } = list.length
+    ? await db.from("booking_staff").select("booking_id, email, status").in("booking_id", list.map((b) => b.id))
+    : { data: [] };
+  const rows = (staff ?? []) as { booking_id: string; email: string; status: string }[];
   let done = 0;
   let failed = 0;
-  for (const b of (data ?? []) as Booking[]) {
-    if (await pushToGoogle(db, b)) done++;
+  for (const b of list) {
+    const mine = rows.filter((r) => r.booking_id === b.id && r.status !== "nevar").map((r) => r.email);
+    const named = hostsOf(b.message).split(/,\s*/);
+    const hosts = withVenueStaff(b, mine.length ? mine : CALENDAR_HOSTS.filter((h) => named.includes(h.name)).map((h) => h.email));
+    if (await pushToGoogle(db, b, hosts)) done++;
     else failed++;
   }
+  revalidatePath("/admin", "layout");
   return { done, failed };
 }
 
