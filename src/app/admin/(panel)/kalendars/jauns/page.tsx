@@ -20,11 +20,12 @@ const ERRORS: Record<string, string> = {
 export default async function NewBookingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kluda?: string; veids?: string }>;
+  searchParams: Promise<{ kluda?: string }>;
 }) {
   await requireSection("kalendars", true);
-  const { kluda, veids } = await searchParams;
-  const business = veids === "uznemums";
+  const { kluda } = await searchParams;
+  // Ar roku pievieno tikai uzņēmumu / iestāžu pasākumus (ballītes un telpu noma nāk no mājaslapas)
+  const business = true;
   const services = await getServices(business ? "business" : "private");
   const f = (label: string, el: React.ReactNode, wide = false) => (
     <label className={`text-sm text-ink-soft ${wide ? "sm:col-span-2" : ""}`}>
@@ -43,23 +44,9 @@ export default async function NewBookingPage({
       </Link>
       <PageHeader
         title="Pievienot rezervāciju"
-        description="Piem. pēc telefona zvana. Visu var labot arī vēlāk, atverot rezervāciju kalendārā."
+        description="Uzņēmuma vai iestādes pasākums (piem. pēc telefona zvana). Visu var labot arī vēlāk, atverot rezervāciju kalendārā."
       />
 
-      <div className="mt-4 flex gap-2 text-sm">
-        <Link
-          href="/admin/kalendars/jauns"
-          className={`rounded-full px-3 py-1.5 font-bold ring-1 ${business ? "ring-line" : "bg-ink text-white ring-ink"}`}
-        >
-          Ballīte / telpu noma
-        </Link>
-        <Link
-          href="/admin/kalendars/jauns?veids=uznemums"
-          className={`rounded-full px-3 py-1.5 font-bold ring-1 ${business ? "bg-ink text-white ring-ink" : "ring-line"}`}
-        >
-          Uzņēmums / iestāde
-        </Link>
-      </div>
 
       {kluda && (
         <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-destructive ring-1 ring-red-200">
