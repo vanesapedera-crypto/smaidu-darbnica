@@ -234,6 +234,7 @@ const tukumsXmas: Service = {
   slug: "ziemassvetki-tukums",
   title: "Ziemassvētki Smaidu Darbnīcā",
   heroImage: "/media/ziemassvetki-tukums/ziemassvetki-klasem.webp",
+  duration: "2 stundas",
   pricing: [
     {
       title: "Cena",
@@ -245,7 +246,7 @@ const tukumsXmas: Service = {
   ],
   seoTitle: "Ziemassvētki bērniem Smaidu Darbnīcā Tukumā",
   seoDescription:
-    "Maģisks Ziemassvētku piedzīvojums bērniem Smaidu Darbnīcā Tukumā: satikšanās ar rūķiem, spīdīgo nūjiņu deja, Ziemassvētku rotājuma pagatavošana. 1 stunda.",
+    "Maģisks Ziemassvētku piedzīvojums bērniem Smaidu Darbnīcā Tukumā: satikšanās ar rūķiem, spīdīgo nūjiņu deja, Ziemassvētku rotājuma pagatavošana. 2 stundas.",
 };
 
 /**
