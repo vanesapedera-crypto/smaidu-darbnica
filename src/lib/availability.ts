@@ -1,4 +1,13 @@
 import { isSupabaseConfigured, supabase } from "./supabase";
+import { PROGRAM_SLOTS } from "./bookings";
+import { VENUE_TIMES } from "./pricing";
+
+/** "14:00" → minūtes */
+const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+/** Vai laika posmi pārklājas (ilgumi stundās) */
+const overlaps = (a: string, aHours: number, b: string, bHours: number) => mins(a) < mins(b) + bHours * 60 && mins(b) < mins(a) + aHours * 60;
+/** Programmas mūsu telpās ar konkrētiem laikiem — to laikā telpu noma aizņemta, un otrādi */
+const STUDIO_PROGRAMS: Record<string, number> = { "ziemassvetki-tukums": 2 };
 
 /**
  * Telpu nomas aizņemtie sākuma laiki izvēlētajā datumā (piem. ["14:00"]).
@@ -13,7 +22,11 @@ export async function bookedSlots(date: string): Promise<string[]> {
     console.error("[availability]", error.message);
     return [];
   }
-  return ((data ?? []) as string[]).map((t) => t.slice(0, 5));
+  const starts = ((data ?? []) as string[]).map((t) => t.slice(0, 5));
+  // Telpas aizņem arī programmas mūsu telpās (piem. Ziemassvētki klasēm 15:00–17:00 aizņem telpu nomu 14:00–17:00):
+  // aizņemts ir katrs telpu nomas laiks, kas pārklājas ar kādu rezervāciju (piesardzīgi — katru skaitām 3 h)
+  const overlapping = VENUE_TIMES.filter((t) => starts.some((s) => overlaps(t, 3, s, 3)));
+  return [...new Set([...starts, ...overlapping])];
 }
 
 /**
@@ -28,7 +41,17 @@ export async function bookedProgramSlots(program: string): Promise<string[]> {
     console.error("[availability]", error.message);
     return [];
   }
-  return ((data ?? []) as string[]).map((t) => t.slice(0, 16));
+  const own = ((data ?? []) as string[]).map((t) => t.slice(0, 16));
+  // Programma mūsu telpās: laiks aizņemts arī tad, ja tajā laikā telpas jau rezervētas (telpu noma u. c.)
+  const hours = STUDIO_PROGRAMS[program];
+  if (!hours) return own;
+  const extra: string[] = [];
+  for (const d of PROGRAM_SLOTS[program] ?? []) {
+    const { data: day } = await supabase.rpc("booked_venue_slots", { day: d.date });
+    const starts = ((day ?? []) as string[]).map((t) => t.slice(0, 5));
+    for (const t of d.times) if (starts.some((s) => overlaps(t, hours, s, 3))) extra.push(`${d.date} ${t}`);
+  }
+  return [...new Set([...own, ...extra])];
 }
 
 /**

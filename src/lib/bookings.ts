@@ -78,7 +78,7 @@ export const programPlusVat = (program: string | null | undefined) => !NO_VAT_PR
 export const FIXED_VENUES: Record<string, { name: string; address: string; hours: number }> = {
   "ziemassvetki-dobele": { name: "“Pilsētas māja” Dobelē", address: "“Pilsētas māja”, Dobele", hours: 1 },
   // Tā pati programma mūsu telpās — telpu noma iekļauta cenā (aizņem telpas 1 h; Keita pievienojas kā telpu nomai)
-  "ziemassvetki-tukums": { name: "Smaidu Darbnīca, Tukums", address: "Smaidu Darbnīca, Pasta iela 25, Tukums", hours: 1 },
+  "ziemassvetki-tukums": { name: "Smaidu Darbnīca, Tukums", address: "Smaidu Darbnīca, Pasta iela 25, Tukums", hours: 2 },
 };
 export const fixedVenue = (program: string | null | undefined) => FIXED_VENUES[program ?? ""];
 /** Norises vietas adrese, ja pieteikums ir kādā no FIXED_VENUES vietām; citādi undefined */
@@ -114,6 +114,16 @@ export const PROGRAM_SLOTS: Record<string, { date: string; times: string[] }[]> 
     { date: "2026-12-14", times: ["09:30", "11:30"] },
     { date: "2026-12-15", times: ["09:30", "11:30"] },
     { date: "2026-12-16", times: ["09:30", "11:30"] },
+  ],
+  // Ziemassvētki klasēm Smaidu Darbnīcā (2 h) — šajos laikos telpu noma citiem automātiski aizņemta (sk. lib/availability.ts)
+  "ziemassvetki-tukums": [
+    { date: "2026-12-11", times: ["10:00"] },
+    { date: "2026-12-14", times: ["10:00"] },
+    { date: "2026-12-15", times: ["15:00"] },
+    { date: "2026-12-16", times: ["10:00"] },
+    { date: "2026-12-17", times: ["10:00", "14:00"] },
+    { date: "2026-12-21", times: ["10:00"] },
+    { date: "2026-12-22", times: ["10:00"] },
   ],
 };
 export const programSlots = (program: string | null | undefined) => PROGRAM_SLOTS[program ?? ""];
