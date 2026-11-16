@@ -63,7 +63,7 @@ export default async function ProgramsPage({ params }: { params: Promise<{ lang:
               </div>
             </div>
           )}
-          <StageHeading eyebrow={t("{n} programmas", { n: rest.length })} title={t("Izvēlieties ballītes")} highlight={t("tēmu")} />
+          <StageHeading eyebrow={t("{n} programmas", { n: rest.length })} title={t("Izklaides programmas")} highlight={t("ballītēm")} />
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((p, i) => (
               <ProgramCard key={p.slug} program={p} index={i} />
