@@ -698,21 +698,35 @@ export async function createManualBooking(form: FormData) {
  */
 export async function convertTeamEvent(id: string) {
   const { db } = await requireAdmin();
+  const title = await convertOne(db, id);
+  revalidatePath("/admin", "layout");
+  redirect(title ? `/admin/kalendars?q=${encodeURIComponent(title)}` : "/admin/kalendars");
+}
+
+/** Visus ar roku ievadītos izbraukumus uzreiz pārvērš par rezervācijām — tad visus pasākumus labo vienādi */
+export async function convertAllTeamEvents() {
+  const { db } = await requireAdmin();
+  const { data } = await db.from("team_events").select("id");
+  for (const r of (data ?? []) as { id: string }[]) await convertOne(db, r.id);
+  revalidatePath("/admin", "layout");
+  redirect("/admin/kalendars?parverstie=1");
+}
+
+async function convertOne(db: Awaited<ReturnType<typeof requireAdmin>>["db"], id: string): Promise<string | null> {
   const { data: e } = await db.from("team_events").select("*").eq("id", id).maybeSingle();
-  if (!e) redirect("/admin/kalendars");
+  if (!e) return null;
   const ev = e as { event_date: string; time: string | null; title: string; place: string | null; team: string | null; details: string | null };
   const m = /(\d{1,2})[.:](\d{2})/.exec(ev.time ?? "");
   const time = m ? `${m[1].padStart(2, "0")}:${m[2]}` : null;
   const norm = (t: string) => t.toLowerCase().replace(/[.(),]/g, " ").replace(/\s+/g, " ").trim();
   const team = ` ${norm(ev.team ?? "")} `;
-  const named = CALENDAR_HOSTS.filter((h) => team.includes(` ${norm(h.name)} `) || team.includes(` ${norm(h.name)}`));
+  const named = CALENDAR_HOSTS.filter((h) => team.includes(` ${norm(h.name)} `));
   const message = withHostsLine(
     [ev.details, ev.time && ev.time !== time ? `Laiks: ${ev.time}` : "", ev.team ? `Komanda (no izbraukuma ieraksta): ${ev.team}` : ""].filter(Boolean).join("\n\n"),
     hostNames(named.map((h) => h.email)),
   );
-  const newId = crypto.randomUUID();
   const { error } = await db.from("bookings").insert({
-    id: newId,
+    id: crypto.randomUUID(),
     status: "Apstiprināta",
     inquiry_type: "business",
     company_name: ev.title,
@@ -722,8 +736,10 @@ export async function convertTeamEvent(id: string) {
     message,
     admin_notes: "Pārvērsts no izbraukuma ieraksta",
   });
-  if (error) redirect(`/admin/kalendars?kluda=${encodeURIComponent(error.message)}`);
+  if (error) {
+    console.error("[convert team event]", error.message);
+    return null;
+  }
   await db.from("team_events").delete().eq("id", id);
-  revalidatePath("/admin", "layout");
-  redirect(`/admin/kalendars?q=${encodeURIComponent(ev.title)}`);
+  return ev.title;
 }

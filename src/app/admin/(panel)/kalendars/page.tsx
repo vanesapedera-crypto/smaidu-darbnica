@@ -20,7 +20,7 @@ import { adminInput, adminPrimary, adminSecondary } from "@/components/admin/sty
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import ResendInvites from "@/components/admin/ResendInvites";
-import { convertTeamEvent } from "@/app/admin/actions";
+import { convertAllTeamEvents, convertTeamEvent } from "@/app/admin/actions";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -366,6 +366,17 @@ export default async function CalendarPage({ searchParams }: Props) {
               </Link>
               <ResendInvites />
             </div>
+          )}
+          {owner && !q && events.length > 0 && (
+            <form action={convertAllTeamEvents} className="mt-4 rounded-2xl bg-purple-50 p-4 ring-1 ring-purple-200">
+              <p className="text-sm text-purple-900">
+                <b>{events.length} izbraukumi</b> ievadīti ar roku (bijušais komandas grafiks) — tos nevar labot tāpat kā rezervācijas.
+                Pārvērtiet tos par rezervācijām: tad visiem pasākumiem var mainīt datumu, laiku, informāciju un pievienot meitenes (Varu/Nevaru, atgādinājumi, Google).
+              </p>
+              <button type="submit" className={`${adminPrimary} mt-3`}>
+                Pārvērst visus par rezervācijām
+              </button>
+            </form>
           )}
           {/* Komandas atbildes: kāda nevar — jāmeklē cits; visas var — jāapstiprina klientam */}
           {!q && (() => {

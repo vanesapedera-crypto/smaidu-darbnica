@@ -192,7 +192,7 @@ export default function BookingAdminPanel({
                     {field("Kontaktpersona", <input name="parent_name" defaultValue={b.parent_name ?? ""} className={adminInput} />)}
                     {field("Telefons", <input name="phone" defaultValue={b.phone ?? ""} className={adminInput} />)}
                     {field("E-pasts", <input type="email" name="email" defaultValue={b.email ?? ""} className={adminInput} />)}
-                    {field(isPrivate ? "Iestāde / grupa" : "Uzņēmums", <input name="company_name" defaultValue={b.company_name ?? ""} className={adminInput} />, true)}
+                    {field(isPrivate ? "Iestāde / grupa" : "Uzņēmums / pasākuma nosaukums", <input name="company_name" defaultValue={b.company_name ?? ""} className={adminInput} />, true)}
                     {isPrivate &&
                       field(
                         "Izklaides programma",
