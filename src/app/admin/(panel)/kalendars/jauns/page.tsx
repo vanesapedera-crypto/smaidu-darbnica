@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireSection } from "@/lib/auth";
 import { getServices } from "@/lib/content/queries";
-import { FIXED_VENUES } from "@/lib/bookings";
 import { CALENDAR_HOSTS } from "@/lib/calendar";
 import SubmitOnce from "@/components/admin/SubmitOnce";
 import { createManualBooking } from "@/app/admin/actions";
@@ -126,30 +125,8 @@ export default async function NewBookingPage({
             className={adminInput}
           />,
         )}
-        {business
-          ? f("Pilsēta", <input name="event_city" className={adminInput} />)
-          : f(
-              "Norises vieta",
-              <select
-                name="location"
-                defaultValue="Smaidu Darbnīcā"
-                className={adminInput}
-              >
-                {[
-                  "Smaidu Darbnīcā",
-                  "Izbraukums",
-                  ...Object.values(FIXED_VENUES).map((v) => v.name),
-                ].map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>,
-            )}
-        {f(
-          "Adrese (izbraukumam)",
-          <input name="address" className={adminInput} />,
-        )}
+        {business && f("Pilsēta", <input name="event_city" className={adminInput} />)}
+        {business && f("Adrese", <input name="address" className={adminInput} />)}
         {f(
           business ? "Dalībnieku skaits" : "Bērnu skaits",
           <input
@@ -162,10 +139,6 @@ export default async function NewBookingPage({
         )}
         {!business &&
           f("Vecums", <input name="child_age" className={adminInput} />)}
-        {f(
-          <textarea name="message" rows={3} className={adminInput} />,
-          true,
-        )}
         {f(
           "Iekšējās piezīmes (tikai komandai)",
           <textarea name="admin_notes" rows={2} className={adminInput} />,
