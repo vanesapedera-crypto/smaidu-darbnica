@@ -12,6 +12,7 @@
  */
 
 import { fixedVenueAddress, needsHeadcount } from "./bookings";
+import { isGroupProgram } from "@/lib/bookings";
 import { calendarIcs, type CalendarEvent } from "./calendar";
 import { dateWords } from "./dates";
 import { VAT_NOTE, amountText, eur, type BookingCosts } from "./pricing";
@@ -109,7 +110,7 @@ ${facts([
   ["Pasākuma veids", text("event_type")],
   ["Pilsēta / vieta", text("event_city")],
   ["Bērnu skaits", text("children_count")],
-  ["Gaviļnieka vecums", text("child_age")],
+  [isGroupProgram(text("program")) ? "Bērnu vecums" : "Gaviļnieka vecums", text("child_age")],
   ["Dalībnieki", text("participants")],
   ["Budžets", text("budget_range")],
 ])}

@@ -171,7 +171,7 @@ export default async function TukumsXmasPage({ params }: { params: Promise<{ lan
           <LocaleProvider locale={getLocale()} messages={messagesWith(raw)}>
             <BookingForm
               defaultProgram={SLUG}
-              institution={{ nameLabel: "Grupa (bērnudārzs, skola u. c.)", addressLabel: "", plusVat: false }}
+              institution={{ nameLabel: "Grupa (bērnudārzs, skola u. c.)", addressLabel: "", plusVat: false, ageLabel: "Bērnu vecums" }}
               venue={VENUE}
               choice={raw.activities.length > 0 ? { label: CHOICE_LABEL, title: "Izvēlieties vienu gardo aktivitāti", options: raw.activities.map((a) => a.title) } : undefined}
               prices={bookingPrices(rawSettings)}

@@ -109,7 +109,7 @@ export default function BookingForm({
   prices: BookingPrices;
   defaultProgram?: string;
   /** Iestādes forma: lauku nosaukumi (piem. "Bērnudārza nosaukums", "Bērnudārza adrese") */
-  institution?: { nameLabel: string; addressLabel: string; plusVat?: boolean; ticketLabel?: string };
+  institution?: { nameLabel: string; addressLabel: string; plusVat?: boolean; ticketLabel?: string; ageLabel?: string };
   /** Svarīgs brīdinājums zem datuma un laika (piem. par kavēšanos); rindkopas atdala tukša rinda */
   notice?: string;
   /** Noteikta norises vieta (nosaukums tiek saglabāts kā pieteikuma norises vieta) */
@@ -329,6 +329,7 @@ export default function BookingForm({
     if (form.eventDate && dayFull(form.eventDate)) missing.eventDate = DAY_FULL_TEXT;
     if ((headcount || institution) && !form.childrenCount) missing.childrenCount = "Norādiet bērnu skaitu.";
     if (headcount && !institution && !form.childAge.trim()) missing.childAge = "Norādiet gaviļnieka vecumu.";
+    if (institution?.ageLabel && !form.childAge.trim()) missing.childAge = "Norādiet bērnu vecumu.";
     // Cenai jābūt zināmai — rezervāciju ar cenu "pēc vienošanās" nepieņem
     if (program && program.pricing.length > 0 && programPrice === null && !missing.childrenCount && form.childrenCount) {
       missing[headcount || institution ? "childrenCount" : "program"] = PRICE_UNKNOWN_TEXT;
@@ -1048,10 +1049,15 @@ export default function BookingForm({
               label={t("Bērnu skaits")}
               required={headcount || Boolean(institution)}
               error={errors.childrenCount}
-              className={institution ? "sm:col-span-2" : undefined}
+              className={institution && !institution.ageLabel ? "sm:col-span-2" : undefined}
             >
               <input {...fieldProps("childrenCount")} type="number" inputMode="numeric" min={1} />
             </Field>
+            {institution?.ageLabel && (
+              <Field id="childAge" label={t(institution.ageLabel)} required error={errors.childAge}>
+                <input {...fieldProps("childAge")} placeholder={t("Piem. 7 gadi / 1. klase")} />
+              </Field>
+            )}
             {!institution && (
               <Field id="childAge" label={t("Gaviļnieka vecums")} required={headcount} error={errors.childAge}>
                 <input {...fieldProps("childAge")} />

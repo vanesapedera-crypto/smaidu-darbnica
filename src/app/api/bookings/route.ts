@@ -148,6 +148,7 @@ export async function POST(request: Request) {
     const group = isGroupProgram(row.program);
     need("childrenCount", !(needsHeadcount(row.program) || group) || row.children_count, "Norādiet bērnu skaitu.");
     need("childAge", !needsHeadcount(row.program) || group || row.child_age, "Norādiet gaviļnieka vecumu.");
+    need("childAge", row.program !== "ziemassvetki-tukums" || row.child_age, "Norādiet bērnu vecumu.");
     need("companyName", !group || row.company_name, "Norādiet nosaukumu.");
   }
 

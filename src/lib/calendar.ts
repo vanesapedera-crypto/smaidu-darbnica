@@ -1,4 +1,4 @@
-import { atStudio, fixedVenueAddress, type Booking } from "./bookings";
+import { atStudio, fixedVenueAddress, isGroupProgram, type Booking } from "./bookings";
 import { whenLabel } from "./dates";
 import { costLinesText, type BookingCosts } from "./pricing";
 
@@ -102,7 +102,7 @@ export function calendarEvent(b: Booking, title: string, costs?: BookingCosts | 
     b.phone && `Telefons: ${b.phone}`,
     b.email && `E-pasts: ${b.email}`,
     b.children_count && `Bērnu skaits: ${b.children_count}`,
-    b.child_age && `Gaviļnieka vecums: ${b.child_age}`,
+    b.child_age && `${isGroupProgram(b.program) ? "Bērnu vecums" : "Gaviļnieka vecums"}: ${b.child_age}`,
     b.participants && `Dalībnieki: ${b.participants}`,
     costs
       ? `\nIZMAKSAS\n${costLinesText(costs).map((l) => (l.startsWith("Kop") ? l : `• ${l}`)).join("\n")}`
