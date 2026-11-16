@@ -17,7 +17,7 @@ export type StaffRow = { booking_id: string; email: string; name: string; status
 async function describe(b: Booking) {
   const services = await getServices(b.inquiry_type === "business" ? "business" : "private");
   const slug = b.program || b.service_slug || "";
-  const title = services.find((s) => s.slug === slug)?.title ?? (slug || "Telpu noma");
+  const title = services.find((s) => s.slug === slug)?.title ?? (slug || (b.inquiry_type === "business" ? b.company_name || "Pasākums" : "Telpu noma"));
   return { title, when: whenLabel(b.event_date, b.event_time, b.inquiry_type === "business" ? null : b.location), place: b.location === "Izbraukums" ? (b.address ?? "") : (b.location ?? "") };
 }
 

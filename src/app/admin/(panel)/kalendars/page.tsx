@@ -20,6 +20,7 @@ import { adminInput, adminPrimary, adminSecondary } from "@/components/admin/sty
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import ResendInvites from "@/components/admin/ResendInvites";
+import { convertTeamEvent } from "@/app/admin/actions";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -118,7 +119,7 @@ export default async function CalendarPage({ searchParams }: Props) {
     const slug = b.service_slug || b.program;
     const program = slug ? (titles.get(slug) ?? slug) : null;
     if (program) return isVenue(b) ? `Telpu noma + ${program}` : program;
-    return isVenue(b) ? "Telpu noma" : "—";
+    return isVenue(b) ? "Telpu noma" : b.inquiry_type === "business" ? "Pasākums" : "—";
   };
 
   // Skatītājiem (piem. telpu uzkopšanai) — tikai rezervācijas mūsu telpās
@@ -197,9 +198,16 @@ export default async function CalendarPage({ searchParams }: Props) {
             </dl>
             {e.details && <p className="mt-3 rounded-xl bg-surface p-3 whitespace-pre-line">{e.details}</p>}
             {role === "owner" && (
-              <a href={`/admin/grafiks/${e.id}`} className="mt-3 inline-block font-semibold underline decoration-brand decoration-2 underline-offset-4">
-                Labot
-              </a>
+              <div className="mt-3 flex flex-wrap items-center gap-4">
+                <a href={`/admin/grafiks/${e.id}`} className="font-semibold underline decoration-brand decoration-2 underline-offset-4">
+                  Labot
+                </a>
+                <form action={convertTeamEvent.bind(null, e.id)}>
+                  <button type="submit" className={adminSecondary}>
+                    Pievienot meitenes (pārvērst par rezervāciju)
+                  </button>
+                </form>
+              </div>
             )}
           </div>
         </details>

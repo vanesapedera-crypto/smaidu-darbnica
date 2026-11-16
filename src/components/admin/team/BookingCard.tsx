@@ -10,7 +10,7 @@ export type Filter = "visi" | "telpas" | "izbraukumi" | "uznemumi";
 
 export const isVenue = (b: Booking) => b.inquiry_type !== "business" && atStudio(b.location);
 /** Izbraukuma ballīte (kalendārā — lillā) */
-export const isTrip = (b: Booking) => b.inquiry_type !== "business" && b.location === "Izbraukums";
+export const isTrip = (b: Booking) => b.inquiry_type === "business" || b.location === "Izbraukums";
 
 export const matches = (b: Booking, f: Filter) =>
   f === "visi" ? true : f === "telpas" ? isVenue(b) : f === "uznemumi" ? b.inquiry_type === "business" : b.inquiry_type !== "business" && !isVenue(b);

@@ -63,7 +63,7 @@ export async function GET() {
     const slug = b.program || b.service_slug || "";
     const program = titles.get(slug) ?? "";
     const isBusiness = b.inquiry_type === "business";
-    const title = isBusiness ? program || "Pasākums" : [atStudio(b.location) && "Telpu noma", program].filter(Boolean).join(" + ") || "Pasākums";
+    const title = isBusiness ? program || b.company_name || "Pasākums" : [atStudio(b.location) && "Telpu noma", program].filter(Boolean).join(" + ") || "Pasākums";
     const place = atStudio(b.location) ? "Smaidu Darbnīcā" : [b.address, b.event_city].filter(Boolean).join(", ") || b.location || "";
     const time = timeLabel(b.event_time, isBusiness ? null : b.location);
 
