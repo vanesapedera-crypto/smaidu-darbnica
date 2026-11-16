@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { requireAdmin } from "@/lib/auth";
+import { requireSection } from "@/lib/auth";
 import { getServices } from "@/lib/content/queries";
 import { FIXED_VENUES } from "@/lib/bookings";
 import { CALENDAR_HOSTS } from "@/lib/calendar";
@@ -19,7 +19,7 @@ const ERRORS: Record<string, string> = {
 
 /** Rezervācija, ko administratore pievieno pati (piem. pēc telefona zvana) */
 export default async function NewBookingPage({ searchParams }: { searchParams: Promise<{ kluda?: string; veids?: string }> }) {
-  await requireAdmin();
+  await requireSection("kalendars", true);
   const { kluda, veids } = await searchParams;
   const business = veids === "uznemums";
   const services = await getServices(business ? "business" : "private");

@@ -361,12 +361,12 @@ export default async function CalendarPage({ searchParams }: Props) {
               <ul className="mt-2 space-y-2">{found.map((b) => bookingRow(b, true))}</ul>
             </section>
           )}
-          {owner && !q && (
+          {(owner || role === "manager") && !q && (
             <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
               <Link href="/admin/kalendars/jauns" className={adminPrimary}>
                 <Plus className="size-4" aria-hidden /> Pievienot rezervāciju
               </Link>
-              <ResendInvites />
+              {owner && <ResendInvites />}
             </div>
           )}
           {owner && !q && events.length > 0 && (

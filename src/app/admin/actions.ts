@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, clearSession, saveSession, accessOf, homeFor } from "@/lib/auth";
+import { requireAdmin, requireSection, clearSession, saveSession, accessOf, homeFor } from "@/lib/auth";
 import { createUserClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getEntity } from "@/lib/admin/entities";
 import { parse, slugify, setPath } from "@/lib/admin/fields";
@@ -12,6 +12,7 @@ import { getServices, getSettings } from "@/lib/content/queries";
 import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
 import { sendConfirmation } from "@/lib/booking-confirm";
 import { ensureVenueStaff, syncStaff } from "@/lib/staff";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { whenLabel } from "@/lib/dates";
 import { CALENDAR_HOSTS, CALENDAR_INVITES, calendarEvent, hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
 import { atStudio, hostsOf, withEditedMessage, withHostsLine } from "@/lib/bookings";
@@ -634,7 +635,9 @@ export async function resendUpdatedConfirmation(id: string): Promise<{ error?: s
  * (kas piedalās → "Jautāt komandai" → "Apstiprināt un nosūtīt klientam"). Uzreiz arī Google kalendārā kā "🆕 JAUNS".
  */
 export async function createManualBooking(form: FormData) {
-  const { db } = await requireAdmin();
+  // Pievienot var administratore un vadība (Kristīne, "Var labot"); vadībai — ar servera atslēgu (RLS ļauj rakstīt tikai administratorei)
+  const member = await requireSection("kalendars", true);
+  const db = (member.role === "owner" ? member.db : (supabaseAdmin() as typeof member.db | null)) ?? member.db;
   const str = (k: string) => String(form.get(k) ?? "").trim() || null;
   const num = (k: string) => {
     const n = Number(String(form.get(k) ?? "").replace(",", "."));
