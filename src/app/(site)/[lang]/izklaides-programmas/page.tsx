@@ -1,5 +1,5 @@
 import { getT, setLocale } from "@/lib/i18n/server";
-import { isHiddenProgram } from "@/lib/bookings";
+import { SEASONAL_PROGRAMS, isHiddenProgram } from "@/lib/bookings";
 import { asLocale } from "@/lib/i18n/config";
 import GoogleReviewsSection from "@/components/site/GoogleReviewsSection";
 import ProgramCard from "@/components/site/ProgramCard";
@@ -27,6 +27,9 @@ export default async function ProgramsPage({ params }: { params: Promise<{ lang:
   setLocale(asLocale((await params).lang));
   const [allPrograms, settings] = await Promise.all([getServices("private"), getSettings()]);
   const programs = allPrograms.filter((p) => !isHiddenProgram(p.slug));
+  // Sezonas piedāvājums — augšā atsevišķi (secība kā SEASONAL_PROGRAMS), pārējās programmas — zemāk
+  const seasonal = SEASONAL_PROGRAMS.map((slug) => programs.find((p) => p.slug === slug)).filter((p): p is (typeof programs)[number] => Boolean(p));
+  const rest = programs.filter((p) => !SEASONAL_PROGRAMS.includes(p.slug));
   const { programs: page } = settings;
 
   return (
@@ -50,9 +53,19 @@ export default async function ProgramsPage({ params }: { params: Promise<{ lang:
 
       <Section id="programmas" className="scroll-mt-20">
         <Container>
-          <StageHeading eyebrow={t("{n} programmas", { n: programs.length })} title={t("Izvēlieties ballītes")} highlight={t("tēmu")} />
+          {seasonal.length > 0 && (
+            <div className="mb-16 md:mb-20">
+              <StageHeading eyebrow={t("Sezonas piedāvājums")} title={t("Ziemassvētku")} highlight={t("programmas")} />
+              <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {seasonal.map((p, i) => (
+                  <ProgramCard key={p.slug} program={p} index={i} />
+                ))}
+              </div>
+            </div>
+          )}
+          <StageHeading eyebrow={t("{n} programmas", { n: rest.length })} title={t("Izvēlieties ballītes")} highlight={t("tēmu")} />
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {programs.map((p, i) => (
+            {rest.map((p, i) => (
               <ProgramCard key={p.slug} program={p} index={i} />
             ))}
           </div>

@@ -11,6 +11,8 @@ export const googleManaged = (b: { admin_notes?: string | null }) => !(b.admin_n
  */
 export const HIDDEN_PROGRAMS = ["ziemassvetki-dobele"];
 export const isHiddenProgram = (slug: string | null | undefined) => HIDDEN_PROGRAMS.includes(slug ?? "");
+/** Sezonas piedāvājums — sadaļā "Izklaides programmas" augšā, atsevišķi no ballīšu programmām */
+export const SEASONAL_PROGRAMS = ["ziemassvetki-bernudarza", "ziemassvetki-tukums", "minioni-atklaj-manu-pasauli"];
 
 /** Pieteikumu statusi — tie paši, kas tika izmantoti iepriekšējā paneļa versijā. */
 export const BOOKING_STATUSES = ["Jauns", "Apstiprināta", "Atcelta"] as const;
