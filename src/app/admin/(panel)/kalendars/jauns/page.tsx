@@ -112,8 +112,7 @@ export default async function NewBookingPage({
             className={adminInput}
           />,
         )}
-        {business && f("Pilsēta", <input name="event_city" className={adminInput} />)}
-        {business && f("Adrese", <input name="address" className={adminInput} />)}
+        {f("Adrese (vieta, pilsēta)", <input name="address" placeholder="Piem. Rīgas iela 5, Olaine" className={adminInput} />)}
         {f(
           business ? "Dalībnieku skaits" : "Bērnu skaits",
           <input
