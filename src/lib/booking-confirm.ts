@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminContext } from "@/lib/auth";
-import { atStudio, confirmPath, fixedVenueAddress, type Booking } from "@/lib/bookings";
+import { atStudio, confirmPath, fixedVenueAddress, googleManaged, type Booking } from "@/lib/bookings";
 import { CALENDAR_INVITES, calendarEvent } from "@/lib/calendar";
 import { getServices, getSettings } from "@/lib/content/queries";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
@@ -67,7 +67,7 @@ export async function sendConfirmation(b: Booking, hosts: string[], db: AdminCon
   // Ja Google kalendārs nestrādā — .ics ielūgums: komandai (ja ielūgumi ieslēgti) vai tikai administratorei kā rezerves kopija
   const fallback = CALENDAR_INVITES ? guests : [process.env.NOTIFY_EMAIL_PRIVATE || "smaidu.darbniica@gmail.com"];
   // Vispirms — savienotajā Google kalendārā (labojams); ja savienojuma nav vai neizdodas — .ics ielūgums
-  const calendar = event
+  const calendar = event && googleManaged(b)
     ? upsertGoogleEvent(db, b.id, event, guests).then((ok) => (ok ? undefined : sendCalendarInvite(event, fallback, `rezervacija-${b.id}@smaidudarbnica.lv`)))
     : null;
 

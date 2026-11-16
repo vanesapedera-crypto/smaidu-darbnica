@@ -1,4 +1,5 @@
 import "server-only";
+import { googleManaged } from "@/lib/bookings";
 import type { AdminContext } from "./auth";
 import type { Booking } from "./bookings";
 import { CALENDAR_HOSTS, calendarEvent } from "./calendar";
@@ -13,6 +14,7 @@ import { sendCalendarInvite } from "./notify";
  * Atgriež true, ja kaut kas tika izdarīts.
  */
 export async function removeBookingFromCalendars(db: AdminContext["db"], b: Booking): Promise<boolean> {
+  if (!googleManaged(b)) return false; // vecais izbraukums — Google ierakstu uztur ar roku
   const google = await cancelGoogleEvent(db, b.id);
   if (google === "deleted" || google === "gone") return true;
   const event = calendarEvent(b, b.service_slug || b.program || "Rezervācija");

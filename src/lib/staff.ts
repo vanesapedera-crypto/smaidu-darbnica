@@ -3,7 +3,7 @@ import type { MemberContext } from "@/lib/auth";
 import { CALENDAR_HOSTS, CALENDAR_INVITES, CALENDAR_VENUE, OWNER_STAFF_EMAIL, calendarEvent, withVenueStaff } from "@/lib/calendar";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { atStudio } from "@/lib/bookings";
+import { atStudio, googleManaged } from "@/lib/bookings";
 import { type Booking } from "@/lib/bookings";
 import { whenLabel } from "@/lib/dates";
 import { getServices } from "@/lib/content/queries";
@@ -97,7 +97,7 @@ export async function answerStaff(db: MemberContext["db"], bookingId: string, em
 /** Apstiprinātas rezervācijas Google notikumam pievieno vēl vienu viesi (kas atbildēja "Varu") */
 async function addToGoogleGuests(b: Booking, email: string) {
   const admin = supabaseAdmin() as MemberContext["db"] | null;
-  if (!admin || !CALENDAR_INVITES) return;
+  if (!admin || !CALENDAR_INVITES || !googleManaged(b)) return;
   const d = await describe(b);
   const event = calendarEvent(b, d.title || (atStudio(b.location) ? "Telpu noma" : "Pieteikums"));
   if (!event) return;

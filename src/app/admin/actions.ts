@@ -15,7 +15,7 @@ import { ensureVenueStaff, syncStaff } from "@/lib/staff";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { whenLabel } from "@/lib/dates";
 import { CALENDAR_HOSTS, CALENDAR_INVITES, calendarEvent, hostNames, pickHosts, withVenueStaff } from "@/lib/calendar";
-import { atStudio, hostsOf, withEditedMessage, withHostsLine } from "@/lib/bookings";
+import { CONVERTED_NOTE, atStudio, googleManaged, hostsOf, withEditedMessage, withHostsLine } from "@/lib/bookings";
 import { upsertGoogleEvent } from "@/lib/google-calendar";
 import { removeBookingFromCalendars } from "@/lib/calendar-cancel";
 import { bookingCosts, bookingPrices, costsFromText, withCostOverride } from "@/lib/pricing";
@@ -444,6 +444,7 @@ export async function removeFromCalendars(id: string): Promise<{ error?: string;
 
 /** Ieliek (vai atjauno) rezervācijas notikumu savienotajā Google kalendārā un nosūta ielūgumus visiem viesiem */
 async function pushToGoogle(db: Awaited<ReturnType<typeof requireAdmin>>["db"], b: Booking, hosts: string[] = []): Promise<boolean> {
+  if (!googleManaged(b)) return true; // vecais izbraukums — Google ierakstu uztur ar roku
   const isBusiness = b.inquiry_type === "business";
   const [settings, services] = await Promise.all([getSettings(), getServices(isBusiness ? "business" : "private")]);
   const slug = b.service_slug || b.program || "";
@@ -769,7 +770,7 @@ async function convertOne(db: Awaited<ReturnType<typeof requireAdmin>>["db"], id
     event_time: time,
     address: ev.place,
     message,
-    admin_notes: "Pārvērsts no izbraukuma ieraksta",
+    admin_notes: CONVERTED_NOTE,
   });
   if (error) {
     console.error("[convert team event]", error.message);

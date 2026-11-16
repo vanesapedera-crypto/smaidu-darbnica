@@ -1,3 +1,10 @@
+/**
+ * Pasākums, kas pārvērsts no vecā izbraukuma ieraksta (komandas grafika) — tā Google kalendāra ierakstu
+ * Vanesa uztur ar roku, tāpēc sistēma Google kalendārā to neaiztiek (neveido otru ierakstu, neatjauno, neizņem).
+ */
+export const CONVERTED_NOTE = "Pārvērsts no izbraukuma ieraksta";
+export const googleManaged = (b: { admin_notes?: string | null }) => !(b.admin_notes ?? "").includes(CONVERTED_NOTE);
+
 /** Pieteikumu statusi — tie paši, kas tika izmantoti iepriekšējā paneļa versijā. */
 export const BOOKING_STATUSES = ["Jauns", "Apstiprināta", "Atcelta"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
