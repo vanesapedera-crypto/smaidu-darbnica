@@ -8,7 +8,6 @@ import { CALENDAR_HOSTS, calendarEvent, hostNames, withVenueStaff } from "@/lib/
 import type { Service, SiteSettings } from "@/lib/content/types";
 import { VAT_NOTE, amountText, costsToText, eur, parseCostOverride, priceVariants, type BookingCosts } from "@/lib/pricing";
 import CalendarLink from "@/components/admin/CalendarLink";
-import RemoveFromCalendar from "@/components/admin/RemoveFromCalendar";
 import ClientConfirmation from "@/components/admin/ClientConfirmation";
 import ReviewRequest from "@/components/admin/ReviewRequest";
 import StatusSelect from "@/components/admin/StatusSelect";
@@ -339,11 +338,13 @@ export default function BookingAdminPanel({
           return (
             <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink">
               <Summary icon={<CalendarPlus className="size-4" aria-hidden />}>
-                {b.status === "Atcelta" ? "Izņemt no Google kalendāra" : "Google kalendārs — kas piedalās"}
+                {b.status === "Atcelta" ? "Google kalendārs" : "Google kalendārs — kas piedalās"}
               </Summary>
               <div className="border-t border-line p-4">
                 {b.status === "Atcelta" ? (
-                  <RemoveFromCalendar id={b.id} />
+                  <p className="text-sm text-ink-soft">
+                    Google kalendārā ieraksts paliek, kā bija — sistēma to neizņem un nemaina. Ja vajag, atzīmējiet atcelšanu Google kalendārā pati.
+                  </p>
                 ) : (
                   <CalendarLink
                     event={event}

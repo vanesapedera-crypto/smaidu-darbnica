@@ -67,7 +67,7 @@ export default function CalendarLink({
       )}
       <p className="text-xs text-ink-soft">
         {googleBookingId
-          ? "Apstiprinot pieteikumu, notikums kalendārā tiek ielikts automātiski. Šo pogu lietojiet rezervācijām, kas apstiprinātas pirms Google kalendāra savienošanas. Klientam nekas netiek sūtīts."
+          ? "Apstiprinot pieteikumu, notikums kalendārā tiek ielikts automātiski. Šī poga ieliek tikai tad, ja Google kalendārā tā vēl nav — esošu ierakstu tā nemaina. Klientam nekas netiek sūtīts."
           : "Apstiprinot pieteikumu, notikums kalendārā tiek ielikts automātiski. Šo pogu lietojiet tikai tad, ja tas tur nav parādījies."}
       </p>
     </div>

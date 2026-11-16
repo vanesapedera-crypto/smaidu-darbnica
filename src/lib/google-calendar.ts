@@ -134,11 +134,13 @@ export async function upsertGoogleEvent(db: AdminContext["db"], bookingId: strin
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   try {
     let res = await fetch(`${API}?sendUpdates=all`, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
-    // Notikums jau ir (rezervācija apstiprināta atkārtoti) — atjauno to; Google kalendārā ar roku pievienotos viesus saglabā
+    // Notikums jau ir Google kalendārā — Vanesa to uztur pati (laiks, datums, viesi), sistēma to NEMAINA.
+    // Vienīgais izņēmums: sistēmas pagaidu ieraksts "🆕 JAUNS" (jauns pieteikums), ko apstiprinot nomaina ar pilno informāciju.
     if (res.status === 409) {
       const existing = await fetch(`${API}/${id}`, { headers, signal: AbortSignal.timeout(10000) })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
+      if (!existing || existing.status === "cancelled" || !String(existing.summary ?? "").startsWith("🆕 JAUNS")) return true;
       const known = new Set(body.attendees.map((a) => a.email));
       const kept = ((existing?.attendees ?? []) as { email?: string }[])
         .filter((a) => a.email && !known.has(a.email.toLowerCase()) && a.email.toLowerCase() !== own)

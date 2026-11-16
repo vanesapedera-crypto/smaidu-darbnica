@@ -6,6 +6,9 @@ import { CALENDAR_HOSTS, calendarEvent } from "./calendar";
 import { cancelGoogleEvent } from "./google-calendar";
 import { sendCalendarInvite } from "./notify";
 
+/** true — atceļot ierakstu Google kalendārā atstāj tieši tādu, kāds tas ir */
+const ALWAYS_KEEP = true;
+
 /**
  * Izņem rezervācijas notikumu no visu iesaistīto kalendāriem.
  *  - Ja notikums ir savienotajā Google kalendārā — to izdzēš (Google pats izņem to arī viesiem).
@@ -14,7 +17,8 @@ import { sendCalendarInvite } from "./notify";
  * Atgriež true, ja kaut kas tika izdarīts.
  */
 export async function removeBookingFromCalendars(db: AdminContext["db"], b: Booking): Promise<boolean> {
-  if (!googleManaged(b)) return false; // vecais izbraukums — Google ierakstu uztur ar roku
+  // Google kalendārs ir Vanesas drošā kopija: ierakstus no tā sistēma NEKAD neizņem un nemaina (to dara Vanesa pati).
+  if (ALWAYS_KEEP || !googleManaged(b)) return false;
   const google = await cancelGoogleEvent(db, b.id);
   if (google === "deleted" || google === "gone") return true;
   const event = calendarEvent(b, b.service_slug || b.program || "Rezervācija");

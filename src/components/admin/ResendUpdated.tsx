@@ -16,10 +16,10 @@ export default function ResendUpdated({ id, hasEmail }: { id: string; hasEmail: 
         disabled={pending}
         className={adminSecondary}
         onClick={() => {
-          if (!window.confirm(hasEmail ? "Nosūtīt klientam atjaunotu apstiprinājumu ar aktuālo informāciju? Google kalendārs arī tiks atjaunots." : "Klientam nav e-pasta — atjaunots tiks tikai Google kalendārs. Turpināt?")) return;
+          if (!window.confirm(hasEmail ? "Nosūtīt klientam atjaunotu apstiprinājumu ar aktuālo informāciju? (Google kalendārā izmaiņas ieraksti pati.)" : "Klientam nav e-pasta — e-pastu nosūtīt nevar.")) return;
           start(async () => {
             const r = await resendUpdatedConfirmation(id);
-            setMsg(r.error ? { error: r.error } : { ok: r.emailed ? "Nosūtīts. Klients saņēma atjaunotu e-pastu, kalendārs atjaunots." : "Kalendārs atjaunots. Klientam e-pasta nav." });
+            setMsg(r.error ? { error: r.error } : { ok: r.emailed ? "Nosūtīts. Klients saņēma atjaunotu e-pastu." : "Klientam e-pasta nav." });
           });
         }}
       >
