@@ -18,7 +18,9 @@ import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 import { googleConnection } from "@/lib/google-calendar";
 import { adminInput, adminPrimary, adminSecondary } from "@/components/admin/styles";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { cookies } from "next/headers";
+import CalendarViewToggle from "@/components/admin/CalendarViewToggle";
 import ResendInvites from "@/components/admin/ResendInvites";
 import { convertAllTeamEvents, convertTeamEvent } from "@/app/admin/actions";
 import { Search } from "lucide-react";
@@ -32,7 +34,7 @@ export const metadata = { title: "Kalendārs" };
 // Poga "Nosūtīt ielūgumus vēlreiz" sūta daudz notikumu pēc kārtas — atļaujam ilgāku izpildes laiku
 export const maxDuration = 60;
 
-type Props = { searchParams: Promise<{ q?: string; google?: string }> };
+type Props = { searchParams: Promise<{ q?: string; google?: string; skats?: string; m?: string; diena?: string }> };
 
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const WEEKDAY_NAMES = ["svētdiena", "pirmdiena", "otrdiena", "trešdiena", "ceturtdiena", "piektdiena", "sestdiena"];
@@ -59,7 +61,10 @@ const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) 
  */
 export default async function CalendarPage({ searchParams }: Props) {
   const { db, role, email } = await requireSection("kalendars");
-  const { q = "", google } = await searchParams;
+  const { q = "", google, skats, m: monthParam, diena } = await searchParams;
+  // Skats: saraksts (kā līdz šim) vai īsts kalendārs pa mēnešiem; izvēle saglabājas sīkdatnē
+  const view: "saraksts" | "menesis" = (skats ?? (await cookies()).get("sd_skats")?.value) === "menesis" ? "menesis" : "saraksts";
+  const day1 = diena && /^\d{4}-\d{2}-\d{2}$/.test(diena) ? diena : null;
   const owner = role === "owner";
   // Kristīne (vadība) — informēta par visu: redz jaunos, atceltos un komandas atbildes (bez labošanas)
   const seesAll = true; // visa komanda redz pilnīgi visu to pašu, ko administratore — tikai bez labošanas
@@ -338,6 +343,91 @@ export default async function CalendarPage({ searchParams }: Props) {
     </div>
   );
 
+  /** Īsts kalendārs: mēneša režģis (P–Sv); uzspiežot uz dienas — tās dienas pasākumi ar visu informāciju */
+  const monthGrid = () => {
+    const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : today.slice(0, 7);
+    const first = new Date(`${month}-01T12:00:00Z`);
+    const shift = (n: number) => {
+      const d = new Date(first);
+      d.setUTCMonth(d.getUTCMonth() + n);
+      return d.toISOString().slice(0, 7);
+    };
+    const offset = (first.getUTCDay() + 6) % 7; // pirmdiena = 0
+    const daysInMonth = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+    const cells = Array.from({ length: Math.ceil((offset + daysInMonth) / 7) * 7 }, (_, i) => {
+      const n = i - offset + 1;
+      return n >= 1 && n <= daysInMonth ? `${month}-${String(n).padStart(2, "0")}` : null;
+    });
+    const byDay = new Map<string, Booking[]>();
+    for (const b of all) {
+      const d = b.event_date!.slice(0, 10);
+      if (d.startsWith(month)) byDay.set(d, [...(byDay.get(d) ?? []), b]);
+    }
+    const chip = (b: Booking) => (
+      <li
+        key={b.id}
+        className={cn(
+          "truncate rounded px-1 py-0.5 text-[11px] leading-tight font-semibold ring-1",
+          isTrip(b) ? "bg-purple-50 ring-purple-200" : isVenue(b) ? "bg-amber-50 ring-amber-200" : "bg-white ring-line",
+          b.status === "Jauns" && "bg-sky-50 ring-sky-300",
+          isMine(b) && "bg-pink-200 ring-pink-500",
+          b.status === "Atcelta" && "bg-red-50 text-red-700 line-through ring-red-200",
+        )}
+      >
+        {timeLabel(b.event_time, b.location).slice(0, 5)} {isVenue(b) ? "Telpu noma" : b.company_name || label(b)}
+      </li>
+    );
+    return (
+      <section className="mt-6">
+        <div className="flex items-center justify-between gap-3">
+          <a href={`/admin/kalendars?skats=menesis&m=${shift(-1)}`} className={adminSecondary} aria-label="Iepriekšējais mēnesis">
+            <ChevronLeft className="size-4" aria-hidden />
+          </a>
+          <h2 className="text-lg font-extrabold capitalize">
+            {MONTHS[first.getUTCMonth()]} {first.getUTCFullYear()}
+          </h2>
+          <a href={`/admin/kalendars?skats=menesis&m=${shift(1)}`} className={adminSecondary} aria-label="Nākamais mēnesis">
+            <ChevronRight className="size-4" aria-hidden />
+          </a>
+        </div>
+        <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs font-extrabold text-ink-soft">
+          {["P", "O", "T", "C", "Pk", "S", "Sv"].map((d) => (
+            <div key={d}>{d}</div>
+          ))}
+        </div>
+        <div className="mt-1 grid grid-cols-7 gap-1">
+          {cells.map((d, i) =>
+            d ? (
+              <a
+                key={d}
+                href={`/admin/kalendars?diena=${d}`}
+                className={cn(
+                  "min-h-20 rounded-lg bg-white p-1 ring-1 ring-line hover:ring-ink sm:min-h-28",
+                  d === today && "ring-2 ring-ink",
+                  d < today && "opacity-60",
+                )}
+              >
+                <span className={cn("block text-xs font-extrabold", d === today && "text-ink")}>{Number(d.slice(8))}</span>
+                <ul className="mt-0.5 space-y-0.5 text-left">
+                  {(byDay.get(d) ?? []).sort((x, y) => minuteOf(x.event_time) - minuteOf(y.event_time)).slice(0, 4).map(chip)}
+                  {(eventsByDay.get(d) ?? []).slice(0, 2).map((e) => (
+                    <li key={e.id} className="truncate rounded bg-purple-50 px-1 py-0.5 text-[11px] leading-tight font-semibold ring-1 ring-purple-200">
+                      {e.time} {e.title}
+                    </li>
+                  ))}
+                  {(byDay.get(d) ?? []).length > 4 && <li className="text-[11px] font-bold text-ink-soft">+{(byDay.get(d) ?? []).length - 4}</li>}
+                </ul>
+              </a>
+            ) : (
+              <div key={`x${i}`} />
+            ),
+          )}
+        </div>
+        <p className="mt-2 text-xs text-ink-soft">Uzspiediet uz dienas — atveras tās dienas pasākumi ar visu informāciju.</p>
+      </section>
+    );
+  };
+
   return (
     <>
       <PageHeader
@@ -446,10 +536,28 @@ export default async function CalendarPage({ searchParams }: Props) {
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-l-4 border-purple-400 bg-white ring-1 ring-line" /> Izbraukuma ballīte</span>
       </div>
 
-      <section className="mt-6 space-y-6">
-        {upcomingDays.length === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Gaidāmu rezervāciju nav.</p>}
-        {upcomingDays.map((day) => renderDay(day, upcoming.get(day) ?? [], eventsByDay.get(day)))}
-      </section>
+      <div className="mt-6">
+        <CalendarViewToggle view={view} />
+      </div>
+
+      {day1 ? (
+        <section className="mt-6 space-y-4">
+          <a href={`/admin/kalendars?skats=menesis&m=${day1.slice(0, 7)}`} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
+            <ChevronLeft className="size-4" aria-hidden /> Atpakaļ uz mēnesi
+          </a>
+          {renderDay(day1, all.filter((b) => b.event_date!.slice(0, 10) === day1), eventsByDay.get(day1))}
+          {all.every((b) => b.event_date!.slice(0, 10) !== day1) && !(eventsByDay.get(day1) ?? []).length && (
+            <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā dienā pasākumu nav.</p>
+          )}
+        </section>
+      ) : view === "menesis" ? (
+        monthGrid()
+      ) : (
+        <section className="mt-6 space-y-6">
+          {upcomingDays.length === 0 && <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Gaidāmu rezervāciju nav.</p>}
+          {upcomingDays.map((day) => renderDay(day, upcoming.get(day) ?? [], eventsByDay.get(day)))}
+        </section>
+      )}
 
       {/* Google kalendāra notikumi, kas nav no mājaslapas (piem. Kristīnes) — tikai administratorei; ielādējas atsevišķi, lai lapa nav jāgaida */}
       {seesAll && googleDb && (
