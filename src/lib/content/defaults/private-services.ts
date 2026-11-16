@@ -233,6 +233,7 @@ const tukumsXmas: Service = {
   ...dobeleXmas,
   slug: "ziemassvetki-tukums",
   title: "Ziemassvētki Smaidu Darbnīcā",
+  heroImage: "/media/ziemassvetki-tukums/ziemassvetki-klasem.webp",
   pricing: [
     {
       title: "Cena",
