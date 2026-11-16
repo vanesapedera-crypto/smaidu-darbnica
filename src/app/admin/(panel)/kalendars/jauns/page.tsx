@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getServices } from "@/lib/content/queries";
 import { FIXED_VENUES } from "@/lib/bookings";
 import { CALENDAR_HOSTS } from "@/lib/calendar";
+import SubmitOnce from "@/components/admin/SubmitOnce";
 import { createManualBooking } from "@/app/admin/actions";
 import PageHeader from "@/components/admin/PageHeader";
 import TimeSelect from "@/components/site/TimeSelect";
@@ -112,7 +113,9 @@ export default async function NewBookingPage({ searchParams }: { searchParams: P
         </fieldset>
 
         <div className="sm:col-span-2">
-          <button className={adminPrimary}>Saglabāt rezervāciju</button>
+          <SubmitOnce className={adminPrimary} pendingText="Saglabā… (nespiediet vēlreiz)">
+            Saglabāt rezervāciju
+          </SubmitOnce>
         </div>
       </form>
     </div>

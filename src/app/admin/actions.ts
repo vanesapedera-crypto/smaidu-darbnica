@@ -678,6 +678,20 @@ export async function createManualBooking(form: FormData) {
     if (quote) Object.assign(row, { travel_km: quote.roundTripKm, travel_cost: quote.cost });
   }
 
+  // Tāda pati rezervācija pēdējo 10 minūšu laikā jau saglabāta (piem. poga nospiesta vairākas reizes) — otro neveido
+  {
+    let dup = db
+      .from("bookings")
+      .select("id")
+      .eq("event_date", String(row.event_date))
+      .gte("created_at", new Date(Date.now() - 10 * 60 * 1000).toISOString())
+      .limit(1);
+    dup = row.company_name ? dup.eq("company_name", String(row.company_name)) : dup.eq("parent_name", String(row.parent_name));
+    dup = row.event_time ? dup.eq("event_time", String(row.event_time)) : dup.is("event_time", null);
+    const { data: existing } = await dup;
+    if (existing?.length) redirect("/admin/kalendars?pievienots=1");
+  }
+
   const { error } = await db.from("bookings").insert(row);
   if (error) redirect(`/admin/kalendars/jauns?kluda=${encodeURIComponent(error.message)}`);
 
