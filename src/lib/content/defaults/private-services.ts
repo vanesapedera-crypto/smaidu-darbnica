@@ -240,7 +240,7 @@ const tukumsXmas: Service = {
     "Spīdīgo nūjiņu deja – dejas ar gaismas nūjiņām mūzikas pavadībā",
     "Radošā darbnīca – Ziemassvētku rotājuma izgatavošana pašu rokām",
     "Gardā darbnīca – ēdamā Ziemassvētku čiekura pagatavošana",
-    "Brīvais laiks bumbu zonā un disko telpā – spēles bumbās un dejas disko gaismās",
+    "Brīvais laiks bumbu zonā un disko telpā",
     "Silts dzēriens – nelielai pauzei un atpūtai",
   ],
   pricing: [
