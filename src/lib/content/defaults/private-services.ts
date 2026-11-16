@@ -233,7 +233,7 @@ const tukumsXmas: Service = {
   ...dobeleXmas,
   slug: "ziemassvetki-tukums",
   title: "Ziemassvētki Smaidu Darbnīcā",
-  heroImage: "/media/ziemassvetki-tukums/ziemassvetki-tukums-hero.webp",
+  heroImage: "/media/ziemassvetki-tukums/ziemassvetki-tukums-sniegavirs.webp",
   duration: "2 stundas",
   highlights: [
     "Tikšanās ar Ziemassvētku rūķiem – rotaļas, uzdevumi un dažādi pārsteigumi",
