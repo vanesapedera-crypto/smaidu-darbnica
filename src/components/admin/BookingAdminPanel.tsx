@@ -1,5 +1,6 @@
 import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote, Users, XCircle } from "lucide-react";
 import RejectActions from "@/components/admin/RejectActions";
+import SubmitOnce from "@/components/admin/SubmitOnce";
 import ResendUpdated from "@/components/admin/ResendUpdated";
 import StaffPanel from "@/components/admin/StaffPanel";
 import type { StaffRow } from "@/lib/staff";
@@ -68,9 +69,7 @@ export default function BookingAdminPanel({
             Atcelšanas iemesls
             <span className="mt-1 flex flex-wrap gap-2">
               <input name="cancel_reason" defaultValue={b.cancel_reason ?? ""} placeholder="Piem. bērns saslima, mainījās plāni…" className={`${adminInput} min-w-60 flex-1`} />
-              <button type="submit" className={adminSecondary}>
-                Saglabāt
-              </button>
+              <SubmitOnce className={adminSecondary}>Saglabāt</SubmitOnce>
             </span>
           </label>
         </form>
@@ -176,7 +175,7 @@ export default function BookingAdminPanel({
               <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink" open={costs?.exact === false || undefined}>
                 <Summary icon={<Pencil className="size-4" aria-hidden />}>Labot informāciju</Summary>
                 <div className="border-t border-line p-4">
-                <form action={saveBookingDetails.bind(null, b.id)} className="mt-3 space-y-3">
+                <form action={saveBookingDetails.bind(null, b.id)} noValidate className="mt-3 space-y-3">
                   {costs?.exact === false && (
                     <p className="text-sm font-semibold text-destructive">
                       Cena nav zināma (“pēc vienošanās”). Izlabojiet datus vai ierakstiet izmaksas zemāk un saglabājiet — tad var apstiprināt.
@@ -307,9 +306,7 @@ export default function BookingAdminPanel({
                       </label>
                     )}
                   </div>
-                  <button type="submit" className={adminSecondary}>
-                    Saglabāt izmaiņas
-                  </button>
+                  <SubmitOnce className={adminSecondary}>Saglabāt izmaiņas</SubmitOnce>
                 </form>
                 </div>
               </details>
@@ -380,9 +377,7 @@ export default function BookingAdminPanel({
           <Summary icon={<StickyNote className="size-4" aria-hidden />}>Iekšējās piezīmes</Summary>
           <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2 border-t border-line p-4">
             <textarea name="admin_notes" defaultValue={b.admin_notes ?? ""} rows={3} className={adminInput} aria-label="Iekšējās piezīmes" />
-            <button type="submit" className={adminSecondary}>
-              Saglabāt piezīmes
-            </button>
+            <SubmitOnce className={adminSecondary}>Saglabāt piezīmes</SubmitOnce>
           </form>
         </details>
 
