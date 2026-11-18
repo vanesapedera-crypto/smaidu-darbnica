@@ -255,7 +255,10 @@ export async function saveWorkshop(id: string | null, _: TeamActionState, form: 
     return { error: "Neizdevās nolasīt materiālus." };
   }
   const participants = Number(form.get("participants"));
+  const fixedRaw = String(form.get("fixed_cost") ?? "").replace(",", ".").trim();
+  const fixed = Number(fixedRaw);
   const row = {
+    fixed_cost: fixedRaw && Number.isFinite(fixed) && fixed >= 0 && fixed < 10000 ? Math.round(fixed * 100) / 100 : null,
     title,
     description: text(form, "description", 5000),
     image: text(form, "image", 500),

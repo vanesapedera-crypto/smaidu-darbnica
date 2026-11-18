@@ -9,7 +9,7 @@ import { saveCalcOffer } from "@/app/admin/team-actions";
 import { getSettings } from "@/lib/content/queries";
 import { missingTable } from "@/lib/team/files";
 import { emptyCalc, parseCalc, parseSettings, type CostItemRow } from "@/lib/team/offer-calc";
-import { costPerPerson, materialMap, parseItems, type Material } from "@/lib/team/workshops";
+import { materialMap, workshopCost, type Material } from "@/lib/team/workshops";
 import PageHeader from "@/components/admin/PageHeader";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import OfferBuilder from "@/components/admin/team/OfferBuilder";
@@ -24,7 +24,7 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
   const offerId = id && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 
   const [{ data: ws, error }, { data: items }, { data: s }, { data: names }, site, existing, { data: materials }, { data: archiveData }] = await Promise.all([
-    db.from("workshops").select("id, title, items, description").order("title"),
+    db.from("workshops").select("*").order("title"),
     db.from("cost_items").select("*").order("sort").order("title"),
     db.from("calc_settings").select("data").eq("id", 1).maybeSingle(),
     db.from("offers").select("client_name").eq("kind", "client"),
@@ -62,7 +62,7 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
         workshops: ((pr.workshop_ids as string[]) ?? [])
           .map((wid) => (ws ?? []).find((w) => w.id === wid))
           .filter(Boolean)
-          .map((w) => ({ id: w!.id as string, title: w!.title as string, costPerPerson: costPerPerson(parseItems(w!.items), mats), persons: children })),
+          .map((w) => ({ id: w!.id as string, title: w!.title as string, costPerPerson: workshopCost(w as { items: unknown; fixed_cost?: number | null }, mats), persons: children })),
         items: ((pr.activity_ids as string[]) ?? [])
           .map((aid) => ((items ?? []) as CostItemRow[]).find((i) => i.id === aid))
           .filter(Boolean)
@@ -108,7 +108,7 @@ export default async function OfferBuilderPage({ searchParams }: Props) {
           workshops={(ws ?? []).map((w) => ({
             id: w.id as string,
             title: w.title as string,
-            costPerPerson: costPerPerson(parseItems(w.items), mats),
+            costPerPerson: workshopCost(w as { items: unknown; fixed_cost?: number | null }, mats),
             hasDescription: Boolean((w.description as string | null)?.trim()),
           }))}
           catalog={((items ?? []) as CostItemRow[]).map((i) => ({ id: i.id, kind: i.kind, title: i.title, unit: i.unit, cost: Number(i.cost) }))}

@@ -57,6 +57,11 @@ export default async function WorkshopPage({ params, searchParams }: Props) {
                 <input name="title" required defaultValue={w?.title ?? ""} placeholder="piem. Ziemassvētku rotājumu darbnīca" className={adminInput} />
               </label>
               <SeasonChecks value={(w as { season?: string } | null)?.season} />
+              <label className="block max-w-xs space-y-1.5">
+                <span className="block text-sm font-bold">Pašizmaksa 1 personai (€)</span>
+                <input name="fixed_cost" inputMode="decimal" defaultValue={w?.fixed_cost ?? ""} placeholder="piem. 1,20" className={adminInput} />
+                <span className="block text-xs text-ink-soft">Var ierakstīt uzreiz, bez materiāliem. Ja ierakstīta — to izmanto aprēķina vietā. Lai rēķinātu no materiāliem — atstājiet tukšu.</span>
+              </label>
               <WorkshopItems initial={items} materials={mats} participants={w?.participants ?? null} />
               <div className="grid gap-5 border-t border-line pt-5 md:grid-cols-[1fr_auto]">
                 <label className="block space-y-1.5">

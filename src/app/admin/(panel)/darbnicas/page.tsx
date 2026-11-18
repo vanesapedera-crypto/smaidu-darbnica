@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronDown, Package, Palette, Pencil, Plus } from "lucide-react";
 import { isManagerRole, requireSection } from "@/lib/auth";
 import { missingTable } from "@/lib/team/files";
-import { costPerPerson, materialMap, money, packPrice, parseItems, perPerson, type Material, type WorkshopRow } from "@/lib/team/workshops";
+import { costPerPerson, fixedCost, materialMap, money, packPrice, parseItems, perPerson, type Material, type WorkshopRow } from "@/lib/team/workshops";
 import PageHeader from "@/components/admin/PageHeader";
 import MigrationNotice from "@/components/admin/team/MigrationNotice";
 import MaterialsSection from "@/components/admin/team/MaterialsSection";
@@ -48,7 +48,8 @@ export default async function WorkshopsPage({ searchParams }: Props) {
         {workshops.length === 0 && <li className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Darbnīcu vēl nav.</li>}
         {workshops.map((w) => {
           const items = parseItems(w.items);
-          const cost = costPerPerson(items, mats);
+          const fixed = fixedCost(w);
+          const cost = fixed ?? costPerPerson(items, mats);
           return (
             <li key={w.id} className="rounded-2xl bg-white ring-1 ring-line">
               <details className="group">
@@ -58,7 +59,7 @@ export default async function WorkshopsPage({ searchParams }: Props) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-bold">{w.title}</span>
-                    <span className="block text-sm text-ink-soft">{items.length ? `${items.length} materiāli` : "materiāli nav ievadīti"}</span>
+                    <span className="block text-sm text-ink-soft">{fixed !== null ? "pašizmaksa ievadīta" : items.length ? `${items.length} materiāli` : "materiāli nav ievadīti"}</span>
                   </span>
                   <span className="text-sm">
                     <span className="text-ink-soft">1 personai </span>

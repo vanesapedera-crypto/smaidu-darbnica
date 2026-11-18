@@ -21,6 +21,8 @@ export type WorkshopRow = {
   image?: string | null;
   items: WorkshopItem[];
   participants: number | null;
+  /** Ievadīta pašizmaksa 1 personai (bez materiāliem) — ja ir, to izmanto aprēķina vietā */
+  fixed_cost?: number | string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -42,6 +44,15 @@ export function perPerson(item: WorkshopItem, materials: MaterialMap): number {
 
 /** Tīrā pašizmaksa vienai personai */
 export const costPerPerson = (items: WorkshopItem[], materials: MaterialMap) => items.reduce((sum, i) => sum + perPerson(i, materials), 0);
+
+/** Ievadītā pašizmaksa (ja ir), citādi null */
+export const fixedCost = (w: { fixed_cost?: number | string | null }) => {
+  const n = Number(w.fixed_cost);
+  return w.fixed_cost !== null && w.fixed_cost !== undefined && w.fixed_cost !== "" && Number.isFinite(n) && n >= 0 ? n : null;
+};
+/** Darbnīcas pašizmaksa 1 personai: ievadītā, ja ir; citādi — aprēķins no materiāliem */
+export const workshopCost = (w: { items: unknown; fixed_cost?: number | string | null }, materials: MaterialMap) =>
+  fixedCost(w) ?? costPerPerson(parseItems(w.items), materials);
 
 export const money = (n: number) =>
   `${n.toLocaleString("lv-LV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
