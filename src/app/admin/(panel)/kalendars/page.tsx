@@ -345,6 +345,8 @@ export default async function CalendarPage({ searchParams }: Props) {
     </div>
   );
 
+  /** Meitenēm (ne administratorei, ne Kristīnei) kalendāra skatā — tikai pasākumi, kuros viņas piedalās */
+  const onlyMine = !owner && role !== "manager";
   /** Īsts kalendārs: mēneša režģis (P–Sv); uzspiežot uz dienas — tās dienas pasākumi ar visu informāciju */
   const monthGrid = () => {
     const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : today.slice(0, 7);
@@ -361,7 +363,8 @@ export default async function CalendarPage({ searchParams }: Props) {
       return n >= 1 && n <= daysInMonth ? `${month}-${String(n).padStart(2, "0")}` : null;
     });
     const byDay = new Map<string, Booking[]>();
-    for (const b of all) {
+    // Meitenēm kalendārā — tikai viņu pasākumi (visi — sarakstā); administratorei un Kristīnei — visi
+    for (const b of onlyMine ? all.filter(isMine) : all) {
       const d = b.event_date!.slice(0, 10);
       if (d.startsWith(month)) byDay.set(d, [...(byDay.get(d) ?? []), b]);
     }
@@ -415,7 +418,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                 </Link>
                 <ul className="mt-0.5 space-y-0.5 text-left">
                   {(byDay.get(d) ?? []).sort((x, y) => minuteOf(x.event_time) - minuteOf(y.event_time)).slice(0, 4).map(chip)}
-                  {(eventsByDay.get(d) ?? []).slice(0, 2).map((e) => (
+                  {(onlyMine ? [] : (eventsByDay.get(d) ?? [])).slice(0, 2).map((e) => (
                     <li key={e.id} className="truncate rounded bg-purple-50 px-1 py-0.5 text-[11px] leading-tight font-semibold ring-1 ring-purple-200">
                       {e.time} {e.title}
                     </li>
@@ -434,7 +437,10 @@ export default async function CalendarPage({ searchParams }: Props) {
             ),
           )}
         </div>
-        <p className="mt-2 text-xs text-ink-soft">Uzspiediet uz pasākuma — tas atveras ar visu informāciju; uz datuma — visi tās dienas pasākumi.</p>
+        <p className="mt-2 text-xs text-ink-soft">
+          {onlyMine ? "Kalendārā — tikai tavi pasākumi. Visi pasākumi — skatā “Saraksts”. " : ""}
+          Uzspiediet uz pasākuma — tas atveras ar visu informāciju; uz datuma — tās dienas pasākumi.
+        </p>
       </section>
     );
   };
@@ -564,8 +570,8 @@ export default async function CalendarPage({ searchParams }: Props) {
           <Link href={`/admin/kalendars?skats=menesis&m=${day1.slice(0, 7)}`} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
             <ChevronLeft className="size-4" aria-hidden /> Atpakaļ uz mēnesi
           </Link>
-          {renderDay(day1, all.filter((b) => b.event_date!.slice(0, 10) === day1), eventsByDay.get(day1))}
-          {all.every((b) => b.event_date!.slice(0, 10) !== day1) && !(eventsByDay.get(day1) ?? []).length && (
+          {renderDay(day1, all.filter((b) => b.event_date!.slice(0, 10) === day1 && (!onlyMine || isMine(b))), onlyMine ? [] : eventsByDay.get(day1))}
+          {!all.some((b) => b.event_date!.slice(0, 10) === day1 && (!onlyMine || isMine(b))) && (onlyMine || !(eventsByDay.get(day1) ?? []).length) && (
             <p className="rounded-2xl bg-white p-6 text-sm text-ink-soft ring-1 ring-line">Šajā dienā pasākumu nav.</p>
           )}
         </section>
