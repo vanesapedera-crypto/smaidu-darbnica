@@ -1,4 +1,4 @@
-import { CalendarPlus, ChevronDown, Pencil, Star, StickyNote, Users, XCircle } from "lucide-react";
+import { CalendarPlus, ChevronDown, Pencil, Star, Users, XCircle } from "lucide-react";
 import RejectActions from "@/components/admin/RejectActions";
 import SubmitOnce from "@/components/admin/SubmitOnce";
 import ResendUpdated from "@/components/admin/ResendUpdated";
@@ -15,7 +15,7 @@ import StatusSelect from "@/components/admin/StatusSelect";
 import TimeSelect from "@/components/site/TimeSelect";
 import { reviewKind, reviewMessageText, reviewUrl } from "@/lib/review";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
-import { saveBookingDetails, saveBookingNotes, saveCancelReason } from "@/app/admin/actions";
+import { saveBookingDetails, saveCancelReason } from "@/app/admin/actions";
 import { cn } from "@/lib/utils";
 
 export type BookingAdminContext = {
@@ -373,13 +373,6 @@ export default function BookingAdminPanel({
           </details>
         )}
 
-        <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink" open={Boolean(b.admin_notes) || undefined}>
-          <Summary icon={<StickyNote className="size-4" aria-hidden />}>Iekšējās piezīmes</Summary>
-          <form action={saveBookingNotes.bind(null, b.id)} className="space-y-2 border-t border-line p-4">
-            <textarea name="admin_notes" defaultValue={b.admin_notes ?? ""} rows={3} className={adminInput} aria-label="Iekšējās piezīmes" />
-            <SubmitOnce className={adminSecondary}>Saglabāt piezīmes</SubmitOnce>
-          </form>
-        </details>
 
         {/* Pieteikumus nedzēš: nevajadzīgu — statuss "Atcelta" (pāriet uz atceltajiem); notikušie paši pāriet uz arhīvu */}
         <p className="pt-2 text-xs text-ink-soft">
