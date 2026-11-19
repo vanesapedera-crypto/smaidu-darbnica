@@ -3,9 +3,7 @@ import { cache } from "react";
 import { DEFAULT_LOCALE, type Locale } from "./config";
 import { makeT, translateDeep, type Messages, type TFn } from "./translate";
 import uiEn from "./messages/en.json";
-import uiRu from "./messages/ru.json";
 import contentEn from "./content/en.json";
-import contentRu from "./content/ru.json";
 
 /**
  * Pašreizējā valoda servera komponentēm (viena pieprasījuma ietvaros).
@@ -22,12 +20,11 @@ export function getLocale(): Locale {
 }
 
 /** Lapas tekstu vārdnīca (tiek nodota arī klienta komponentēm) */
-export const UI_MESSAGES: Record<Locale, Messages | null> = { lv: null, en: uiEn, ru: uiRu };
+export const UI_MESSAGES: Record<Locale, Messages | null> = { lv: null, en: uiEn };
 /** Serverī — lapas teksti + datubāzes satura tulkojumi */
 const ALL: Record<Locale, Messages | null> = {
   lv: null,
   en: { ...(contentEn as Messages), ...(uiEn as Messages) },
-  ru: { ...(contentRu as Messages), ...(uiRu as Messages) },
 };
 
 /** Tulkošanas funkcija pašreizējā valodā: const t = getT(); t("Kontakti") */

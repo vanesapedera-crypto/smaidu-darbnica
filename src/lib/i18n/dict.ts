@@ -1,6 +1,6 @@
 import type { Locale } from "./config";
 
-/** Mājaslapas kopējie teksti (izvēlne, kājene, pogas) trīs valodās. */
+/** Mājaslapas kopējie teksti (izvēlne, kājene, pogas) divās valodās. */
 const lv = {
   nav: {
     "/": "Sākums",
@@ -67,39 +67,7 @@ const en: Dict = {
   },
 };
 
-const ru: Dict = {
-  nav: {
-    "/": "Главная",
-    "/par-mums": "О нас",
-    "/uznemumiem": "Для компаний",
-    "/izrades": "Спектакли",
-    "/izklaides-programmas": "Детские праздники",
-    "/telpu-noma": "Аренда помещения",
-    "/kontakti": "Контакты",
-  },
-  skipToContent: "Перейти к содержанию",
-  mainNav: "Основная навигация",
-  homeAria: "Smaidu Darbnīca — главная",
-  requestOffer: "Запросить предложение",
-  openMenu: "Открыть меню",
-  closeMenu: "Закрыть меню",
-  businessServices: "Услуги для компаний",
-  xmasForBusiness: "Рождество для компаний",
-  language: "Язык",
-  footer: {
-    business: "Для компаний",
-    sections: "Разделы",
-    contacts: "Контакты",
-    forBusiness: "Для компаний",
-    forPrivate: "Частным лицам",
-    venueHire: "Аренда помещения",
-    madeBy: "Сайт разработала",
-    reviews: "Отзывы",
-    privacy: "Политика конфиденциальности",
-  },
-};
-
-const DICTS: Record<Locale, Dict> = { lv, en, ru };
+const DICTS: Record<Locale, Dict> = { lv, en };
 
 /** Teksti izvēlētajā valodā */
 export const dict = (locale: Locale): Dict => DICTS[locale] ?? lv;

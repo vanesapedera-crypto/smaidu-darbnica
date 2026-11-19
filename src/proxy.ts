@@ -19,11 +19,11 @@ import {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Mājaslapas valodas (sk. src/lib/i18n/config.ts): /en/… un /ru/… — kā ir; /lv/… → bez prefiksa;
+  // Mājaslapas valodas (sk. src/lib/i18n/config.ts): /en/… — kā ir; /lv/… un /ru/… (krievu valoda noņemta) → bez prefiksa;
   // pārējās publiskās adreses iekšēji → /lv/… (latviešu lapas adresē paliek bez prefiksa)
   if (!/^\/(admin|api)(\/|$)/.test(pathname)) {
-    if (/^\/(en|ru)(\/|$)/.test(pathname)) return NextResponse.next();
-    if (/^\/lv(\/|$)/.test(pathname)) {
+    if (/^\/en(\/|$)/.test(pathname)) return NextResponse.next();
+    if (/^\/(lv|ru)(\/|$)/.test(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = pathname.slice(3) || "/";
       return NextResponse.redirect(url, 308);

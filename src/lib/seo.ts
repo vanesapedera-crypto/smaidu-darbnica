@@ -58,7 +58,7 @@ export async function pageMetadata(input: PageMetaInput): Promise<Metadata> {
     alternates: { canonical: url, languages },
     openGraph: {
       type: "website",
-      locale: { lv: "lv_LV", en: "en_GB", ru: "ru_RU" }[locale],
+      locale: { lv: "lv_LV", en: "en_GB" }[locale],
       siteName: seo.siteName,
       url,
       title: title ? `${title} | ${seo.siteName}` : seo.defaultTitle,

@@ -1,16 +1,16 @@
 /**
  * Mājaslapas valodas. Latviešu — bez prefiksa (smaidudarbnica.lv/uznemumiem),
- * angļu un krievu — ar prefiksu (/en/uznemumiem, /ru/uznemumiem). Sk. src/proxy.ts.
+ * angļu — ar prefiksu (/en/uznemumiem). Sk. src/proxy.ts.
  */
-export const LOCALES = ["lv", "en", "ru"] as const;
+export const LOCALES = ["lv", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "lv";
 
 export const isLocale = (v: unknown): v is Locale => LOCALES.includes(v as Locale);
 
-export const LOCALE_LABEL: Record<Locale, string> = { lv: "LV", en: "EN", ru: "RU" };
+export const LOCALE_LABEL: Record<Locale, string> = { lv: "LV", en: "EN" };
 /** Valodas kods HTML un Open Graph */
-export const LOCALE_TAG: Record<Locale, string> = { lv: "lv-LV", en: "en-GB", ru: "ru-RU" };
+export const LOCALE_TAG: Record<Locale, string> = { lv: "lv-LV", en: "en-GB" };
 
 /** Adreses, kurām valodas prefiksu nepievieno (panelis, API, faili u. c.) */
 const UNPREFIXED = /^\/(admin|api|_next|r\/|piedavajums|media|brand|images|admin-app)(\/|$)|\.[a-z0-9]+$/i;
@@ -24,7 +24,7 @@ export function localePath(locale: Locale, href: string): string {
 
 /** Adrese bez valodas prefiksa: "/en/uznemumiem" → "/uznemumiem" */
 export function stripLocale(pathname: string): string {
-  const m = pathname.match(/^\/(en|ru|lv)(?=\/|$)/);
+  const m = pathname.match(/^\/(en|lv)(?=\/|$)/);
   return m ? pathname.slice(m[0].length) || "/" : pathname;
 }
 
