@@ -11,7 +11,7 @@ import SubmitOnce from "@/components/admin/SubmitOnce";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { missingTable } from "@/lib/team/files";
 import { savePayRates, savePayroll } from "@/app/admin/payroll-actions";
-import CarsForm, { type Car } from "@/components/admin/CarsForm";
+import type { Car } from "@/components/admin/CarsForm";
 import { ADMIN_FEE, CLEANING_FEE, bonusesFor } from "@/lib/payroll";
 
 export const metadata = { title: "Algas" };
@@ -91,8 +91,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
     const defPay = rateFor(b);
     const rows = people.map((p) => {
       const s = saved.find((r) => r.booking_id === b.id && r.person === p.person);
-      // Ceļa izdevumi — tikai vadītājam (sadaļa "Transports")
-      const travel = cars.filter((c) => c.driver === p.person).reduce((t, c) => t + Number(c.amount ?? 0), 0);
+      // Ceļa izdevumi — nekad nedala: tikai tam, kurš vada (iepriekš norādīts rezervācijas "Transports"), var labot
+      const fromCars = cars.filter((c) => c.driver === p.person).reduce((t, c) => t + Number(c.amount ?? 0), 0);
+      const travel = s && s.travel !== null ? Number(s.travel) : fromCars || null;
       return { ...p, pay: s ? s.pay : defPay, travel, savedRow: Boolean(s) };
     });
     const slug = b.program || b.service_slug || "";
@@ -200,8 +201,11 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
               {who && <span className="font-normal text-ink-soft"> · {who}</span>}
             </p>
             {bonuses.length ? <p className="text-xs text-ink-soft">{bonuses.map((x) => `+ ${x.name} — ${x.label} ${eur(x.amount)}`).join(" · ")}</p> : null}
-            {b.travel_cost && !cars.length ? (
-              <p className="text-xs font-semibold text-destructive">Rezervācijā ceļa izdevumi {eur(Number(b.travel_cost))} — norādiet zemāk, kurš brauc ar mašīnu.</p>
+            {b.travel_cost ? (
+              <p className="text-xs text-ink-soft">
+                Ceļa izdevumi rezervācijā: {eur(Number(b.travel_cost))} — ierakstiet tam, kurš vada (netiek dalīti)
+                {cars.length ? ` · brauc: ${cars.map((c) => c.driver_name).join(", ")}` : ""}
+              </p>
             ) : null}
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[460px] text-sm">
@@ -209,7 +213,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   <tr className="text-left text-ink-soft">
                     <th className="pb-1 font-semibold">Kas</th>
                     <th className="pb-1 font-semibold">Alga (€)</th>
-                    <th className="pb-1 font-semibold">Ceļa izdevumi (vadītājam)</th>
+                    <th className="pb-1 font-semibold">Ceļa izdevumi (€)</th>
                     <th className="pb-1" />
                   </tr>
                 </thead>
@@ -224,7 +228,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                       <td className="py-1.5 pr-2">
                         <input name={`pay__${r.person}`} defaultValue={val(r.pay)} inputMode="decimal" placeholder="—" className={`${adminInput} max-w-28 ${r.pay === null ? "ring-2 ring-red-300" : ""}`} />
                       </td>
-                      <td className="py-1.5 pr-2 whitespace-nowrap">{r.travel ? eur(r.travel) : "—"}</td>
+                      <td className="py-1.5 pr-2">
+                        <input name={`travel__${r.person}`} defaultValue={val(r.travel)} inputMode="decimal" placeholder="0" className={`${adminInput} max-w-28`} />
+                      </td>
                       <td className="py-1.5 text-xs text-ink-soft">
                         {r.person.startsWith("x:") ? (
                           <label className="inline-flex items-center gap-1">
@@ -243,7 +249,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                     <td className="py-1.5 pr-2">
                       <input name="new_pay" inputMode="decimal" placeholder="alga" className={`${adminInput} max-w-28`} />
                     </td>
-                    <td />
+                    <td className="py-1.5 pr-2">
+                      <input name="new_travel" inputMode="decimal" placeholder="ceļš" className={`${adminInput} max-w-28`} />
+                    </td>
                     <td />
                   </tr>
                 </tbody>
@@ -253,14 +261,6 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
               <SubmitOnce className={adminSecondary}>Saglabāt algas</SubmitOnce>
             </div>
           </form>
-          <details className="mt-4 rounded-xl bg-surface/60 p-3" open={(Boolean(b.travel_cost) && !cars.length) || undefined}>
-            <summary className="cursor-pointer text-sm font-extrabold">
-              🚗 Transports {cars.length ? `— ${cars.map((c) => c.driver_name).join(", ")}` : "— nav norādīts"}
-            </summary>
-            <div className="mt-3">
-              <CarsForm bookingId={b.id} cars={cars} suggested={b.travel_cost ? Number(b.travel_cost) : null} />
-            </div>
-          </details>
           </div>
         ))}
       </section>

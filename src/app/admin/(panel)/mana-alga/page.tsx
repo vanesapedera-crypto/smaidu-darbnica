@@ -38,7 +38,7 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
   const [{ data: bData }, { data: staffData }, { data: payData }, { data: rateData }, { data: carData }, privateS, businessS] = await Promise.all([
     db.from("bookings").select("*").eq("status", "Apstiprināta").gte("event_date", `${month}-01`).lt("event_date", `${shift(1)}-01`).order("event_date").order("event_time"),
     db.from("booking_staff").select("booking_id, email, status").eq("email", me),
-    db.from("payroll").select("booking_id, person, pay").eq("person", me),
+    db.from("payroll").select("booking_id, person, pay, travel").eq("person", me),
     db.from("pay_rates").select("key, amount"),
     db.from("booking_cars").select("booking_id, driver, amount").eq("driver", me),
     getServices("private"),
@@ -47,7 +47,7 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
   const titles = new Map([...privateS, ...businessS].map((s) => [s.slug, s.title]));
   const rates = new Map(((rateData ?? []) as { key: string; amount: number | null }[]).map((r) => [r.key, r.amount]));
   const staff = (staffData ?? []) as { booking_id: string; status: string }[];
-  const pays = (payData ?? []) as { booking_id: string; pay: number | null }[];
+  const pays = (payData ?? []) as { booking_id: string; pay: number | null; travel: number | null }[];
   const cars = (carData ?? []) as { booking_id: string; amount: number | null }[];
 
   const rateFor = (b: Booking) => {
@@ -72,7 +72,7 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
         title,
         pay: p ? p.pay : rateFor(b),
         bonus: myBonus(b),
-        travel: cars.filter((c) => c.booking_id === b.id).reduce((t, c) => t + Number(c.amount ?? 0), 0),
+        travel: p && p.travel !== null ? Number(p.travel) : cars.filter((c) => c.booking_id === b.id).reduce((t, c) => t + Number(c.amount ?? 0), 0),
       };
     });
   const pay = rows.reduce((t, r) => t + Number(r.pay ?? 0), 0);

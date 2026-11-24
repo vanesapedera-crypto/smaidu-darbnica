@@ -19,11 +19,11 @@ export async function savePayroll(bookingId: string, form: FormData) {
     person: p,
     name: String(form.get(`name__${p}`) ?? p).slice(0, 120),
     pay: num(form.get(`pay__${p}`)),
-    travel: null, // ceļa izdevumi — sadaļā "Transports" (vadītājam)
+    travel: num(form.get(`travel__${p}`)), // tikai tam, kurš vada (nedala)
     updated_at: new Date().toISOString(),
   }));
   const extra = String(form.get("new_name") ?? "").trim().slice(0, 120);
-  if (extra) rows.push({ booking_id: bookingId, person: `x:${extra}`, name: extra, pay: num(form.get("new_pay")), travel: null, updated_at: new Date().toISOString() });
+  if (extra) rows.push({ booking_id: bookingId, person: `x:${extra}`, name: extra, pay: num(form.get("new_pay")), travel: num(form.get("new_travel")), updated_at: new Date().toISOString() });
   if (rows.length) await db.from("payroll").upsert(rows, { onConflict: "booking_id,person" });
   const remove = form.getAll("remove").map(String).filter((p) => p.startsWith("x:"));
   if (remove.length) await db.from("payroll").delete().eq("booking_id", bookingId).in("person", remove);
