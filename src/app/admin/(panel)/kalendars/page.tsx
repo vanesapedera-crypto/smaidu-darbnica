@@ -22,6 +22,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cookies } from "next/headers";
 import CalendarViewToggle from "@/components/admin/CalendarViewToggle";
 import ResendInvites from "@/components/admin/ResendInvites";
+import type { Car } from "@/components/admin/CarsForm";
 import { convertAllTeamEvents, convertTeamEvent } from "@/app/admin/actions";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -79,7 +80,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   const googleDb = (owner ? db : supabaseAdmin()) as MemberContext["db"] | null;
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
 
-  const [{ data, error }, { data: eventRows }, business, programs, settings, { data: staffData }] = await Promise.all([
+  const [{ data, error }, { data: eventRows }, business, programs, settings, { data: staffData }, { data: carsData }] = await Promise.all([
     db.from("bookings").select("*").not("event_date", "is", null).order("event_date").order("event_time", { nullsFirst: true }),
     // Izbraukumi un pasākumi, kas ievadīti ar roku (tabula team_events) — visa komanda redz visus (lasa ar servera atslēgu)
     ((owner ? db : (supabaseAdmin() ?? db)) as typeof db).from("team_events").select("*").order("event_date"),
@@ -87,6 +88,8 @@ export default async function CalendarPage({ searchParams }: Props) {
     getServices("private"),
     getSettings(),
     db.from("booking_staff").select("booking_id, email, name, status, responded_at"),
+    // Transports (kurš brauc ar mašīnu) — redz administratore un vadība; ja tabulas nav — tukšs
+    db.from("booking_cars").select("booking_id, driver, driver_name, amount, note").order("created_at"),
   ]);
 
   // Administratorei: jaunie pieteikumi (arī bez datuma un uzņēmumu pieprasījumi), atceltie, meklēšana, Google savienojums
@@ -310,7 +313,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                 <ChevronDown className="hidden size-4 text-ink-soft transition-transform group-open:rotate-180 sm:block" aria-hidden />
               </summary>
               {owner ? (
-                <BookingAdminPanel b={b} labelText={label(b)} costs={c} ctx={ctx} staff={staffBy.get(b.id) ?? []} />
+                <BookingAdminPanel b={b} labelText={label(b)} costs={c} ctx={ctx} staff={staffBy.get(b.id) ?? []} cars={((carsData ?? []) as (Car & { booking_id: string })[]).filter((x) => x.booking_id === b.id)} />
               ) : (
                 <>
                   {myRow(b) && (

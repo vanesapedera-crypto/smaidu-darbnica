@@ -11,6 +11,7 @@ import SubmitOnce from "@/components/admin/SubmitOnce";
 import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { missingTable } from "@/lib/team/files";
 import { savePayRates, savePayroll } from "@/app/admin/payroll-actions";
+import CarsForm, { type Car } from "@/components/admin/CarsForm";
 
 export const metadata = { title: "Algas" };
 
@@ -40,13 +41,14 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   };
   const end = `${shift(1)}-01`;
 
-  const [{ data: bData }, payRes, rateRes, { data: staffData }, privateS, businessS] = await Promise.all([
+  const [{ data: bData }, payRes, rateRes, { data: staffData }, privateS, businessS, carsRes] = await Promise.all([
     db.from("bookings").select("*").eq("status", "Apstiprināta").gte("event_date", `${month}-01`).lt("event_date", end).order("event_date").order("event_time"),
     db.from("payroll").select("booking_id, person, name, pay, travel"),
     db.from("pay_rates").select("key, title, amount"),
     db.from("booking_staff").select("booking_id, email, name, status"),
     getServices("private"),
     getServices("business"),
+    db.from("booking_cars").select("booking_id, driver, driver_name, amount, note").order("created_at"),
   ]);
   if (missingTable(payRes.error) || missingTable(rateRes.error)) return <MigrationNotice title="Algas" file="20261124090000_payroll.sql" />;
 
@@ -54,6 +56,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const saved = (payRes.data ?? []) as PayRow[];
   const rates = new Map(((rateRes.data ?? []) as Rate[]).map((r) => [r.key, r]));
   const staff = (staffData ?? []) as Staff[];
+  const allCars = (missingTable(carsRes.error) ? [] : (carsRes.data ?? [])) as (Car & { booking_id: string })[];
   const titles = new Map([...privateS, ...businessS].map((s) => [s.slug, s.title]));
 
   // Standarta cenu saraksts: visas izklaides programmas + telpu noma + uzņēmumu pasākums + pārējie
@@ -78,17 +81,21 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
       people = CALENDAR_HOSTS.filter((h) => names.includes(h.name)).map((h) => ({ person: h.email, name: h.name }));
     }
     const extras = saved.filter((r) => r.booking_id === b.id && r.person.startsWith("x:")).map((r) => ({ person: r.person, name: r.name }));
-    people = [...people, ...extras.filter((x) => !people.some((p) => p.person === x.person))];
+    const cars = allCars.filter((c) => c.booking_id === b.id);
+    // Vadītājs, kurš nav sarakstā (piem. ārējs šoferis) — arī algu sarakstā (ceļa izdevumi viņam)
+    const drivers = cars.map((c) => ({ person: c.driver, name: c.driver_name }));
+    for (const x of [...extras, ...drivers]) if (!people.some((p) => p.person === x.person)) people.push(x);
     const defPay = rateFor(b);
-    const defTravel = b.travel_cost && people.length ? Math.round((Number(b.travel_cost) / people.length) * 100) / 100 : null;
     const rows = people.map((p) => {
       const s = saved.find((r) => r.booking_id === b.id && r.person === p.person);
-      return { ...p, pay: s ? s.pay : defPay, travel: s ? s.travel : defTravel, savedRow: Boolean(s) };
+      // Ceļa izdevumi — tikai vadītājam (sadaļa "Transports")
+      const travel = cars.filter((c) => c.driver === p.person).reduce((t, c) => t + Number(c.amount ?? 0), 0);
+      return { ...p, pay: s ? s.pay : defPay, travel, savedRow: Boolean(s) };
     });
     const slug = b.program || b.service_slug || "";
     const title = b.inquiry_type === "business" ? b.company_name || titles.get(slug) || "Pasākums" : [atStudio(b.location) && "Telpu noma", titles.get(slug)].filter(Boolean).join(" + ") || "Pasākums";
     const who = b.inquiry_type === "business" ? "" : b.parent_name || "";
-    return { b, title, who, rows };
+    return { b, title, who, rows, cars };
   });
 
   // Kopsavilkums pa cilvēkiem
@@ -163,20 +170,23 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
 
       {/* Pasākumi */}
       <section className="mt-6 space-y-4">
-        {events.map(({ b, title, who, rows }) => (
-          <form key={b.id} action={savePayroll.bind(null, b.id)} className="rounded-2xl bg-white p-4 ring-1 ring-line sm:p-5">
+        {events.map(({ b, title, who, rows, cars }) => (
+          <div key={b.id} className="rounded-2xl bg-white p-4 ring-1 ring-line sm:p-5">
+          <form action={savePayroll.bind(null, b.id)}>
             <p className="font-bold">
               {b.event_date!.slice(8, 10)}.{b.event_date!.slice(5, 7)}. {timeLabel(b.event_time, b.inquiry_type === "business" ? null : b.location)} · {title}
               {who && <span className="font-normal text-ink-soft"> · {who}</span>}
             </p>
-            {b.travel_cost ? <p className="text-xs text-ink-soft">Ceļa izdevumi rezervācijā: {eur(Number(b.travel_cost))} (sadalīti uz visiem — var labot)</p> : null}
+            {b.travel_cost && !cars.length ? (
+              <p className="text-xs font-semibold text-destructive">Rezervācijā ceļa izdevumi {eur(Number(b.travel_cost))} — norādiet zemāk, kurš brauc ar mašīnu.</p>
+            ) : null}
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[460px] text-sm">
                 <thead>
                   <tr className="text-left text-ink-soft">
                     <th className="pb-1 font-semibold">Kas</th>
                     <th className="pb-1 font-semibold">Alga (€)</th>
-                    <th className="pb-1 font-semibold">Ceļa izdevumi (€)</th>
+                    <th className="pb-1 font-semibold">Ceļa izdevumi (vadītājam)</th>
                     <th className="pb-1" />
                   </tr>
                 </thead>
@@ -191,9 +201,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                       <td className="py-1.5 pr-2">
                         <input name={`pay__${r.person}`} defaultValue={val(r.pay)} inputMode="decimal" placeholder="—" className={`${adminInput} max-w-28 ${r.pay === null ? "ring-2 ring-red-300" : ""}`} />
                       </td>
-                      <td className="py-1.5 pr-2">
-                        <input name={`travel__${r.person}`} defaultValue={val(r.travel)} inputMode="decimal" placeholder="0" className={`${adminInput} max-w-28`} />
-                      </td>
+                      <td className="py-1.5 pr-2 whitespace-nowrap">{r.travel ? eur(r.travel) : "—"}</td>
                       <td className="py-1.5 text-xs text-ink-soft">
                         {r.person.startsWith("x:") ? (
                           <label className="inline-flex items-center gap-1">
@@ -212,18 +220,25 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                     <td className="py-1.5 pr-2">
                       <input name="new_pay" inputMode="decimal" placeholder="alga" className={`${adminInput} max-w-28`} />
                     </td>
-                    <td className="py-1.5 pr-2">
-                      <input name="new_travel" inputMode="decimal" placeholder="ceļš" className={`${adminInput} max-w-28`} />
-                    </td>
+                    <td />
                     <td />
                   </tr>
                 </tbody>
               </table>
             </div>
             <div className="mt-3">
-              <SubmitOnce className={adminSecondary}>Saglabāt</SubmitOnce>
+              <SubmitOnce className={adminSecondary}>Saglabāt algas</SubmitOnce>
             </div>
           </form>
+          <details className="mt-4 rounded-xl bg-surface/60 p-3" open={(Boolean(b.travel_cost) && !cars.length) || undefined}>
+            <summary className="cursor-pointer text-sm font-extrabold">
+              🚗 Transports {cars.length ? `— ${cars.map((c) => c.driver_name).join(", ")}` : "— nav norādīts"}
+            </summary>
+            <div className="mt-3">
+              <CarsForm bookingId={b.id} cars={cars} suggested={b.travel_cost ? Number(b.travel_cost) : null} />
+            </div>
+          </details>
+          </div>
         ))}
       </section>
 

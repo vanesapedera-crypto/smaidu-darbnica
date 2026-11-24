@@ -1,6 +1,7 @@
-import { CalendarPlus, ChevronDown, Pencil, Star, Users, XCircle } from "lucide-react";
+import { CalendarPlus, Car as CarIcon, ChevronDown, Pencil, Star, Users, XCircle } from "lucide-react";
 import RejectActions from "@/components/admin/RejectActions";
 import SubmitOnce from "@/components/admin/SubmitOnce";
+import CarsForm, { type Car } from "@/components/admin/CarsForm";
 import ResendUpdated from "@/components/admin/ResendUpdated";
 import StaffPanel from "@/components/admin/StaffPanel";
 import type { StaffRow } from "@/lib/staff";
@@ -34,6 +35,7 @@ export default function BookingAdminPanel({
   costs,
   ctx,
   staff = [],
+  cars = [],
 }: {
   b: Booking;
   labelText: string;
@@ -41,6 +43,8 @@ export default function BookingAdminPanel({
   ctx: BookingAdminContext;
   /** Kas piedalās un ko atbildēja (booking_staff) */
   staff?: StaffRow[];
+  /** Transports: kurš brauc ar mašīnu (booking_cars) */
+  cars?: Car[];
 }) {
   const { programs, settings, googleConnected } = ctx;
   // Kas piedalās: atzīmētās + telpu nomā vienmēr Keita
@@ -329,6 +333,16 @@ export default function BookingAdminPanel({
         )}
 
         {/* Google kalendārs: kas piedalās + ielikt/atjaunot notikumu */}
+                {/* Transports — kurš brauc ar mašīnu (ceļa izdevumi algās pienākas vadītājam) */}
+        <details className="group/s rounded-2xl ring-1 ring-line open:ring-ink" open={(Boolean(b.travel_cost) && !cars.length && b.location === "Izbraukums") || undefined}>
+          <Summary icon={<CarIcon className="size-4" aria-hidden />}>
+            Transports {cars.length ? `— ${cars.map((c) => c.driver_name).join(", ")}` : b.travel_cost ? "— jānorāda, kurš brauc" : ""}
+          </Summary>
+          <div className="border-t border-line p-4">
+            <CarsForm bookingId={b.id} cars={cars} suggested={b.travel_cost ? Number(b.travel_cost) : null} />
+          </div>
+        </details>
+
         {(() => {
           const event = calendarEvent(b, labelText, costs);
           if (!event) return null;

@@ -7,7 +7,7 @@ import type { TeamRole } from "@/lib/auth";
 import type { Section } from "@/lib/team/sections";
 import { cn } from "@/lib/utils";
 
-type Item = { href: string; label: string; icon: typeof Inbox; exact?: boolean; ownerOnly?: boolean; section?: Section; edit?: boolean };
+type Item = { href: string; label: string; icon: typeof Inbox; exact?: boolean; ownerOnly?: boolean; section?: Section; edit?: boolean; notManager?: boolean };
 type Group = { title: string; items: Item[] };
 
 // "Standarta piedāvājumi" pagaidām izvēlnē nav (2026-11-08, lapa /admin/standarta-piedavajumi paliek).
@@ -29,6 +29,8 @@ const groups: Group[] = [
       { href: "/admin/klientu-vesture", label: "Klientu vēsture", icon: History, section: "klientu_vesture" },
       { href: "/admin/scenariji", label: "Scenāriji", icon: FileText, section: "scenariji" },
       { href: "/admin/komandas-piekluve", label: "Komandas piekļuve", icon: UserCog, section: "piekluve" },
+      // Mana alga — katrai meitenei tikai sava (administratorei un vadībai — sadaļa "Algas")
+      { href: "/admin/mana-alga", label: "Mana alga", icon: Wallet, notManager: true },
       { href: "/admin/parole", label: "Mainīt paroli", icon: KeyRound },
     ],
   },
@@ -49,7 +51,9 @@ const groups: Group[] = [
 export default function AdminNav({ role, sections }: { role: TeamRole; sections: Section[] }) {
   const owner = role === "owner";
   const visible = (i: Item) =>
-    i.ownerOnly
+    i.notManager
+      ? !owner && role !== "manager"
+      : i.ownerOnly
       ? owner
       : i.href === "/admin/rezervacijas" && owner
         ? false
