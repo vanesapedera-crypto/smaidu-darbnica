@@ -157,6 +157,49 @@ export async function upsertGoogleEvent(db: AdminContext["db"], bookingId: strin
 }
 
 /**
+ * Esošam Google notikumam pievieno viesus (piem. animatori, kas atbildēja "Varu") un nosūta viņiem ielūgumu.
+ * Neko citu notikumā nemaina (laiku, aprakstu un esošos viesus Vanesa uztur pati).
+ * "missing" — notikuma Google kalendārā vēl nav; "failed" — savienojums nestrādā.
+ */
+export async function addGoogleGuests(db: AdminContext["db"], bookingId: string, emails: string[]): Promise<"added" | "missing" | "failed"> {
+  const conn = await googleConnection(db);
+  if (!conn) return "failed";
+  const token = await accessToken(conn.refreshToken);
+  if (!token) return "failed";
+  const url = `${API}/${eventId(bookingId)}`;
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  try {
+    const current = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+    if (current.status === 404 || current.status === 410) return "missing";
+    if (!current.ok) {
+      console.error("[google] guests get", current.status, await current.text());
+      return "failed";
+    }
+    const ev = (await current.json()) as { status?: string; attendees?: { email?: string }[] };
+    if (ev.status === "cancelled") return "missing";
+    const own = conn.email.toLowerCase();
+    const attendees = ev.attendees ?? [];
+    const have = new Set(attendees.map((a) => (a.email ?? "").toLowerCase()));
+    const added = [...new Set(emails.map((e) => e.toLowerCase()))].filter((e) => e && e !== own && !have.has(e));
+    if (!added.length) return "added";
+    const res = await fetch(`${url}?sendUpdates=all`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ attendees: [...attendees, ...added.map((email) => ({ email }))] }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) {
+      console.error("[google] guests patch", res.status, await res.text());
+      return "failed";
+    }
+    return "added";
+  } catch (e) {
+    console.error("[google] guests failed", e);
+    return "failed";
+  }
+}
+
+/**
  * Atceļ rezervācijas notikumu savienotajā Google kalendārā: viesiem tas pazūd (saņem paziņojumu),
  * administratores kalendārā paliek kā "❌ ATCELTS" — dublējums, informācija nepazūd.
  * Atgriež: "deleted" — izdzēsts visiem; "gone" — jau bija izdzēsts; "missing" — Google kalendārā tāda notikuma nav

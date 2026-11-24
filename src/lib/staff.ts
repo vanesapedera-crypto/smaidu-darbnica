@@ -1,13 +1,13 @@
 import "server-only";
 import type { MemberContext } from "@/lib/auth";
 import { CALENDAR_HOSTS, CALENDAR_INVITES, CALENDAR_VENUE, OWNER_STAFF_EMAIL, calendarEvent, withVenueStaff } from "@/lib/calendar";
-import { upsertGoogleEvent } from "@/lib/google-calendar";
+import { addGoogleGuests, upsertGoogleEvent } from "@/lib/google-calendar";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { atStudio, googleManaged } from "@/lib/bookings";
 import { type Booking } from "@/lib/bookings";
 import { whenLabel } from "@/lib/dates";
 import { getServices } from "@/lib/content/queries";
-import { notifyStaffAssigned, notifyStaffDeclined, notifyStaffReady } from "@/lib/notify";
+import { notifyStaffAssigned, notifyStaffDeclined, notifyStaffReady, sendCalendarInvite } from "@/lib/notify";
 import { pushToAdmin, pushToEmails } from "@/lib/push";
 
 /** Kas piedalās pasākumā un ko atbildēja (tabula booking_staff) */
@@ -94,16 +94,29 @@ export async function answerStaff(db: MemberContext["db"], bookingId: string, em
   return { ok: true };
 }
 
-/** Apstiprinātas rezervācijas Google notikumam pievieno vēl vienu viesi (kas atbildēja "Varu") */
+/**
+ * Apstiprinātai rezervācijai — kalendāra ielūgums tam, kas atbildēja "Varu":
+ *  1) ja notikums jau ir Google kalendārā — pievieno viņu viesos (citu neko nemaina);
+ *  2) ja notikuma vēl nav — izveido to ar visiem, kas atbildējuši "Varu";
+ *  3) ja Google kalendārs nav savienots vai neizdodas — .ics ielūgums uz e-pastu (Google to ieliek kalendārā).
+ */
 async function addToGoogleGuests(b: Booking, email: string) {
   const admin = supabaseAdmin() as MemberContext["db"] | null;
-  if (!admin || !CALENDAR_INVITES || !googleManaged(b)) return;
+  if (!admin || !CALENDAR_INVITES) return;
   const d = await describe(b);
   const event = calendarEvent(b, d.title || (atStudio(b.location) ? "Telpu noma" : "Pieteikums"));
   if (!event) return;
-  const { data } = await admin.from("booking_staff").select("email, status").eq("booking_id", b.id);
-  const yes = ((data ?? []) as { email: string; status: string }[]).filter((r) => r.status === "var").map((r) => r.email);
-  await upsertGoogleEvent(admin, b.id, event, [...new Set([...event.guests, ...withVenueStaff(b, [...yes, email.toLowerCase()])])]);
+  const who = email.toLowerCase();
+  if (googleManaged(b)) {
+    const added = await addGoogleGuests(admin, b.id, [who]);
+    if (added === "added") return;
+    if (added === "missing") {
+      const { data } = await admin.from("booking_staff").select("email, status").eq("booking_id", b.id);
+      const yes = ((data ?? []) as { email: string; status: string }[]).filter((r) => r.status === "var").map((r) => r.email);
+      if (await upsertGoogleEvent(admin, b.id, event, [...new Set([...event.guests, ...withVenueStaff(b, [...yes, who])])])) return;
+    }
+  }
+  await sendCalendarInvite(event, [who], `rezervacija-${b.id}@smaidudarbnica.lv`);
 }
 
 /**

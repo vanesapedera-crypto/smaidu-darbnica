@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Clapperboard, FileText, History, Inbox, KeyRound, Palette, UserCog, Calculator, Presentation, Coins } from "lucide-react";
+import { CalendarDays, Clapperboard, FileText, History, Inbox, KeyRound, Palette, UserCog, Calculator, Presentation, Coins, Wallet } from "lucide-react";
 import type { TeamRole } from "@/lib/auth";
 import type { Section } from "@/lib/team/sections";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,8 @@ const groups: Group[] = [
     // Visas fiksētās cenas vienuviet — šeit raksta ciparus
     title: "💰 Cenas",
     items: [
+      // Algas — tikai administratore un vadība (Kristīne)
+      { href: "/admin/algas", label: "Algas", icon: Wallet, section: "kalendars", edit: true },
       { href: "/admin/darbnicas", label: "Radošās darbnīcas", icon: Palette, section: "darbnicas" },
       { href: "/admin/izmaksas", label: "Pakalpojumi", icon: Coins, section: "piedavajumi" },
       // Izrāžu izmaksas un sezona — lapai "Salikt piedāvājumu"
