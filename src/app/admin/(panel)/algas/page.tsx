@@ -12,14 +12,12 @@ import { adminInput, adminSecondary } from "@/components/admin/styles";
 import { missingTable } from "@/lib/team/files";
 import { savePayRates, savePayroll } from "@/app/admin/payroll-actions";
 import CarsForm, { type Car } from "@/components/admin/CarsForm";
+import { ADMIN_FEE, CLEANING_FEE, bonusesFor } from "@/lib/payroll";
 
 export const metadata = { title: "Algas" };
 
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const eur = (n: number) => `${n.toLocaleString("lv-LV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
-/** Administratorei (Vanesai) no katras privātpersonas izklaides programmas (ne telpu nomas, ne uzņēmumiem). */
-const ADMIN_FEE = 5;
-const ADMIN_NAME = "Vanesa";
 const val = (n: number | null | undefined) => (n === null || n === undefined ? "" : String(n).replace(".", ","));
 
 type PayRow = { booking_id: string; person: string; name: string; pay: number | null; travel: number | null };
@@ -28,8 +26,8 @@ type Staff = { booking_id: string; email: string; name: string; status: string }
 
 /**
  * Algas pa mēnešiem (tikai administratore un Kristīne): katrs apstiprinātais pasākums, kas tajā piedalījās,
- * alga (no standarta cenas vai ar roku), ceļa izdevumi (tikai vadītājam) un administrēšana (5 € Vanesai
- * no katras privātpersonas izklaides programmas).
+ * alga (no standarta cenas vai ar roku), ceļa izdevumi (tikai vadītājam) un piemaksas (src/lib/payroll.ts:
+ * 5 € Vanesai par privātpersonu izklaides programmām, 20 € Keitai par grīdu tīrīšanu telpu nomā).
  * Augšā — kopsavilkums pa cilvēkiem.
  */
 export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
@@ -100,8 +98,8 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
     const slug = b.program || b.service_slug || "";
     const title = b.inquiry_type === "business" ? b.company_name || titles.get(slug) || "Pasākums" : [atStudio(b.location) && "Telpu noma", titles.get(slug)].filter(Boolean).join(" + ") || "Pasākums";
     const who = b.inquiry_type === "business" ? "" : b.parent_name || "";
-    const adminFee = b.inquiry_type !== "business" && slug && privateSlugs.has(slug) ? ADMIN_FEE : 0;
-    return { b, title, who, rows, cars, adminFee };
+    const bonuses = bonusesFor(b, privateSlugs);
+    return { b, title, who, rows, cars, bonuses };
   });
 
   // Kopsavilkums pa cilvēkiem
@@ -115,16 +113,18 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
       t.travel += Number(r.travel ?? 0);
       totals.set(r.name, t);
     }
-    if (e.adminFee) {
-      const t = get(ADMIN_NAME);
-      t.admin += e.adminFee;
-      totals.set(ADMIN_NAME, t);
+    for (const x of e.bonuses) {
+      const t = get(x.name);
+      if (!e.rows.some((r) => r.name === x.name)) t.events += 1;
+      t.admin += x.amount;
+      totals.set(x.name, t);
     }
   }
   const all = (t: { pay: number; travel: number; admin: number }) => t.pay + t.travel + t.admin;
   const summary = [...totals.values()].sort((a, b) => all(b) - all(a));
   const sum = summary.reduce((s, t) => s + all(t), 0);
-  const adminCount = events.filter((e) => e.adminFee).length;
+  const adminCount = events.filter((e) => e.bonuses.some((x) => x.label === "administrēšana")).length;
+  const cleanCount = events.filter((e) => e.bonuses.some((x) => x.label === "grīdu tīrīšana")).length;
   const missing = events.reduce((n, e) => n + e.rows.filter((r) => r.pay === null).length, 0);
 
   return (
@@ -157,7 +157,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   <th className="pb-2 font-semibold">Pasākumi</th>
                   <th className="pb-2 text-right font-semibold">Alga</th>
                   <th className="pb-2 text-right font-semibold">Ceļa izdevumi</th>
-                  <th className="pb-2 text-right font-semibold">Administrēšana</th>
+                  <th className="pb-2 text-right font-semibold">Piemaksas</th>
                   <th className="pb-2 text-right font-semibold">Kopā</th>
                 </tr>
               </thead>
@@ -180,9 +180,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 </tr>
               </tbody>
             </table>
-            {adminCount > 0 && (
+            {(adminCount > 0 || cleanCount > 0) && (
               <p className="mt-2 text-xs text-ink-soft">
-                Administrēšana: {ADMIN_NAME}i {eur(ADMIN_FEE)} no katras privātpersonas izklaides programmas ({adminCount} × {eur(ADMIN_FEE)}). Telpu nomai un uzņēmumiem netiek pieskaitīts.
+                Piemaksas: Vanesai administrēšana {eur(ADMIN_FEE)} no katras privātpersonas izklaides programmas ({adminCount}×); Keitai grīdu tīrīšana {eur(CLEANING_FEE)} pie katras telpu nomas ({cleanCount}×). Uzņēmumiem netiek pieskaitīts.
               </p>
             )}
             {missing > 0 && <p className="mt-2 text-sm font-semibold text-destructive">{missing} reizēm alga vēl nav norādīta — ievadiet zemāk vai standarta cenās.</p>}
@@ -192,14 +192,14 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
 
       {/* Pasākumi */}
       <section className="mt-6 space-y-4">
-        {events.map(({ b, title, who, rows, cars, adminFee }) => (
+        {events.map(({ b, title, who, rows, cars, bonuses }) => (
           <div key={b.id} className="rounded-2xl bg-white p-4 ring-1 ring-line sm:p-5">
           <form action={savePayroll.bind(null, b.id)}>
             <p className="font-bold">
               {b.event_date!.slice(8, 10)}.{b.event_date!.slice(5, 7)}. {timeLabel(b.event_time, b.inquiry_type === "business" ? null : b.location)} · {title}
               {who && <span className="font-normal text-ink-soft"> · {who}</span>}
             </p>
-            {adminFee ? <p className="text-xs text-ink-soft">+ {ADMIN_NAME}i administrēšana {eur(adminFee)}</p> : null}
+            {bonuses.length ? <p className="text-xs text-ink-soft">{bonuses.map((x) => `+ ${x.name} — ${x.label} ${eur(x.amount)}`).join(" · ")}</p> : null}
             {b.travel_cost && !cars.length ? (
               <p className="text-xs font-semibold text-destructive">Rezervācijā ceļa izdevumi {eur(Number(b.travel_cost))} — norādiet zemāk, kurš brauc ar mašīnu.</p>
             ) : null}

@@ -8,6 +8,7 @@ import { timeLabel } from "@/lib/dates";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import PageHeader from "@/components/admin/PageHeader";
 import { adminSecondary } from "@/components/admin/styles";
+import { bonusesFor } from "@/lib/payroll";
 
 export const metadata = { title: "Mana alga" };
 
@@ -53,8 +54,11 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
     const slug = b.program || b.service_slug || "";
     return (slug && rates.get(slug)) ?? (b.inquiry_type === "business" ? rates.get("uznemums") : atStudio(b.location) ? rates.get("telpu-noma") : undefined) ?? rates.get("default") ?? null;
   };
+  const privateSlugs = new Set(privateS.map((s) => s.slug));
+  const myBonus = (b: Booking) => bonusesFor(b, privateSlugs).filter((x) => x.person === me);
   const rows = ((bData ?? []) as Booking[])
     .filter((b) => {
+      if (myBonus(b).length) return true;
       const s = staff.find((x) => x.booking_id === b.id);
       if (s) return s.status !== "nevar";
       return Boolean(myName && hostsOf(b.message).split(/,\s*/).includes(myName)) || cars.some((c) => c.booking_id === b.id);
@@ -67,11 +71,13 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
         b,
         title,
         pay: p ? p.pay : rateFor(b),
+        bonus: myBonus(b),
         travel: cars.filter((c) => c.booking_id === b.id).reduce((t, c) => t + Number(c.amount ?? 0), 0),
       };
     });
   const pay = rows.reduce((t, r) => t + Number(r.pay ?? 0), 0);
   const travel = rows.reduce((t, r) => t + r.travel, 0);
+  const bonus = rows.reduce((t, r) => t + r.bonus.reduce((a, x) => a + x.amount, 0), 0);
 
   return (
     <>
@@ -91,8 +97,8 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
       <section className="mt-6 grid gap-3 sm:grid-cols-3">
         {[
           ["Pasākumi", String(rows.length)],
-          ["Alga", eur(pay)],
-          ["Kopā ar ceļa izdevumiem", eur(pay + travel)],
+          ["Alga" + (bonus ? " + piemaksas" : ""), eur(pay + bonus)],
+          ["Kopā ar ceļa izdevumiem", eur(pay + bonus + travel)],
         ].map(([k, v]) => (
           <div key={k} className="rounded-2xl bg-white p-4 ring-1 ring-line">
             <p className="text-sm text-ink-soft">{k}</p>
@@ -121,7 +127,14 @@ export default async function MyPayPage({ searchParams }: { searchParams: Promis
                     <td className="py-2 whitespace-nowrap">
                       {r.b.event_date!.slice(8, 10)}.{r.b.event_date!.slice(5, 7)}. {timeLabel(r.b.event_time, r.b.inquiry_type === "business" ? null : r.b.location).slice(0, 5)}
                     </td>
-                    <td className="py-2 font-semibold">{r.title}</td>
+                    <td className="py-2 font-semibold">
+                      {r.title}
+                      {r.bonus.map((x) => (
+                        <span key={x.label} className="block text-xs font-normal text-ink-soft">
+                          + {x.label} {eur(x.amount)}
+                        </span>
+                      ))}
+                    </td>
                     <td className="py-2 text-right">{r.pay === null ? <span className="text-ink-soft">vēl nav norādīta</span> : eur(Number(r.pay))}</td>
                     <td className="py-2 text-right">{r.travel ? eur(r.travel) : "—"}</td>
                   </tr>
