@@ -17,6 +17,9 @@ export const metadata = { title: "Algas" };
 
 const MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
 const eur = (n: number) => `${n.toLocaleString("lv-LV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+/** Administratorei (Vanesai) no katras privātpersonas izklaides programmas (ne telpu nomas, ne uzņēmumiem). */
+const ADMIN_FEE = 5;
+const ADMIN_NAME = "Vanesa";
 const val = (n: number | null | undefined) => (n === null || n === undefined ? "" : String(n).replace(".", ","));
 
 type PayRow = { booking_id: string; person: string; name: string; pay: number | null; travel: number | null };
@@ -25,7 +28,8 @@ type Staff = { booking_id: string; email: string; name: string; status: string }
 
 /**
  * Algas pa mēnešiem (tikai administratore un Kristīne): katrs apstiprinātais pasākums, kas tajā piedalījās,
- * alga (no standarta cenas vai ar roku) un ceļa izdevumi (no rezervācijas, sadalīti uz visiem — var labot).
+ * alga (no standarta cenas vai ar roku), ceļa izdevumi (tikai vadītājam) un administrēšana (5 € Vanesai
+ * no katras privātpersonas izklaides programmas).
  * Augšā — kopsavilkums pa cilvēkiem.
  */
 export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
@@ -57,6 +61,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const rates = new Map(((rateRes.data ?? []) as Rate[]).map((r) => [r.key, r]));
   const staff = (staffData ?? []) as Staff[];
   const allCars = (missingTable(carsRes.error) ? [] : (carsRes.data ?? [])) as (Car & { booking_id: string })[];
+  const privateSlugs = new Set(privateS.map((s) => s.slug));
   const titles = new Map([...privateS, ...businessS].map((s) => [s.slug, s.title]));
 
   // Standarta cenu saraksts: visas izklaides programmas + telpu noma + uzņēmumu pasākums + pārējie
@@ -95,21 +100,31 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
     const slug = b.program || b.service_slug || "";
     const title = b.inquiry_type === "business" ? b.company_name || titles.get(slug) || "Pasākums" : [atStudio(b.location) && "Telpu noma", titles.get(slug)].filter(Boolean).join(" + ") || "Pasākums";
     const who = b.inquiry_type === "business" ? "" : b.parent_name || "";
-    return { b, title, who, rows, cars };
+    const adminFee = b.inquiry_type !== "business" && slug && privateSlugs.has(slug) ? ADMIN_FEE : 0;
+    return { b, title, who, rows, cars, adminFee };
   });
 
   // Kopsavilkums pa cilvēkiem
-  const totals = new Map<string, { name: string; events: number; pay: number; travel: number }>();
-  for (const e of events)
+  const totals = new Map<string, { name: string; events: number; pay: number; travel: number; admin: number }>();
+  const get = (name: string) => totals.get(name) ?? { name, events: 0, pay: 0, travel: 0, admin: 0 };
+  for (const e of events) {
     for (const r of e.rows) {
-      const t = totals.get(r.name) ?? { name: r.name, events: 0, pay: 0, travel: 0 };
+      const t = get(r.name);
       t.events += 1;
       t.pay += Number(r.pay ?? 0);
       t.travel += Number(r.travel ?? 0);
       totals.set(r.name, t);
     }
-  const summary = [...totals.values()].sort((a, b) => b.pay + b.travel - (a.pay + a.travel));
-  const sum = summary.reduce((s, t) => s + t.pay + t.travel, 0);
+    if (e.adminFee) {
+      const t = get(ADMIN_NAME);
+      t.admin += e.adminFee;
+      totals.set(ADMIN_NAME, t);
+    }
+  }
+  const all = (t: { pay: number; travel: number; admin: number }) => t.pay + t.travel + t.admin;
+  const summary = [...totals.values()].sort((a, b) => all(b) - all(a));
+  const sum = summary.reduce((s, t) => s + all(t), 0);
+  const adminCount = events.filter((e) => e.adminFee).length;
   const missing = events.reduce((n, e) => n + e.rows.filter((r) => r.pay === null).length, 0);
 
   return (
@@ -142,6 +157,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   <th className="pb-2 font-semibold">Pasākumi</th>
                   <th className="pb-2 text-right font-semibold">Alga</th>
                   <th className="pb-2 text-right font-semibold">Ceļa izdevumi</th>
+                  <th className="pb-2 text-right font-semibold">Administrēšana</th>
                   <th className="pb-2 text-right font-semibold">Kopā</th>
                 </tr>
               </thead>
@@ -152,17 +168,23 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                     <td className="py-2">{t.events}</td>
                     <td className="py-2 text-right">{eur(t.pay)}</td>
                     <td className="py-2 text-right">{eur(t.travel)}</td>
-                    <td className="py-2 text-right font-extrabold">{eur(t.pay + t.travel)}</td>
+                    <td className="py-2 text-right">{t.admin ? eur(t.admin) : "—"}</td>
+                    <td className="py-2 text-right font-extrabold">{eur(all(t))}</td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-ink">
-                  <td className="pt-2 font-extrabold" colSpan={4}>
+                  <td className="pt-2 font-extrabold" colSpan={5}>
                     Pavisam kopā
                   </td>
                   <td className="pt-2 text-right font-extrabold">{eur(sum)}</td>
                 </tr>
               </tbody>
             </table>
+            {adminCount > 0 && (
+              <p className="mt-2 text-xs text-ink-soft">
+                Administrēšana: {ADMIN_NAME}i {eur(ADMIN_FEE)} no katras privātpersonas izklaides programmas ({adminCount} × {eur(ADMIN_FEE)}). Telpu nomai un uzņēmumiem netiek pieskaitīts.
+              </p>
+            )}
             {missing > 0 && <p className="mt-2 text-sm font-semibold text-destructive">{missing} reizēm alga vēl nav norādīta — ievadiet zemāk vai standarta cenās.</p>}
           </div>
         )}
@@ -170,13 +192,14 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
 
       {/* Pasākumi */}
       <section className="mt-6 space-y-4">
-        {events.map(({ b, title, who, rows, cars }) => (
+        {events.map(({ b, title, who, rows, cars, adminFee }) => (
           <div key={b.id} className="rounded-2xl bg-white p-4 ring-1 ring-line sm:p-5">
           <form action={savePayroll.bind(null, b.id)}>
             <p className="font-bold">
               {b.event_date!.slice(8, 10)}.{b.event_date!.slice(5, 7)}. {timeLabel(b.event_time, b.inquiry_type === "business" ? null : b.location)} · {title}
               {who && <span className="font-normal text-ink-soft"> · {who}</span>}
             </p>
+            {adminFee ? <p className="text-xs text-ink-soft">+ {ADMIN_NAME}i administrēšana {eur(adminFee)}</p> : null}
             {b.travel_cost && !cars.length ? (
               <p className="text-xs font-semibold text-destructive">Rezervācijā ceļa izdevumi {eur(Number(b.travel_cost))} — norādiet zemāk, kurš brauc ar mašīnu.</p>
             ) : null}
