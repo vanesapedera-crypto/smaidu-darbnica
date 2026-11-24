@@ -125,7 +125,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const summary = [...totals.values()].sort((a, b) => all(b) - all(a));
   const sum = summary.reduce((s, t) => s + all(t), 0);
   const adminCount = events.filter((e) => e.bonuses.some((x) => x.label === "administrēšana")).length;
-  const cleanCount = events.filter((e) => e.bonuses.some((x) => x.label === "grīdu tīrīšana")).length;
+  const cleanCount = events.filter((e) => e.bonuses.some((x) => x.label === "telpu tīrīšana")).length;
   const missing = events.reduce((n, e) => n + e.rows.filter((r) => r.pay === null).length, 0);
 
   return (
@@ -183,7 +183,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             </table>
             {(adminCount > 0 || cleanCount > 0) && (
               <p className="mt-2 text-xs text-ink-soft">
-                Piemaksas: Vanesai administrēšana {eur(ADMIN_FEE)} no katras privātpersonas izklaides programmas ({adminCount}×); Keitai grīdu tīrīšana {eur(CLEANING_FEE)} pie katras telpu nomas ({cleanCount}×). Uzņēmumiem netiek pieskaitīts.
+                Piemaksas: Vanesai administrēšana {eur(ADMIN_FEE)} no katras privātpersonas izklaides programmas ({adminCount}×); Keitai telpu tīrīšana {eur(CLEANING_FEE)} pie katras telpu nomas ({cleanCount}×). Uzņēmumiem netiek pieskaitīts.
               </p>
             )}
             {missing > 0 && <p className="mt-2 text-sm font-semibold text-destructive">{missing} reizēm alga vēl nav norādīta — ievadiet zemāk vai standarta cenās.</p>}
