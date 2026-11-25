@@ -156,9 +156,7 @@ export function isWeekdayBlocked(program: string | null | undefined, date: strin
  * Vienīgie datumi, kuros programmu var rezervēt (YYYY-MM-DD). Ja programmai tie ir norādīti, formā datumu izvēlas
  * no šī saraksta (laiks — brīvi), un serveris citus datumus nepieņem. Pilnībā aizņemtie (FULLY_BOOKED_DATES) netiek piedāvāti.
  */
-export const ALLOWED_DATES: Record<string, string[]> = {
-  "ziemassvetki-bernudarza": ["2026-12-14", "2026-12-15", "2026-12-16", "2026-12-21", "2026-12-22"],
-};
+export const ALLOWED_DATES: Record<string, string[]> = {};
 export const allowedDates = (program: string | null | undefined) => ALLOWED_DATES[program ?? ""];
 export const isDateAllowed = (program: string | null | undefined, date: string | null | undefined) => {
   const dates = allowedDates(program);
@@ -171,29 +169,7 @@ export const isDateAllowed = (program: string | null | undefined, date: string |
  * `cost` — cik komandas aizņem variants (ja nav norādīts — 1), `label` — nosaukums tekstā.
  */
 export type DayWindow = { label: string; from?: string; until?: string; max?: number; variants?: string[]; cost?: Record<string, number> };
-export const DAY_RULES: Record<string, { minutes: number; days: Record<string, DayWindow[]> }> = {
-  "ziemassvetki-bernudarza": {
-    // Laiks, ko komanda pavada programmā — 1 stunda
-    minutes: 60,
-    days: {
-      "2026-12-14": [
-        // Rītā — viena rezervācija: vai nu "Rūķis un Ziemassvētku vecītis", vai "Divi rūķi"
-        { label: "rītā", until: "13:00", max: 1, variants: ["Rūķis un Ziemassvētku vecītis", "Divi rūķi"] },
-        { label: "vakarā", from: "15:30", max: 1, variants: ["Divi rūķi"] },
-      ],
-      "2026-12-15": [
-        // Pēc 14.00 — vai nu viena rezervācija "Divi rūķi" (aizņem abas komandas), vai divas "Rūķis un Ziemassvētku vecītis"
-        { label: "vakarā", from: "14:00", max: 2, variants: ["Rūķis un Ziemassvētku vecītis", "Divi rūķi"], cost: { "Divi rūķi": 2 } },
-      ],
-      "2026-12-16": [
-        // Rītā — vai nu viena rezervācija "Divi rūķi" (aizņem abas komandas), vai divas "Rūķis un Ziemassvētku vecītis"
-        { label: "rītā", until: "13:00", max: 2, variants: ["Rūķis un Ziemassvētku vecītis", "Divi rūķi"], cost: { "Divi rūķi": 2 } },
-        // Vakarā pēc 15.00 — tikai "Rūķis un Ziemassvētku vecītis"
-        { label: "vakarā", from: "15:00", max: 1, variants: ["Rūķis un Ziemassvētku vecītis"] },
-      ],
-    },
-  },
-};
+export const DAY_RULES: Record<string, { minutes: number; days: Record<string, DayWindow[]> }> = {};
 export const dayWindows = (program: string | null | undefined, date: string | null | undefined): DayWindow[] | undefined =>
   DAY_RULES[program ?? ""]?.days[(date ?? "").slice(0, 10)];
 export const hasDayRules = (program: string | null | undefined) => Boolean(DAY_RULES[program ?? ""]);
@@ -284,9 +260,7 @@ export const DATE_NOT_ALLOWED_TEXT = "Lūdzu, izvēlieties kādu no pieejamajiem
  * forma to neļauj, un serveris pieteikumu noraida. Pārējās programmas un telpu nomu tas neietekmē.
  * Jaunu datumu pievieno šeit.
  */
-export const FULLY_BOOKED_DATES: Record<string, string[]> = {
-  "ziemassvetki-bernudarza": ["2026-12-11", "2026-12-18"],
-};
+export const FULLY_BOOKED_DATES: Record<string, string[]> = {};
 export const fullyBookedDates = (program: string | null | undefined) => FULLY_BOOKED_DATES[program ?? ""] ?? [];
 export const isFullyBooked = (program: string | null | undefined, date: string | null | undefined) =>
   Boolean(date) && fullyBookedDates(program).includes((date as string).slice(0, 10));
