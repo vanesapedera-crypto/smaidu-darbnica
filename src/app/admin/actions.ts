@@ -9,7 +9,7 @@ import { parse, slugify, setPath } from "@/lib/admin/fields";
 import { settingsSchemas, type SettingsKey } from "@/lib/admin/settings-schema";
 import type { Booking } from "@/lib/bookings";
 import { getServices, getSettings } from "@/lib/content/queries";
-import { notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
+import { BOSS_EMAIL, notifyClientRejected, notifyReviewRequest } from "@/lib/notify";
 import { sendConfirmation } from "@/lib/booking-confirm";
 import { ensureVenueStaff, syncStaff } from "@/lib/staff";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -667,6 +667,8 @@ export async function createManualBooking(form: FormData) {
     child_age: isBusiness ? null : str("child_age"),
     message: str("message"),
     admin_notes: [str("admin_notes"), "Pievienots panelī (pa telefonu)"].filter(Boolean).join("\n"),
+    // Kurš pievienoja — redzams rezervācijā ("Pievienoja: Kristīne")
+    created_by: member.role === "owner" ? "Vanesa" : member.email.toLowerCase() === BOSS_EMAIL ? "Kristīne" : member.email,
   };
   // Kas piedalās (izvēles rūtiņas) + telpu nomā vienmēr Keita
   const hosts = withVenueStaff(row as unknown as Booking, pickHosts(form.getAll("hosts").filter((v): v is string => typeof v === "string")));
@@ -696,7 +698,12 @@ export async function createManualBooking(form: FormData) {
     if (existing?.length) redirect("/admin/kalendars?pievienots=1");
   }
 
-  const { error } = await db.from("bookings").insert(row);
+  let { error } = await db.from("bookings").insert(row);
+  // Kolonna created_by vēl nav izveidota (migrācija 20261126090000) — saglabā bez tās
+  if (error && /created_by/.test(error.message)) {
+    delete row.created_by;
+    ({ error } = await db.from("bookings").insert(row));
+  }
   if (error) redirect(`/admin/kalendars/jauns?kluda=${encodeURIComponent(error.message)}`);
 
   // Uzreiz apstiprināta (piem. jau sarunāts pa telefonu) — klientam e-pastu nesūta

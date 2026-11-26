@@ -304,6 +304,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                           ) : (
                             hasProgram && <span className={owner ? "font-semibold text-destructive" : ""}>Piedalās: vēl nav norādīts</span>
                           )}
+                          {b.created_by && <> · Pievienoja: <b className="text-ink">{b.created_by}</b></>}
                         </span>
                       )
                     );

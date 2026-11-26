@@ -3,6 +3,14 @@
  * Vanesa uztur ar roku, tāpēc sistēma Google kalendārā to neaiztiek (neveido otru ierakstu, neatjauno, neizņem).
  */
 export const CONVERTED_NOTE = "Pārvērsts no izbraukuma ieraksta";
+/** Kas pievienoja rezervāciju: konkrēts cilvēks panelī, vecais izbraukumu saraksts vai klients mājaslapā */
+export function addedBy(b: { created_by?: string | null; admin_notes?: string | null }): string {
+  if (b.created_by) return b.created_by;
+  const n = b.admin_notes ?? "";
+  if (n.includes(CONVERTED_NOTE)) return "No vecā izbraukumu saraksta";
+  if (n.includes("Pievienots panelī")) return "Panelī (pirms 26.11 — nav zināms, kurš)";
+  return "Klients mājaslapā";
+}
 export const googleManaged = (b: { admin_notes?: string | null }) => !(b.admin_notes ?? "").includes(CONVERTED_NOTE);
 
 /**
@@ -21,6 +29,8 @@ export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 export type Booking = {
   id: string;
   created_at: string | null;
+  /** Kurš pievienoja panelī ("Vanesa", "Kristīne"); mājaslapas pieteikumiem — null */
+  created_by?: string | null;
   inquiry_type: "business" | "private" | null;
   status: BookingStatus | null;
   parent_name: string | null;

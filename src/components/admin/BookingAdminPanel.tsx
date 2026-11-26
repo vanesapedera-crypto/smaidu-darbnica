@@ -5,7 +5,7 @@ import CarsForm, { type Car } from "@/components/admin/CarsForm";
 import ResendUpdated from "@/components/admin/ResendUpdated";
 import StaffPanel from "@/components/admin/StaffPanel";
 import type { StaffRow } from "@/lib/staff";
-import { FIXED_VENUES, atStudio, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
+import { FIXED_VENUES, addedBy, atStudio, editableMessage, hostsOf, phoneDigits, type Booking } from "@/lib/bookings";
 import { CALENDAR_HOSTS, calendarEvent, hostNames, withVenueStaff } from "@/lib/calendar";
 import type { Service, SiteSettings } from "@/lib/content/types";
 import { VAT_NOTE, amountText, costsToText, eur, parseCostOverride, priceVariants, type BookingCosts } from "@/lib/pricing";
@@ -96,6 +96,7 @@ export default function BookingAdminPanel({
               ["Ceļa izdevumi", b.travel_cost != null && `${b.travel_cost} € (${b.travel_km} km turp un atpakaļ)`],
               ["Budžets", b.budget_range],
               ["Piedalās", hostNames(hostEmails) || null],
+              ["Pievienoja", addedBy(b)],
               ["Saņemts", b.created_at && new Date(b.created_at).toLocaleString("lv-LV", { dateStyle: "short", timeStyle: "short" })],
             ] as [string, React.ReactNode][]
           )
